@@ -3,7 +3,8 @@ This software is licensed under the GNU General Public License v3.0 (GPL-3.0). S
 # UnifAI
 
 **A governed agentic AI operating system.**
-Run your own AI society locally.
+
+**Run your own AI society -- locally.**
 
 UnifAI is built on the **UnifAI Protocol** — a governance-first architecture for multi-agent AI systems.
 
