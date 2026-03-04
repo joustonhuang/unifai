@@ -1,9 +1,14 @@
 This software is licensed under the GNU General Public License v3.0 (GPL-3.0). See the LICENSE file for details.
+
 # UnifAI
 
-A union AI society based on the **UnifAI Protocol** — a governance-first architecture for multi-agent AI systems.
+**A governed agentic AI operating system.**
+Run your own AI society locally.
+
+UnifAI is built on the **UnifAI Protocol** — a governance-first architecture for multi-agent AI systems.
 
 UnifAI explores a structured approach to building AI societies where multiple agents, tools, and models collaborate under a clear governance layer.
+
 
 The system was co-designed by Jouston Huang <jouston@linux.com> with assistance from Lyra, a cloud-based advanced LLM used for high-level reasoning.
 
@@ -14,6 +19,8 @@ The system was co-designed by Jouston Huang <jouston@linux.com> with assistance 
 Most AI agent systems start with models and tools.
 
 UnifAI starts with **governance**.
+
+The project aims to build a governed, agentic AI operating system in which AI agents, humans, and external models operate within a structured constitutional framework.
 
 ```
 
