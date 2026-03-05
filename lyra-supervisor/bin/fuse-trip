@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DURATION_SEC="${1:-600}"          # default 10 minutes
+REASON_CODE="${2:-MANUAL_TRIP}"
+NOTE="${3:-manual}"
+
+NOW="$(date +%s)"
+UNTIL="$((NOW + DURATION_SEC))"
+
+STATE_DIR="/var/lib/little7"
+STATE_FILE="${STATE_DIR}/fuse_state.json"
+
+sudo mkdir -p "$STATE_DIR"
+sudo tee "$STATE_FILE" >/dev/null <<EOF
+{
+  "state": "TRIPPED",
+  "scope": "cloud_all",
+  "until_epoch": ${UNTIL},
+  "reason_code": "$(printf "%s" "$REASON_CODE" | sed 's/"/\\"/g')",
+  "note": "$(printf "%s" "$NOTE" | sed 's/"/\\"/g')",
+  "ts_epoch": ${NOW}
+}
+EOF
+
+sudo chmod 0644 "$STATE_FILE"
+echo "FUSE TRIPPED: scope=cloud_all until=$UNTIL reason=$REASON_CODE note=$NOTE"

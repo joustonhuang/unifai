@@ -30,7 +30,9 @@ sudo apt-get install -y \
   net-tools \
   systemd-timesyncd \
   lsof \
-  unzip
+  unzip \
+  docker.io \
+  docker-compose
 
 # 3) Ensure time sync is enabled (important for TLS, logs, and auth)
 sudo systemctl enable --now systemd-timesyncd || true

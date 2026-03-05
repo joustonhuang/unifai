@@ -1,0 +1,46 @@
+services:
+  workers:
+    image: python:3.11-slim
+    container_name: unifai-workers
+    working_dir: /app
+    restart: unless-stopped
+
+    # Run the dummy worker from the installed docker assets directory.
+    command: ["bash", "-lc", "python -u /opt/little7/docker/worker_dummy.py"]
+
+    volumes:
+      # Read-only runtime tree
+      - /opt/little7:/opt/little7:ro
+
+      # Writable state/logs
+      - /var/lib/little7:/var/lib/little7
+      - /var/log/little7:/var/log/little7
+
+      # Inherit host timezone via localtime (portable across distros)
+      - /etc/localtime:/etc/localtime:ro
+
+  nanoclaw:
+    build:
+      # Build context contains package.json/server.js for the MVP app
+      context: /opt/little7/docker/nanoclaw-app
+      dockerfile: ../nanoclaw.Dockerfile
+
+    container_name: unifai-nanoclaw
+    working_dir: /app
+    restart: unless-stopped
+
+    volumes:
+      # Persist NanoClaw data
+      - /var/lib/little7/nanoclaw:/var/lib/little7/nanoclaw
+
+      # Optional: allow NanoClaw to orchestrate other containers (future use)
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # Inherit host timezone via localtime
+      - /etc/localtime:/etc/localtime:ro
+
+    environment:
+      - NANOCLAW_DATA_DIR=/var/lib/little7/nanoclaw
+
+    # Do NOT npm install at runtime; it is done at build time in the Dockerfile.
+    command: ["npm", "start"]

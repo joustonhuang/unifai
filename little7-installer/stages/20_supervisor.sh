@@ -47,6 +47,11 @@ fi
 if [ -d "$SRC_SEC" ]; then
   echo "Syncing secrets..."
   sudo rsync -a "$SRC_SEC/" "$DST_SEC/"
+
+  # HARDEN: secrets must be root-only on installed system
+  sudo chown -R root:root "$DST_SEC"
+  sudo chmod 700 "$DST_SEC"
+  sudo find "$DST_SEC" -type f -name '*.gpg' -exec chmod 600 {} \;
   sudo chmod -R go-rwx "$DST_SEC"
 else
   echo "Warning: secrets directory not found: $SRC_SEC (skipping)"
