@@ -1,0 +1,22 @@
+[Unit]
+Description=Lyra Supervisor (local task manager)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/little7/lyra-supervisor
+ExecStart=/usr/bin/python3 /opt/little7/lyra-supervisor/supervisor.py
+
+StandardOutput=journal
+StandardError=journal
+
+Restart=always
+RestartSec=3
+
+# Optional hardening (enable later once the runtime is stable)
+# User=little7
+# Group=little7
+
+[Install]
+WantedBy=multi-user.target

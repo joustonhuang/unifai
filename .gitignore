@@ -1,0 +1,66 @@
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+*~
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================
+# Virtual environments
+# =========================
+.venv/
+venv/
+env/
+
+# =========================
+# Runtime data (do NOT commit)
+# =========================
+logs/
+db/
+data/
+lyra-supervisor/logs/
+lyra-supervisor/data/
+*.sqlite
+*.sqlite3
+
+
+
+# =========================
+# Secrets (very important)
+# =========================
+*.key
+*.pem
+*.crt
+*.gpg
+*.env
+.env.*
+
+# If you keep encrypted API keys
+lyra-secrets/*.gpg
+
+# =========================
+# Local testing artifacts
+# =========================
+tmp/
+.cache/
+
+# =========================
+# Editor / IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# System install paths (never in repo)
+# =========================
+/opt/
+/var/
+/etc/
