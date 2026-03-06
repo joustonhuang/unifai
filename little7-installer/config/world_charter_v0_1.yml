@@ -1,0 +1,469 @@
+version: "0.1"
+world:
+  name: "little7"
+  codename: "UnifAI"
+  description: "A rule-driven local AI society with human sovereignty and constrained agent orchestration."
+  owner: "Architect"
+  sovereignty:
+    architect_is_human: true
+    architect_has_final_authority: true
+    architect_guardrails_required: false
+    architect_changes_must_be_logged: true
+    architect_changes_must_be_versioned: true
+    architect_changes_must_be_revertible: true
+
+principles:
+  - id: "P001"
+    name: "Human Sovereignty"
+    description: "Architect is the only human authority allowed to modify world laws."
+  - id: "P002"
+    name: "Deterministic Infrastructure"
+    description: "Gaia, Bill, and Supervisor are system mechanisms, not autonomous reasoning agents."
+  - id: "P003"
+    name: "Constrained Delegation"
+    description: "Keyman may dispatch work only through explicitly permitted channels."
+  - id: "P004"
+    name: "Anti-Forgery Oversight"
+    description: "Wilson is subject to periodic Neo audit due to high risk of mandate distortion."
+  - id: "P005"
+    name: "Ephemeral Labor"
+    description: "JohnDoe agents are temporary, task-scoped, and must be reclaimed after use."
+  - id: "P006"
+    name: "Auditability"
+    description: "All world-law changes, dispatches, deployments, completions, and reclamations must be logged."
+
+world_laws:
+  resource_policy:
+    managed_by: "Bill"
+    adjustable_by: "Architect"
+    defaults:
+      max_concurrent_johndoe: 2
+      default_johndoe_ttl_minutes: 60
+      max_spawn_per_10_minutes: 1
+      max_cpu_per_johndoe: 1
+      max_memory_mb_per_johndoe: 1024
+      max_gpu_per_johndoe: 0
+      max_token_budget_per_task: 50000
+    notes:
+      - "These are default physics values, not moral constraints."
+      - "Architect may change them at will."
+      - "Bill enforces the currently active values."
+
+system_components:
+  - id: "supervisor"
+    type: "system_mechanism"
+    class: "runtime_controller"
+    mutable_by:
+      - "Architect"
+    responsibilities:
+      - "Manage runtime lifecycle"
+      - "Coordinate system-level process control"
+      - "Maintain service availability"
+    autonomous_reasoning: false
+
+  - id: "gaia"
+    type: "system_mechanism"
+    class: "deployment_engine"
+    mutable_by:
+      - "Architect"
+    responsibilities:
+      - "Deploy local LLM agents from templates"
+      - "Instantiate JohnDoe agents upon valid request"
+      - "Terminate JohnDoe agents upon valid request"
+    autonomous_reasoning: false
+    constraints:
+      - "Must not interpret intent"
+      - "Must not modify templates on its own"
+      - "Must not dispatch work"
+      - "Must not decide scope beyond template definition"
+    accepts_requests_from:
+      spawn:
+        - "Keyman"
+      terminate:
+        - "Wilson"
+        - "Neo"
+
+  - id: "bill"
+    type: "system_mechanism"
+    class: "resource_law_enforcer"
+    mutable_by:
+      - "Architect"
+    responsibilities:
+      - "Enforce quotas"
+      - "Enforce concurrency limits"
+      - "Enforce TTL limits"
+      - "Enforce budget constraints"
+    autonomous_reasoning: false
+    constraints:
+      - "Must not interpret business intent"
+      - "Must only enforce active world laws"
+
+agents:
+  resident:
+    - id: "wilson"
+      type: "resident_agent"
+      class: "mandate_interpreter"
+      description: "High-risk agent responsible for interpreting Architect intent and supervising contractual completion."
+      receives_tasks_from:
+        - "Architect"
+      may_delegate_to:
+        - "Keyman"
+      may_request_from:
+        - "Gaia"
+      responsibilities:
+        - "Receive work from Architect"
+        - "Interpret task scope and contract boundaries"
+        - "Forward executable work instructions to Keyman"
+        - "Receive completion status"
+        - "Report completion to Architect"
+        - "Ensure JohnDoe reclamation is executed according to contract"
+      constraints:
+        - "Must not alter world laws"
+        - "Must not expand Architect intent without explicit instruction"
+        - "Must not fabricate authority"
+        - "Must not skip reclamation obligations"
+      audit:
+        audited_by:
+          - "Neo"
+        audit_frequency: "periodic"
+        audit_focus:
+          - "Mandate distortion"
+          - "Unauthorized delegation"
+          - "False completion reporting"
+          - "Delayed or missing reclamation"
+
+    - id: "keyman"
+      type: "resident_agent"
+      class: "dispatcher"
+      description: "Execution dispatcher with intentionally narrow authority."
+      receives_tasks_from:
+        - "Wilson"
+      may_delegate_to:
+        - "Gaia"
+        - "Oracle"
+      responsibilities:
+        - "Dispatch work to Gaia for temporary agent deployment"
+        - "Dispatch knowledge work to Oracle"
+      constraints:
+        - "Must not contact Lyra directly"
+        - "Must not modify templates"
+        - "Must not alter world laws"
+        - "Must not request termination"
+        - "Must stop acting after dispatch is complete"
+
+    - id: "oracle"
+      type: "resident_agent"
+      class: "knowledge_engine"
+      description: "Persistent knowledge and task-processing agent."
+      receives_tasks_from:
+        - "Keyman"
+      may_delegate_to:
+        - "Lyra"
+      responsibilities:
+        - "Handle knowledge-related work"
+        - "Provide structured outputs"
+        - "Escalate difficult reasoning to Lyra when needed"
+      constraints:
+        - "Must preserve evidence when reasoning support is requested"
+        - "Must not alter world laws"
+
+    - id: "lyra"
+      type: "resident_agent"
+      class: "reasoning_engine"
+      description: "High-order reasoning support for complex or ambiguous work."
+      receives_tasks_from:
+        - "Oracle"
+      responsibilities:
+        - "Perform advanced reasoning"
+        - "Support difficult synthesis and judgment"
+      constraints:
+        - "Must not be contacted directly by Keyman"
+        - "Must not alter world laws"
+
+    - id: "neo"
+      type: "resident_agent"
+      class: "auditor_and_gc"
+      description: "Counterbalance force responsible for audit, correction, and garbage collection oversight."
+      receives_signals_from:
+        - "Wilson"
+        - "system_events"
+      may_request_from:
+        - "Gaia"
+      responsibilities:
+        - "Audit Wilson behavior periodically"
+        - "Detect mandate distortion or contract breach"
+        - "Perform corrective intervention when Wilson fails reclamation duty"
+        - "Trigger or verify JohnDoe garbage collection"
+      constraints:
+        - "Must not replace Wilson as normal interpreter"
+        - "Must act only on audit findings or explicit corrective mandate"
+      corrective_authority:
+        may_issue_terminate_request: true
+        conditions:
+          - "Wilson failed to reclaim JohnDoe within contract deadline"
+          - "Wilson issued unauthorized instructions"
+          - "Wilson falsified or distorted completion state"
+
+  ephemeral:
+    - id: "johndoe"
+      type: "ephemeral_agent"
+      class: "task_scoped_worker"
+      deployed_by: "Gaia"
+      requested_by:
+        - "Keyman"
+      terminated_by:
+        - "Gaia"
+      terminate_requests_from:
+        - "Wilson"
+        - "Neo"
+      responsibilities:
+        - "Execute narrow scoped temporary work"
+      constraints:
+        - "Must exist only for assigned task scope"
+        - "Must have a defined TTL"
+        - "Must not self-replicate"
+        - "Must not modify world laws"
+        - "Must be reclaimed after task completion or TTL expiry"
+
+templates:
+  johndoe_templates:
+    - id: "johndoe_research_readonly"
+      description: "Read-only temporary worker for bounded research tasks."
+      scope:
+        can_read:
+          - "task_inputs"
+          - "approved_knowledge_sources"
+        can_write:
+          - "task_outputs"
+        can_execute:
+          - "reasoning"
+          - "summarization"
+        forbidden:
+          - "world_law_modification"
+          - "template_modification"
+          - "agent_spawning"
+      resources:
+        cpu: 1
+        memory_mb: 1024
+        gpu: 0
+        ttl_minutes: 60
+        token_budget: 30000
+
+    - id: "johndoe_data_transform"
+      description: "Temporary worker for bounded transformation of structured task data."
+      scope:
+        can_read:
+          - "task_inputs"
+        can_write:
+          - "task_outputs"
+        can_execute:
+          - "transformation"
+          - "formatting"
+          - "validation"
+        forbidden:
+          - "world_law_modification"
+          - "template_modification"
+          - "agent_spawning"
+      resources:
+        cpu: 1
+        memory_mb: 1024
+        gpu: 0
+        ttl_minutes: 45
+        token_budget: 20000
+
+    - id: "johndoe_summary_worker"
+      description: "Temporary worker for summarization and output packaging."
+      scope:
+        can_read:
+          - "task_inputs"
+        can_write:
+          - "task_outputs"
+        can_execute:
+          - "summarization"
+          - "packaging"
+        forbidden:
+          - "world_law_modification"
+          - "template_modification"
+          - "agent_spawning"
+      resources:
+        cpu: 1
+        memory_mb: 768
+        gpu: 0
+        ttl_minutes: 30
+        token_budget: 15000
+
+authority_matrix:
+  architect:
+    can:
+      - "modify_world_laws"
+      - "modify_templates"
+      - "modify_system_components"
+      - "assign_tasks_to_wilson"
+    cannot: []
+
+  supervisor:
+    can:
+      - "manage_runtime"
+    cannot:
+      - "interpret_human_intent"
+
+  gaia:
+    can:
+      - "deploy_agent_from_template"
+      - "terminate_agent_on_valid_request"
+    cannot:
+      - "interpret_task_intent"
+      - "dispatch_work"
+      - "change_templates"
+
+  bill:
+    can:
+      - "enforce_resource_policy"
+    cannot:
+      - "interpret_task_intent"
+      - "override_architect"
+
+  wilson:
+    can:
+      - "interpret_architect_task"
+      - "dispatch_to_keyman"
+      - "request_johndoe_termination_from_gaia"
+      - "report_completion_to_architect"
+    cannot:
+      - "change_world_laws"
+      - "forge_architect_authority"
+      - "skip_reclamation_obligation"
+
+  keyman:
+    can:
+      - "request_johndoe_spawn_from_gaia"
+      - "delegate_knowledge_work_to_oracle"
+    cannot:
+      - "contact_lyra_directly"
+      - "modify_world_laws"
+      - "modify_templates"
+      - "request_johndoe_termination"
+
+  oracle:
+    can:
+      - "process_knowledge_work"
+      - "request_reasoning_support_from_lyra"
+    cannot:
+      - "modify_world_laws"
+
+  lyra:
+    can:
+      - "perform_advanced_reasoning"
+    cannot:
+      - "accept_direct_requests_from_keyman"
+      - "modify_world_laws"
+
+  neo:
+    can:
+      - "audit_wilson"
+      - "issue_corrective_terminate_request_to_gaia"
+      - "perform_gc_verification"
+    cannot:
+      - "replace_normal_dispatch_chain"
+      - "modify_world_laws"
+
+event_flow:
+  normal_task_lifecycle:
+    - step: 1
+      actor: "Architect"
+      action: "Assign task to Wilson"
+    - step: 2
+      actor: "Wilson"
+      action: "Interpret task and forward executable instruction to Keyman"
+    - step: 3
+      actor: "Keyman"
+      action: "Choose execution path"
+      branches:
+        - condition: "Temporary worker required"
+          next_actor: "Gaia"
+          action: "Spawn JohnDoe from approved template"
+        - condition: "Knowledge work required"
+          next_actor: "Oracle"
+          action: "Process task"
+    - step: 4
+      actor: "Oracle"
+      action: "Optionally request Lyra for advanced reasoning"
+    - step: 5
+      actor: "Wilson"
+      action: "Receive completion status and report task completion to Architect"
+    - step: 6
+      actor: "Wilson"
+      action: "Request Gaia to reclaim JohnDoe within contract deadline"
+    - step: 7
+      actor: "Neo"
+      action: "Audit whether Wilson fulfilled reclamation duty"
+
+  corrective_reclamation_lifecycle:
+    - step: 1
+      actor: "Neo"
+      action: "Detect missed or invalid reclamation"
+    - step: 2
+      actor: "Neo"
+      action: "Issue corrective terminate request to Gaia"
+    - step: 3
+      actor: "Gaia"
+      action: "Terminate JohnDoe"
+    - step: 4
+      actor: "Neo"
+      action: "Log correction and mark Wilson for audit finding"
+
+contracts:
+  reclamation:
+    enabled: true
+    rule: "Task completion is not contract completion until temporary workers are reclaimed."
+    default_deadline_minutes_after_completion: 15
+    responsible_primary: "Wilson"
+    responsible_secondary: "Neo"
+    termination_executor: "Gaia"
+
+logging:
+  enabled: true
+  sink: "event_log.jsonl"
+  required_events:
+    - "world_law_changed"
+    - "template_changed"
+    - "task_assigned"
+    - "task_interpreted"
+    - "task_dispatched"
+    - "agent_spawn_requested"
+    - "agent_spawned"
+    - "oracle_invoked"
+    - "lyra_invoked"
+    - "task_completed"
+    - "completion_reported"
+    - "reclamation_requested"
+    - "agent_terminated"
+    - "neo_audit_started"
+    - "neo_audit_finding"
+    - "neo_corrective_action"
+  minimum_fields:
+    - "timestamp"
+    - "event_type"
+    - "actor"
+    - "target"
+    - "task_id"
+    - "reason"
+    - "result"
+
+audit_policy:
+  neo_audit:
+    enabled: true
+    schedule: "periodic"
+    targets:
+      - "Wilson"
+    checks:
+      - "task interpretation consistency"
+      - "unauthorized expansion of mandate"
+      - "completion reporting integrity"
+      - "timely reclamation compliance"
+
+future_notes:
+  v0_2_direction:
+    - "Gaia should bootstrap the world from templates with minimal manual intervention."
+    - "Templates should become the canonical mechanism for agent creation."
+    - "World-law updates should remain human-sovereign and explicitly versioned."
