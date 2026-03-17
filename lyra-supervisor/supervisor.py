@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+Supervisor runtime loop.
+
+This file stays intentionally small and auditable. It serves as the runtime
+enforcement boundary, while Secret Safe, Bill/Budget gate, and Fuse/Kill
+Switch remain separate world-physics primitives.
+"""
+
 import os, time, json, sqlite3, subprocess
 from datetime import datetime, timezone, timedelta
 

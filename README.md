@@ -4,13 +4,13 @@ This software is licensed under the GNU General Public License v3.0 (GPL-3.0). S
 
 # UnifAI
 
-**A governed agentic AI operating system.**
+**A governed AI operating system with explicit authority boundaries.**
 
 **Run your own AI society -- locally.**
 
-UnifAI is built on the **UnifAI Protocol** — a governance-first architecture for multi-agent AI systems.
+UnifAI is built on the **UnifAI Protocol** — a governance-first architecture with distinct physics, constitutional, and runtime layers.
 
-UnifAI explores a structured approach to building AI societies where multiple agents, tools, and models collaborate under a clear governance layer.
+UnifAI explores a structured approach where agents operate inside hard mechanics and constitutional law, rather than inheriting authority from capability.
 
 
 The system was co-designed by Jouston Huang <jouston@linux.com> with assistance from Lyra, a cloud-based advanced LLM used for high-level reasoning.
@@ -19,18 +19,17 @@ The system was co-designed by Jouston Huang <jouston@linux.com> with assistance 
 
 # Philosophy
 
-Most AI agent systems start with models and tools.
+Most AI systems start with models and tools.
 
-UnifAI starts with **governance**.
+UnifAI starts with **authority structure**.
 
-The project aims to build a governed, agentic AI operating system in which AI agents, humans, and external models operate within a structured constitutional framework.
+The project aims to build a governed AI operating system in which agents operate under world physics and constitutional constraints ratified by the human Architect.
 
 ```
 
-governance
-→ policy
-→ agents
-→ models
+constitution
+→ world physics
+→ docker world (agents and tools)
 
 ```
 
@@ -40,13 +39,13 @@ The goal is to prevent uncontrolled agent behavior and build systems that remain
 
 # Lyra–Little7 Constitution (v0.3)
 
-The UnifAI runtime follows a minimal governance framework.
+The UnifAI runtime follows a minimal governance framework with three explicit layers.
 
 ## Core Principle
 
-**Supervisor is the single authority of the system.**
+**Authority belongs to World Physics and Constitution, not to agent capability.**
 
-All agents, models, tools, and external services must interact through the Supervisor.
+Supervisor is the enforcement boundary of the World Physics layer, not merely a coordinator.
 
 The Supervisor must remain:
 
@@ -54,11 +53,21 @@ The Supervisor must remain:
 - auditable
 - human-understandable
 
+## Three-Layer Structure
+
+1. World Physics
+   hard mechanics and enforcement primitives:
+   Secret Safe, Bill/Budget gate, Fuse/Kill Switch, and Supervisor boundary
+2. Constitution
+   governing law for all agents and mechanisms; amendments can be proposed, but Architect has final ratification authority
+3. Docker World
+   operational runtime where resident and ephemeral agents actually execute work
+
 ---
 
 # Rule 0 — Secret Sovereignty
 
-Secrets **never leave the Supervisor**.
+Secrets never leave the **World Physics Secret Safe boundary**.
 
 Examples:
 
@@ -68,7 +77,7 @@ Examples:
 - external service tokens
 
 Agents never directly access secrets.  
-Supervisor executes requests on their behalf.
+Supervisor enforces access boundaries, while secret handling remains a separate world-physics primitive.
 
 ---
 
@@ -177,7 +186,7 @@ Neo may recommend:
 
 # Rule 5 — Kill Switch Authority
 
-Supervisor must support **Kill Switch mechanisms**.
+World Physics must support **Fuse / Kill Switch mechanisms**.
 
 Capabilities:
 
@@ -195,9 +204,9 @@ Triggers may come from:
 
 ---
 
-# Rule 6 — Budget Governance (Bill)
+# Rule 6 — Budget Gate (Bill)
 
-**Bill manages model budgets.**
+**Bill is the budget gate primitive in World Physics.**
 
 Future UnifAI systems may interact with multiple generative AI services:
 
@@ -217,7 +226,7 @@ Bill responsibilities:
 - resource allocation across models
 - cost optimization
 
-Bill does **not hold API keys**.
+Bill does **not hold API keys** and must remain separate from ad hoc agent behavior.
 
 ---
 
@@ -330,42 +339,29 @@ Human-focused summaries with noise removed.
 
 # System Architecture (Simplified)
 
-```
-
-```
-            Architect
-                 ↑
-         Supervisor Gateway
-                 ↑
-               Wilson
-                 ↑
-  ┌──────────────┴──────────────┐
-  │                             │
-```
-
-JohnDoe                       Oracle
-(Local Worker)            (External Query)
-
-```
-    ↑                       ↑
-    └──────── Keyman ───────┘
-       (Task Routing)
-```
-
-Neo  → Monitoring
-Bill → Budget Control
-
-Lyra → Cloud-based Advanced LLM
-
+```text
+Architect (human final ratifier)
+  |
+Constitution layer
+  |
+World Physics layer:
+  - Supervisor (enforcement boundary)
+  - Secret Safe
+  - Bill (Budget gate)
+  - Fuse / Kill Switch
+  |
+Docker World layer:
+  - Resident agents: Wilson, Keyman, Oracle, Lyra, Neo
+  - Ephemeral agents: JohnDoe
 ```
 
 ---
 
 # Final Principle
 
-Agents are tools.  
-Supervisor is governance.  
-Architect is sovereignty.
+Capability belongs to agents, but authority belongs to physics and constitution.  
+No agent may gain authority merely by being more capable.  
+Architect is final constitutional authority.
 
 No agent may bypass governance.
 
@@ -376,7 +372,8 @@ No agent may bypass governance.
 Run the Gaia smoke test:
 
 ```bash
-./scripts/smoke_test_gaia.sh
+./lyra-scripts/smoke_test_gaia.sh
+```
 
 ---
 
