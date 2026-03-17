@@ -260,6 +260,7 @@ agents:
 
   ephemeral:
     - id: "johndoe"
+      layer: "docker_world"
       type: "ephemeral_agent"
       class: "task_scoped_worker"
       deployed_by: "Gaia"

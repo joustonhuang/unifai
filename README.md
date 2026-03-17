@@ -46,6 +46,7 @@ The UnifAI runtime follows a minimal governance framework with three explicit la
 **Authority belongs to World Physics and Constitution, not to agent capability.**
 
 Supervisor is the enforcement boundary of the World Physics layer, not merely a coordinator.
+Supervisor enforces authority boundaries but is not itself a sovereign actor.
 
 The Supervisor must remain:
 
