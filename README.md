@@ -27,8 +27,8 @@ The project aims to build a governed AI operating system in which agents operate
 
 ```
 
-constitution
-→ world physics
+world physics
+→ constitution
 → docker world (agents and tools)
 
 ```

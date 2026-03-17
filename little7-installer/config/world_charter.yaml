@@ -235,6 +235,7 @@ agents:
         - "Must not alter world laws"
 
     - id: "neo"
+      layer: "docker_world"
       type: "resident_agent"
       class: "auditor_and_gc"
       description: "Counterbalance force responsible for audit, correction, and garbage collection oversight."
