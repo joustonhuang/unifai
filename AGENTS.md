@@ -41,6 +41,15 @@ Agents must read the charter before implementing or modifying code related to:
 
 ## Architectural Constraints
 
+- UnifAI has three layers:
+  - World Physics (enforcement mechanisms)
+  - Constitution (governing law)
+  - Docker World (operational runtime)
+
+- Supervisor is the enforcement boundary of the World Physics layer, not merely a coordinator.
+- Secret Safe, Bill/Budget gate, and Fuse/Kill Switch are World Physics primitives.
+- World Physics primitives must remain distinct from ad hoc agent behavior.
+
 - Gaia is a deterministic deployment engine.
 - Gaia is not an autonomous LLM agent.
 - Gaia must not interpret task intent.
@@ -59,6 +68,9 @@ Agents must read the charter before implementing or modifying code related to:
 
 - Bill enforces world resource laws.
 
+- Capability belongs to agents, but authority belongs to World Physics and Constitution.
+- Architect has final constitutional ratification authority.
+
 ## Development Rules
 
 - Do not introduce authorities not present in the charter.
@@ -72,4 +84,3 @@ If implementation details are missing or ambiguous:
 1. Do not invent new powers.
 2. Implement the minimal behavior consistent with the charter.
 3. Document assumptions in the PR description.
-

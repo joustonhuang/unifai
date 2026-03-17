@@ -12,6 +12,30 @@ world:
     architect_changes_must_be_versioned: true
     architect_changes_must_be_revertible: true
 
+architecture_layers:
+  world_physics:
+    description: "Hard mechanics and enforcement boundary layer."
+    primitives:
+      - "Supervisor boundary"
+      - "Secret Safe"
+      - "Bill/Budget gate"
+      - "Fuse/Kill Switch"
+    notes:
+      - "The full world-physics layer may grow significantly over time."
+      - "supervisor.py should remain small, readable, and auditable."
+      - "Budget and secret primitives must remain outside supervisor.py."
+  constitution:
+    description: "Governing law all agents and mechanisms must follow."
+    amendment_process:
+      proposals_allowed: true
+      final_ratifier: "Architect"
+  docker_world:
+    description: "Operational environment where resident and ephemeral agents run."
+
+authority_model:
+  law: "Capability belongs to agents, but authority belongs to physics and constitution."
+  constraint: "No agent may gain authority merely by being more capable."
+
 principles:
   - id: "P001"
     name: "Human Sovereignty"
@@ -31,6 +55,9 @@ principles:
   - id: "P006"
     name: "Auditability"
     description: "All world-law changes, dispatches, deployments, completions, and reclamations must be logged."
+  - id: "P007"
+    name: "Authority Separation"
+    description: "Agent capability does not grant authority; authority is defined by world physics and constitution."
 
 world_laws:
   resource_policy:
@@ -48,14 +75,40 @@ world_laws:
       - "These are default physics values, not moral constraints."
       - "Architect may change them at will."
       - "Bill enforces the currently active values."
+  budget_gate_policy:
+    managed_by: "Bill"
+    layer: "world_physics"
+    notes:
+      - "Budget authority is a world-physics primitive."
+      - "Budget control must not be delegated to ad hoc agent behavior."
+  secret_safe_policy:
+    managed_by: "Secret Safe"
+    enforced_by: "Supervisor"
+    layer: "world_physics"
+    notes:
+      - "Secrets remain in world physics boundaries and never become direct agent-owned data."
+      - "Secret handling must not be embedded in ad hoc agent behavior."
+  fuse_kill_switch_policy:
+    managed_by: "Fuse/Kill Switch"
+    enforced_by: "Supervisor"
+    layer: "world_physics"
+    triggers:
+      - "Architect"
+      - "Neo"
+      - "Policy-defined automatic trigger"
+    notes:
+      - "Fuse/Kill Switch is a world-physics primitive."
+      - "Fuse may block secret release and pause or terminate unsafe runtime flows."
 
 system_components:
   - id: "supervisor"
     type: "system_mechanism"
+    layer: "world_physics"
     class: "runtime_controller"
     mutable_by:
       - "Architect"
     responsibilities:
+      - "Enforce world-physics boundary at runtime"
       - "Manage runtime lifecycle"
       - "Coordinate system-level process control"
       - "Maintain service availability"
@@ -63,6 +116,7 @@ system_components:
 
   - id: "gaia"
     type: "system_mechanism"
+    layer: "world_physics"
     class: "deployment_engine"
     mutable_by:
       - "Architect"
@@ -85,6 +139,7 @@ system_components:
 
   - id: "bill"
     type: "system_mechanism"
+    layer: "world_physics"
     class: "resource_law_enforcer"
     mutable_by:
       - "Architect"
@@ -101,6 +156,7 @@ system_components:
 agents:
   resident:
     - id: "wilson"
+      layer: "docker_world"
       type: "resident_agent"
       class: "mandate_interpreter"
       description: "High-risk agent responsible for interpreting Architect intent and supervising contractual completion."
@@ -133,6 +189,7 @@ agents:
           - "Delayed or missing reclamation"
 
     - id: "keyman"
+      layer: "docker_world"
       type: "resident_agent"
       class: "dispatcher"
       description: "Execution dispatcher with intentionally narrow authority."
@@ -152,6 +209,7 @@ agents:
         - "Must stop acting after dispatch is complete"
 
     - id: "oracle"
+      layer: "docker_world"
       type: "resident_agent"
       class: "knowledge_engine"
       description: "Persistent knowledge and task-processing agent."
@@ -168,6 +226,7 @@ agents:
         - "Must not alter world laws"
 
     - id: "lyra"
+      layer: "docker_world"
       type: "resident_agent"
       class: "reasoning_engine"
       description: "High-order reasoning support for complex or ambiguous work."
@@ -181,6 +240,7 @@ agents:
         - "Must not alter world laws"
 
     - id: "neo"
+      layer: "docker_world"
       type: "resident_agent"
       class: "auditor_and_gc"
       description: "Counterbalance force responsible for audit, correction, and garbage collection oversight."
@@ -206,6 +266,7 @@ agents:
 
   ephemeral:
     - id: "johndoe"
+      layer: "docker_world"
       type: "ephemeral_agent"
       class: "task_scoped_worker"
       deployed_by: "Gaia"
