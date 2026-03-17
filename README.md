@@ -23,7 +23,7 @@ Most AI systems start with models and tools.
 
 UnifAI starts with **governance**.
 
-The project aims to build a governed AI operating system in which agents operate under world physics and constitutional constraints ratified by the human Architect.
+The project aims to build a governed agentic AI operating system in which AI agents, humans, and external models operate within a structured constitutional framework.
 
 ```
 
@@ -343,13 +343,13 @@ Human-focused summaries with noise removed.
 ```text
 Architect (human final ratifier)
   |
-Constitution layer
-  |
 World Physics layer:
   - Supervisor (enforcement boundary)
   - Secret Safe
   - Bill (Budget gate)
   - Fuse / Kill Switch
+  |
+Constitution layer
   |
 Docker World layer:
   - Resident agents: Wilson, Keyman, Oracle, Lyra, Neo
@@ -385,7 +385,3 @@ Early experimental architecture.
 The goal is to explore **governed multi-agent AI systems** that can run even on modest hardware.
 
 Reference node: **Little7**.
-ode: **Little7**.
-ttle7**.
-ttle7**.
-*.
