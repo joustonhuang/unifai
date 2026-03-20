@@ -12,7 +12,7 @@ REPO_ROOT="$(cd "$INSTALLER_DIR/.." && pwd)"
 
 SRC_SUP="${REPO_ROOT}/lyra-supervisor"
 SRC_CFG="${REPO_ROOT}/lyra-config"
-SRC_SEC="${REPO_ROOT}/lyra-secrets"
+SRC_SEC="${REPO_ROOT}/lyra-supervisor/supervisor-secretvault/secrets"
 
 DST_BASE="/opt/little7"
 DST_SUP="${DST_BASE}/lyra-supervisor"

@@ -44,8 +44,7 @@ little7-installer/config/active_models.yml
 *.env
 .env.*
 
-# If you keep encrypted API keys
-lyra-secrets/*.gpg
+/lyra-supervisor/supervisor-secretvault/*
 
 # =========================
 # Local testing artifacts
