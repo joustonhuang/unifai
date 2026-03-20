@@ -16,3 +16,5 @@ Notes:
 - Do not place plaintext credentials here.
 - `.auth` files belong under `grants/` only.
 - The runtime installer still deploys secrets into `/etc/little7/secrets` so existing consumers such as `lyra-supervisor/bin/get-secret` continue to work.
+- `install.sh` installs the current secret set into `/etc/little7/secrets`.
+- `uninstall.sh` removes `/etc/little7/secrets` to provide a clean rollback path for this boundary.
