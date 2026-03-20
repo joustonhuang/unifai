@@ -7,18 +7,10 @@ enforcement boundary, while Secret Safe, Bill/Budget gate, and Fuse/Kill
 Switch remain separate world-physics primitives.
 """
 
-import json
-import os
-import sqlite3
-import subprocess
-import time
+import os, time, json, sqlite3, subprocess
 from datetime import datetime, timezone, timedelta
 
 BUILD_ID = "dev-20260305-1427"
-SUPERVISOR_ROOT = os.path.dirname(os.path.abspath(__file__))
-SECRETVAULT_ROOT = os.path.join(SUPERVISOR_ROOT, "supervisor-secretvault")
-SECRET_ROOT = os.path.join(SECRETVAULT_ROOT, "secrets")
-GRANTS_ROOT = os.path.join(SECRETVAULT_ROOT, "grants")
 DB = os.path.expanduser("~/lyra-supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/lyra-supervisor/logs/supervisor.log")
 
@@ -58,28 +50,6 @@ def db():
     """)
     return conn
 
-
-def warn_secretvault_layout():
-    if os.path.isdir(SECRET_ROOT):
-        for entry in sorted(os.listdir(SECRET_ROOT)):
-            full = os.path.join(SECRET_ROOT, entry)
-            if not os.path.isfile(full):
-                continue
-            lower = entry.lower()
-            if lower.endswith((".txt", ".json", ".yaml", ".yml", ".env", ".auth")):
-                log(f"WARNING plaintext-like file in secrets/: {full}")
-
-    grants_root_real = os.path.realpath(GRANTS_ROOT)
-    for root, _, files in os.walk(SUPERVISOR_ROOT):
-        root_real = os.path.realpath(root)
-        for name in files:
-            if not name.endswith(".auth"):
-                continue
-            full = os.path.join(root, name)
-            if root_real == grants_root_real or root_real.startswith(grants_root_real + os.sep):
-                continue
-            log(f"WARNING .auth file outside grants/: {full}")
-
 def run_allowlisted(cmd_key: str, args: list[str]) -> dict:
     if cmd_key not in ALLOW_CMDS:
         raise RuntimeError(f"command not allowlisted: {cmd_key}")
@@ -98,7 +68,6 @@ def main():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     log("supervisor start")
-    warn_secretvault_layout()
 
     conn = db()
     conn.close()

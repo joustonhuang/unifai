@@ -44,18 +44,7 @@ little7-installer/config/active_models.yml
 *.env
 .env.*
 
-# SecretVault: never commit secrets or runtime artifacts
-/lyra-supervisor/supervisor-secretvault/secrets/*
-/lyra-supervisor/supervisor-secretvault/grants/*
-/lyra-supervisor/supervisor-secretvault/audit/*
-/lyra-supervisor/supervisor-secretvault/tmp/*
-
-# allow directory structure
-!/lyra-supervisor/supervisor-secretvault/secrets/.gitkeep
-!/lyra-supervisor/supervisor-secretvault/grants/.gitkeep
-!/lyra-supervisor/supervisor-secretvault/audit/.gitkeep
-!/lyra-supervisor/supervisor-secretvault/config/.gitkeep
-!/lyra-supervisor/supervisor-secretvault/tmp/.gitkeep
+/lyra-supervisor/supervisor-secretvault/*
 
 # =========================
 # Local testing artifacts
