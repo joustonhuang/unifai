@@ -50,8 +50,6 @@ little7-installer/config/active_models.yml
 # Local testing artifacts
 # =========================
 tmp/
-!/lyra-supervisor/supervisor-secretvault/tmp/
-!/lyra-supervisor/supervisor-secretvault/tmp/.gitkeep
 .cache/
 
 # =========================
