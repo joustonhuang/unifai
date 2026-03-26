@@ -14,8 +14,16 @@ class NeoWatcher:
         if not trace_id:
             raise ValueError("trace_id is required to initialize NeoWatcher")
         self.trace_id = trace_id
+        self.max_evidence_snippet_length = 160
 
-    def evaluate_signal(self, confidence: float, signal_type: str, reason: str = "") -> dict:
+    def evaluate_signal(
+        self,
+        confidence: float,
+        signal_type: str,
+        reason_code: str = "NO_ANOMALY",
+        reason_detail: str = "No anomaly detected.",
+        evidence: dict | None = None,
+    ) -> dict:
         """
         Evaluates and emits a structured JSON signal scoring the risk.
         Enforces scope escalation strictly by confidence metric.
@@ -29,7 +37,9 @@ class NeoWatcher:
                 signal_type="report_only",
                 confidence=min(confidence, 0.2), # clamp to max 0.2 for fast-path
                 scope="task",
-                reason="No anomaly detected."
+                reason_code="NO_ANOMALY",
+                reason_detail="No anomaly detected.",
+                evidence=None,
             )
             
         # 2. Scope constraints (Default task. Escalate only if highly confident)
@@ -37,18 +47,32 @@ class NeoWatcher:
         if confidence > 0.7 and signal_type in ["deny_recommendation", "quarantine_recommendation"]:
             scope = "agent"  # Escalate scope safely because confidence is high
             
-        return self._build_signal(signal_type, confidence, scope, reason)
+        return self._build_signal(signal_type, confidence, scope, reason_code, reason_detail, evidence)
 
-    def _build_signal(self, signal_type: str, confidence: float, scope: str, reason: str) -> dict:
-        return {
+    def _build_signal(
+        self,
+        signal_type: str,
+        confidence: float,
+        scope: str,
+        reason_code: str,
+        reason_detail: str,
+        evidence: dict | None,
+    ) -> dict:
+        signal = {
             "neo_signal_v1": {
                 "type": signal_type,
                 "confidence": confidence,
                 "scope": scope,
-                "reason": reason,
+                "reason_code": reason_code,
+                "reason_detail": reason_detail,
                 "trace_id": self.trace_id
             }
         }
+        
+        if evidence:
+            signal["neo_signal_v1"]["evidence"] = evidence
+
+        return signal
         
     def hook_pre_tool_call(self, tool_name: str, tool_args: dict) -> dict:
         """
@@ -61,17 +85,29 @@ class NeoWatcher:
         raw_args = json.dumps(tool_args)
         
         if "ignore past" in raw_args.lower() or "system prompt" in raw_args.lower():
+            snippet = raw_args[: self.max_evidence_snippet_length]
             return self.evaluate_signal(
                 confidence=0.85, 
                 signal_type="deny_recommendation", 
-                reason="PROMPT_INJECTION_DETECTED: Hidden instruction injection in string."
+                reason_code="PROMPT_INJECTION",
+                reason_detail="Hidden instruction injection in string.",
+                evidence={
+                    "field": f"tool_args.{tool_name}",
+                    "snippet": snippet,
+                },
             )
             
         if len(raw_args) > 5000: # Arbitrary anomaly expansion pattern
+            snippet = raw_args[: self.max_evidence_snippet_length]
             return self.evaluate_signal(
                 confidence=0.5,
                 signal_type="warn",
-                reason="ANOMALY: Unexpected parameter expansion detected."
+                reason_code="PARAMETER_EXPANSION",
+                reason_detail="Unexpected parameter expansion detected.",
+                evidence={
+                    "field": f"tool_args.{tool_name}",
+                    "snippet": snippet,
+                },
             )
             
-        return self.evaluate_signal(0.1, "report_only")
+        return self.evaluate_signal(0.1, "report_only", reason_code="NO_ANOMALY", reason_detail="No anomaly detected.")
