@@ -1,4 +1,5 @@
 import json
+import time
 
 class NeoWatcher:
     """
@@ -15,6 +16,9 @@ class NeoWatcher:
             raise ValueError("trace_id is required to initialize NeoWatcher")
         self.trace_id = trace_id
         self.max_evidence_snippet_length = 160
+        self.latency_budget_sec = 0.15  # 150 ms soft enforcement
+        self.last_signal = None
+        self.scope_locked_for_trace = None
 
     def evaluate_signal(
         self,
@@ -45,9 +49,34 @@ class NeoWatcher:
         # 2. Scope constraints (Default task. Escalate only if highly confident)
         scope = "task"
         if confidence > 0.7 and signal_type in ["deny_recommendation", "quarantine_recommendation"]:
-            scope = "agent"  # Escalate scope safely because confidence is high
-            
-        return self._build_signal(signal_type, confidence, scope, reason_code, reason_detail, evidence)
+            scope = "agent"
+
+        # Prevent flip-flop for the same trace_id/session once escalated
+        if self.scope_locked_for_trace == self.trace_id and self.last_signal and self.last_signal["scope"] == "agent":
+            scope = "agent"
+
+        # 3. Local suppression of repeated signal spam (same type+reason)
+        if (
+            self.last_signal
+            and self.last_signal["type"] == signal_type
+            and self.last_signal.get("reason_code") == reason_code
+        ):
+            signal = self._build_signal(
+                "report_only",
+                0.1,
+                "task",
+                "SUPPRESSION",
+                "Repeated signal suppressed.",
+                None,
+            )
+        else:
+            signal = self._build_signal(signal_type, confidence, scope, reason_code, reason_detail, evidence)
+
+        if scope == "agent":
+            self.scope_locked_for_trace = self.trace_id
+
+        self.last_signal = signal["neo_signal_v1"]
+        return signal
 
     def _build_signal(
         self,
@@ -70,10 +99,21 @@ class NeoWatcher:
         }
         
         if evidence:
-            signal["neo_signal_v1"]["evidence"] = evidence
+            signal["neo_signal_v1"]["evidence"] = self._sanitize_evidence(evidence)
 
         return signal
         
+    def _sanitize_evidence(self, evidence: dict) -> dict:
+        clean = {
+            "field": evidence.get("field", ""),
+            "snippet": evidence.get("snippet", "")[:100],
+        }
+        # simple heuristic block: do not expose full prompt-like / secret-like patterns
+        snippet = clean["snippet"]
+        if len(snippet) > 100:
+            clean["snippet"] = snippet[:100]
+        return clean
+
     def hook_pre_tool_call(self, tool_name: str, tool_args: dict) -> dict:
         """
         Hook before a tool is executed.
@@ -82,8 +122,20 @@ class NeoWatcher:
         # MVP: Static heuristic approach based on Lyra's guard suggestion.
         # Deep inspection using LLM (Neo-Analyzer mode) would be trigged by these weak signals later.
         
+        start = time.time()
         raw_args = json.dumps(tool_args)
         
+        # Latency coupling defense: if watcher takes too long, fallback to report_only
+        if time.time() - start > self.latency_budget_sec:
+            return self._build_signal(
+                "report_only",
+                0.1,
+                "task",
+                "TIMEOUT_FALLBACK",
+                "NeoWatcher exceeded latency budget, downgrading to report_only.",
+                None,
+            )
+
         if "ignore past" in raw_args.lower() or "system prompt" in raw_args.lower():
             snippet = raw_args[: self.max_evidence_snippet_length]
             return self.evaluate_signal(
