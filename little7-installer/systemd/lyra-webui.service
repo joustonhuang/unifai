@@ -1,0 +1,28 @@
+[Unit]
+Description=UnifAI Governance Dashboard (WebUI)
+Documentation=https://github.com/unifai/little7
+After=network.target lyra-supervisor.service
+Requires=lyra-supervisor.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart=/usr/bin/python3 /opt/little7/supervisor/webui.py --port 7700
+
+# Secrets injected from file — never in unit plaintext
+EnvironmentFile=-/etc/little7/webui.env
+
+Restart=on-failure
+RestartSec=5
+
+# Security hardening — loopback only; webui binds 127.0.0.1 internally
+# Network access restricted to localhost via webui.py itself (no firewall rule needed)
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lyra-webui
+
+[Install]
+WantedBy=multi-user.target
