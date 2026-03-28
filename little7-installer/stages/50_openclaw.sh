@@ -73,6 +73,9 @@ sudo tee "${OPENCLAW_LAUNCHER}" >/dev/null <<'LAUNCHER'
 # The key is NEVER written to disk outside the SecretVault grant mechanism.
 set -euo pipefail
 
+# Disable shell debug output explicitly to prevent secret leaks
+set +x
+
 SV_CLI="/opt/little7/supervisor/supervisor-secretvault/src/cli.js"
 MASTER_KEY_FILE="/etc/little7/secretvault_master.key"
 
@@ -106,12 +109,11 @@ if [ ! -f "$GRANT_PATH" ]; then
   exit 3
 fi
 
-API_KEY="$(cat "$GRANT_PATH")"
 echo "[openclaw-start] Grant received. Starting OpenClaw with injected key..."
 
-# Launch OpenClaw — key lives only in the process env, never in a config file
-export ANTHROPIC_API_KEY="$API_KEY"
-exec openclaw gateway "$@"
+# Launch OpenClaw — key lives only in the process env for this command, never in a config file
+# Using env directly without 'export' prevents the key from persisting in the shell environment
+exec env ANTHROPIC_API_KEY="$(cat "$GRANT_PATH")" openclaw gateway "$@"
 LAUNCHER
 
 sudo chmod 0750 "${OPENCLAW_LAUNCHER}"

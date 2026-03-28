@@ -17,6 +17,9 @@ echo "[INFO] Dev mode: using ephemeral master key (not persisted)"
 export SECRETVAULT_MASTER_KEY=$(openssl rand -hex 32)
 export SECRETVAULT_ROOT="$TEST_ROOT"
 
+# Ensure no leakage via debug out in subshells or during test
+set +x
+
 mkdir -p "$SECRETVAULT_ROOT/config" "$SECRETVAULT_ROOT/secrets" \
          "$SECRETVAULT_ROOT/grants" "$SECRETVAULT_ROOT/audit" "$SECRETVAULT_ROOT/tmp"
 chmod 700 "$SECRETVAULT_ROOT/secrets" "$SECRETVAULT_ROOT/grants"
@@ -63,10 +66,11 @@ if [ ! -f "$GRANT_PATH" ]; then
 fi
 
 echo "[INFO] Step 4: Injecting key and calling Anthropic API..."
+# Simulate what openclaw-start does without `export`
 API_KEY=$(cat "$GRANT_PATH")
-echo "[INFO] Injected Key: ${API_KEY:0:20}..."
+echo "[INFO] Injected Key test via exec env simulation..."
 
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+HTTP_STATUS=$(env ANTHROPIC_API_KEY="$API_KEY" curl -s -o /dev/null -w "%{http_code}" \
   -X POST https://api.anthropic.com/v1/messages \
   -H "x-api-key: $API_KEY" \
   -H "anthropic-version: 2023-06-01" \
@@ -79,6 +83,23 @@ if [ "$HTTP_STATUS" == "401" ]; then
 else
   echo "[FAIL] Got HTTP $HTTP_STATUS instead of 401 Unauthorized."
   exit 1
+fi
+
+echo "[INFO] Step 6: Asserting negative test (leakage absence)..."
+unset API_KEY
+
+if env | grep -q "ANTHROPIC_API_KEY"; then
+  echo "[FAIL] ANTHROPIC_API_KEY leaked into global process environment!"
+  exit 1
+else
+  echo "[PASS] ANTHROPIC_API_KEY not found in global env."
+fi
+
+if [ -n "${API_KEY:-}" ]; then
+  echo "[FAIL] Temporary script variable API_KEY failed to unset!"
+  exit 1
+else
+  echo "[PASS] Temporary keys purged locally."
 fi
 
 $SV cleanup >/dev/null || true
