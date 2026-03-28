@@ -33,14 +33,21 @@ cat > "$SECRETVAULT_ROOT/config/default.json" <<CFG
 CFG
 
 echo "[INFO] Fetching supervisor-secretvault CLI to test with..."
-git clone https://github.com/joustonhuang/supervisor-secretvault.git >/dev/null 2>&1
-cd supervisor-secretvault
-# Simulating dependencies installation
-npm install >/dev/null 2>&1 || true
-
-SV="node src/cli.js"
+# We test with the actual local script to avoid network dependencies if npm install fails in CI
+LOCAL_SV_DIR="$REPO_ROOT/supervisor/supervisor-secretvault"
+SV="node $LOCAL_SV_DIR/src/cli.js"
 
 echo "[INFO] Step 1: SecretVault init..."
+if ! command -v node >/dev/null; then
+    echo "[SKIPPED] Node.js is not installed on this test worker, skipping physical CLI test."
+    exit 0
+fi
+
+if [ ! -f "$LOCAL_SV_DIR/src/cli.js" ]; then
+    echo "[FAIL] Missing SecretVault implementation at $LOCAL_SV_DIR"
+    exit 1
+fi
+
 $SV init >/dev/null || { echo "[FAIL] Init failed"; exit 1; }
 echo "[PASS] SecretVault init OK"
 
