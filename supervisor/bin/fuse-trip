@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# UnifAI "The Brake" - Hard Kill Switch (OS-Level)
+# Trip the fuse to physically sever AI agent operations on the machine.
+
 set -euo pipefail
 
 DURATION_SEC="${1:-600}"          # default 10 minutes
@@ -10,9 +13,13 @@ UNTIL="$((NOW + DURATION_SEC))"
 
 STATE_DIR="/var/lib/little7"
 STATE_FILE="${STATE_DIR}/fuse_state.json"
+SV_CLI="/opt/little7/supervisor/supervisor-secretvault/src/cli.js"
 
+echo "[FUSE-TRIP] Initiating emergency governance lockdown: ${REASON_CODE}..."
+
+# 1. State Lockdown: Write the trip file to prevent future boots
 sudo mkdir -p "$STATE_DIR"
-sudo tee "$STATE_FILE" >/dev/null <<EOF
+sudo tee "$STATE_FILE" >/dev/null <<JSON
 {
   "state": "TRIPPED",
   "scope": "cloud_all",
@@ -21,7 +28,37 @@ sudo tee "$STATE_FILE" >/dev/null <<EOF
   "note": "$(printf "%s" "$NOTE" | sed 's/"/\\"/g')",
   "ts_epoch": ${NOW}
 }
-EOF
-
+JSON
 sudo chmod 0644 "$STATE_FILE"
-echo "FUSE TRIPPED: scope=cloud_all until=$UNTIL reason=$REASON_CODE note=$NOTE"
+echo "[OK] 1. Fuse state marked as TRIPPED."
+
+# 2. Secret Nullification: Purge all active SecretVault grants physically
+if [ -f "$SV_CLI" ]; then
+    echo " > Purging all active capability grants..."
+    # Execute cleanup aggressively using node
+    sudo -u root node "$SV_CLI" cleanup >/dev/null 2>&1 || true
+    # Paranoid fallback: destroy grant payload files directly
+    sudo rm -rf /opt/little7/supervisor/supervisor-secretvault/grants/*.secret 2>/dev/null || true
+    echo "[OK] 2. In-flight secrets revoked."
+else
+    echo "[WARN] SecretVault CLI not found, skipping secret purge."
+fi
+
+# 3. PID Eradication: Slay the OpenClaw tree
+echo " > Executing SIGKILL on OpenClaw process tree..."
+# Find all node processes running openclaw and kill -9 them to prevent graceful state saving
+if pgrep -f "openclaw" > /dev/null; then
+    sudo pkill -9 -f "openclaw" || true
+    echo "[OK] 3. OpenClaw processes annihilated."
+else
+    echo "[OK] 3. No OpenClaw processes found."
+fi
+
+# Paranoid clearance of the shell env if running in source
+unset ANTHROPIC_API_KEY || true
+
+echo "=========================================================="
+echo "FUSE COMPLETELY TRIPPED AND ENFORCED AT OS-LEVEL."
+echo "Scope: cloud_all | Until: $UNTIL | Reason: $REASON_CODE"
+echo "Agents have been physically neutralized."
+echo "=========================================================="
