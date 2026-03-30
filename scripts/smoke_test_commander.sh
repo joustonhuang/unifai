@@ -13,6 +13,7 @@ BILL_PROXY="$REPO_ROOT/supervisor/plugins/bill_guardian/bill_proxy.py"
 BOT_LISTENER="$REPO_ROOT/supervisor/plugins/telegram_bridge/bot_listener.py"
 STATE_FILE="/tmp/unifai_budget.json"
 ALERT_LOG="/tmp/unifai_signal_alert.log"
+export UNIFAI_AUDIT_LOG="/tmp/unifai_audit.log"
 
 AUTHORIZED_CHAT_ID_VALUE="7001"
 AUTHORIZED_CHAT_ID="$AUTHORIZED_CHAT_ID_VALUE"

@@ -32,7 +32,17 @@ SECRETVAULT_CLI = Path(os.getenv("SECRETVAULT_CLI_PATH", str(SUPERVISOR_DIR / "s
 MASTER_KEY_FILE = Path(os.getenv("SECRETVAULT_MASTER_KEY_FILE", "/etc/little7/secretvault_master.key"))
 
 SECURITY_UNAUTHORIZED_MSG = "🚨 UNIF_AI SECURITY: Unauthorized command attempt from [{chat_id}]."
+AUDIT_LOG_FILE = Path(os.getenv("UNIFAI_AUDIT_LOG", "/var/log/unifai/audit.log"))
 
+def log_audit(action, chat_id, details=""):
+    try:
+        AUDIT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        log_entry = json.dumps({"timestamp": timestamp, "action": action, "chat_id": chat_id, "details": details})
+        with open(AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(log_entry + "\n")
+    except Exception as e:
+        print(f"Failed to write audit log: {e}", file=sys.stderr)
 
 def read_state():
     if not BUDGET_FILE.exists():
@@ -160,11 +170,14 @@ def command_kill():
 
 
 def handle_command(chat_id, text):
+    command_line = (text or "").strip()
+    log_audit("COMMAND_RECEIVED", chat_id, command_line)
+    
     allowed, denied_message = enforce_authorization(chat_id)
     if not allowed:
+        log_audit("COMMAND_DENIED_UNAUTHORIZED", chat_id, command_line)
         return denied_message
 
-    command_line = (text or "").strip()
     if not command_line:
         return "Empty command."
 
@@ -172,17 +185,26 @@ def handle_command(chat_id, text):
     command = parts[0]
     args = parts[1:]
 
-    if command == "/status":
-        return command_status()
-    if command == "/add_budget":
-        if not args:
-            return "Usage: /add_budget <integer>"
-        return command_add_budget(args[0])
-    if command == "/rotate":
-        return command_rotate()
-    if command == "/kill":
-        return command_kill()
-    return "Unknown command. Available: /status, /add_budget, /rotate, /kill"
+    try:
+        if command == "/status":
+            result = command_status()
+        elif command == "/add_budget":
+            if not args:
+                result = "Usage: /add_budget <integer>"
+            else:
+                result = command_add_budget(args[0])
+        elif command == "/rotate":
+            result = command_rotate()
+        elif command == "/kill":
+            result = command_kill()
+        else:
+            result = "Unknown command. Available: /status, /add_budget, /rotate, /kill"
+            
+        log_audit("COMMAND_EXECUTED", chat_id, f"cmd={command} result={result}")
+        return result
+    except Exception as e:
+        log_audit("COMMAND_FAILED", chat_id, f"cmd={command} error={str(e)}")
+        return f"Command failed: {e}"
 
 
 def request_grant_path_from_secretvault():

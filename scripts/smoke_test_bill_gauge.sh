@@ -53,9 +53,8 @@ echo "[INFO] Validating Shadow Telemetry and Redaction..."
 sleep 1
 
 SHADOW_LOG="/tmp/unifai_shadow.log"
-if [ -f "/var/log/unifai/shadow.log" ]; then
-   SHADOW_LOG="/var/log/unifai/shadow.log"
-fi
+# Test environment should only trust tmp log, isolated from root OS
+export UNIFAI_LOG_DIR="/tmp/"
 
 if ! [ -f "$SHADOW_LOG" ]; then
     echo "[FAIL] Shadow Log not generated at $SHADOW_LOG"

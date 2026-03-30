@@ -27,7 +27,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SIGNAL_SCRIPT = os.path.normpath(os.path.join(SCRIPT_DIR, "..", "..", "..", "scripts", "signal_alert.sh"))
 
 # Telemetry settings (fallback to /tmp if non-sudo)
-LOG_DIR = "/var/log/unifai"
+LOG_DIR = os.getenv("UNIFAI_LOG_DIR", "/var/log/unifai")
 try:
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR, exist_ok=True)

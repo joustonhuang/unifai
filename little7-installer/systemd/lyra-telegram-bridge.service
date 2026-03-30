@@ -16,11 +16,14 @@ ExecStart=/usr/bin/python3 /opt/little7/supervisor/plugins/telegram_bridge/bot_l
 EnvironmentFile=-/etc/little7/telegram_bridge.env
 
 Restart=always
-RestartSec=3
+RestartSec=5
+ProtectSystem=full
+NoNewPrivileges=true
 
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=lyra-telegram-bridge
 
 [Install]
+WantedBy=multi-user.target
 WantedBy=multi-user.target
