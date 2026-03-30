@@ -5,9 +5,14 @@
 set -euo pipefail
 
 MESSAGE="${1:-🚨 UNIF_AI ALERT: Unknown Event}"
+ALERT_LOG_PATH="${UNIFAI_ALERT_LOG_PATH:-/tmp/unifai_signal_alert.log}"
 
 # Log to console/journal
 echo "[TELEGRAM SIGNAL] $MESSAGE"
+
+# Persist a local signal trace for auditing and smoke tests
+mkdir -p "$(dirname "$ALERT_LOG_PATH")"
+printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$MESSAGE" >> "$ALERT_LOG_PATH"
 
 # Attempt to send to Telegram if configured
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then

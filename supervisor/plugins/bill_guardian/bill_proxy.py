@@ -19,6 +19,9 @@ BUDGET_FILE = "/tmp/unifai_budget.json"
 DEFAULT_BUDGET = 1000
 PROXY_PORT = 7701
 ANTHROPIC_REAL_URL = "https://api.anthropic.com"
+KEY_STATUS_VALID = "VALID"
+KEY_STATUS_INVALID = "INVALID"
+CRITICAL_KEY_ALERT = "🚨 UNIF_AI CRITICAL: API Key Revoked/Expired. Keyman intervention required."
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Signal script resolution regardless of where proxy is called from
 SIGNAL_SCRIPT = os.path.normpath(os.path.join(SCRIPT_DIR, "..", "..", "..", "scripts", "signal_alert.sh"))
@@ -64,17 +67,63 @@ console.addFilter(RedactionFilter())
 logger.addHandler(console)
 
 def get_budget():
+    state = get_state()
+    return int(state.get("budget", 0))
+
+def get_state():
     if not os.path.exists(BUDGET_FILE):
-        set_budget(DEFAULT_BUDGET)
+        set_state({"budget": DEFAULT_BUDGET, "key_status": KEY_STATUS_VALID})
     try:
         with open(BUDGET_FILE, "r") as f:
-            return json.load(f).get("budget", 0)
+            raw = json.load(f)
+            if not isinstance(raw, dict):
+                return {"budget": DEFAULT_BUDGET, "key_status": KEY_STATUS_VALID}
+            budget = int(raw.get("budget", DEFAULT_BUDGET))
+            key_status = raw.get("key_status", KEY_STATUS_VALID)
+            if key_status not in (KEY_STATUS_VALID, KEY_STATUS_INVALID):
+                key_status = KEY_STATUS_VALID
+            return {
+                "budget": budget,
+                "key_status": key_status,
+                "key_status_reason": raw.get("key_status_reason"),
+            }
     except Exception:
-        return 0
+        return {"budget": 0, "key_status": KEY_STATUS_VALID}
 
 def set_budget(tokens):
+    state = get_state()
+    state["budget"] = int(tokens)
+    set_state(state)
+
+def set_state(state):
     with open(BUDGET_FILE, "w") as f:
-        json.dump({"budget": tokens}, f)
+        json.dump(state, f)
+
+def mark_key_invalid(reason):
+    state = get_state()
+    state["key_status"] = KEY_STATUS_INVALID
+    state["key_status_reason"] = reason
+    set_state(state)
+
+def get_simulated_upstream_status(headers):
+    if os.getenv("UNIFAI_PROXY_TEST_MODE", "0") != "1":
+        return None
+    raw = headers.get("x-unifai-simulate-status")
+    if not raw:
+        return None
+    try:
+        status = int(raw)
+    except ValueError:
+        return None
+    return status
+
+def send_json(handler, status, payload):
+    body = json.dumps(payload).encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-type", "application/json")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
 
 def trigger_signal_alert(message):
     logger.warning(f"DISPATCHING SIGNAL ALERT: {message}")
@@ -86,8 +135,10 @@ def trigger_signal_alert(message):
 
 class BillProxyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        # Read Budget Constraint
-        current_budget = get_budget()
+        # Read Budget and key state constraints.
+        state = get_state()
+        current_budget = int(state.get("budget", 0))
+        key_status = state.get("key_status", KEY_STATUS_VALID)
         
         # Read the raw request (The Engine payload)
         content_length = int(self.headers.get('Content-Length', 0))
@@ -96,36 +147,80 @@ class BillProxyHandler(BaseHTTPRequestHandler):
         # Log context payload implicitly (Shadow Telemetry)
         safe_post_data = post_data.decode('utf-8', errors='replace')
         logger.info(f"REQUEST INBOUND: {safe_post_data}")
-        logger.info(f"REQUEST SECRETS: {self.headers.get('x-api-key', 'None')}")
+        logger.info("REQUEST SECRETS: [REDACTED]")
+
+        if key_status == KEY_STATUS_INVALID:
+            logger.warning("KEY PAUSED: Stored key status is INVALID. Returning 503 until rotation.")
+            send_json(self, 503, {
+                "error": {
+                    "type": "service_unavailable",
+                    "message": "UnifAI key is invalid. Rotation required.",
+                }
+            })
+            return
 
         if current_budget <= 0:
             logger.warning("FUEL CUT: Budget exceeded. Striking OpenClaw with 429.")
             trigger_signal_alert("🚨 UNIF_AI ALERT: Budget Depleted. Odometer engaged. Agent Throttled.")
-            self.send_response(429)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(b'{"error": {"type": "rate_limit_error", "message": "UnifAI Budget Exceeded"}}')
+            send_json(self, 429, {
+                "error": {
+                    "type": "rate_limit_error",
+                    "message": "UnifAI Budget Exceeded",
+                }
+            })
             return
 
         # Prepare request envelope for Anthropic
-        req_headers = {k: v for k, v in self.headers.items() if k.lower() not in ['host', 'connection', 'content-length']}
-        target_url = f"{ANTHROPIC_REAL_URL}{self.path}"
-        req = urllib.request.Request(target_url, data=post_data, headers=req_headers, method="POST")
+        req_headers = {
+            k: v for k, v in self.headers.items()
+            if k.lower() not in ['host', 'connection', 'content-length', 'x-unifai-simulate-status']
+        }
 
-        # Network transmission (The Real World hook)
-        try:
-            with urllib.request.urlopen(req) as response:
-                response_body = response.read()
-                status = response.status
-                response_headers = response.headers
-        except urllib.error.HTTPError as e:
-            response_body = e.read()
-            status = e.code
-            response_headers = e.headers
+        simulated_status = get_simulated_upstream_status(self.headers)
+        if simulated_status is not None:
+            status = simulated_status
+            response_body = json.dumps({"error": "simulated-upstream-status"}).encode("utf-8")
+            response_headers = {"Content-Type": "application/json"}
+        else:
+            target_url = f"{ANTHROPIC_REAL_URL}{self.path}"
+            req = urllib.request.Request(target_url, data=post_data, headers=req_headers, method="POST")
+
+            # Network transmission (The Real World hook)
+            try:
+                with urllib.request.urlopen(req) as response:
+                    response_body = response.read()
+                    status = response.status
+                    response_headers = response.headers
+            except urllib.error.HTTPError as e:
+                response_body = e.read()
+                status = e.code
+                response_headers = e.headers
+            except urllib.error.URLError as e:
+                logger.error(f"UPSTREAM NETWORK FAILURE: {e}")
+                send_json(self, 502, {
+                    "error": {
+                        "type": "upstream_error",
+                        "message": "Anthropic upstream unreachable",
+                    }
+                })
+                return
 
         # Log Matrix response
         safe_response_body = response_body.decode('utf-8', errors='replace')
         logger.info(f"RESPONSE OUTBOUND (Status {status}): {safe_response_body}")
+
+        # Key revocation/expiration path: never hard-crash, pause with 503.
+        if status in (401, 403):
+            logger.error(f"KEY AUTH FAILURE: Upstream returned {status}. Marking key INVALID and pausing agent.")
+            mark_key_invalid(f"upstream-auth-{status}")
+            trigger_signal_alert(CRITICAL_KEY_ALERT)
+            send_json(self, 503, {
+                "error": {
+                    "type": "service_unavailable",
+                    "message": "UnifAI key invalid/expired. Keyman intervention required.",
+                }
+            })
+            return
 
         # Usage Calculation (Telemetry deduction)
         cost = 0
@@ -157,7 +252,11 @@ class BillProxyHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     logger.info(f"Starting unseen UnifAI Bill Proxy on port {PROXY_PORT}...")
-    set_budget(DEFAULT_BUDGET)
+    state = get_state()
+    state["budget"] = int(state.get("budget", DEFAULT_BUDGET))
+    if state.get("key_status") not in (KEY_STATUS_VALID, KEY_STATUS_INVALID):
+        state["key_status"] = KEY_STATUS_VALID
+    set_state(state)
     server = HTTPServer(('127.0.0.1', PROXY_PORT), BillProxyHandler)
     try:
         server.serve_forever()
