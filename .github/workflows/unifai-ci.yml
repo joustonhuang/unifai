@@ -30,27 +30,37 @@ jobs:
       - name: Setup Node Ecosystem
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Provision Host Kernel Paths
+        run: |
+          sudo mkdir -p /var/log/unifai
+          sudo chmod -R 777 /var/log/unifai
+
       - name: Ignition Sequence - Grant Permissions
+
         run: chmod +x scripts/smoke_test_*.sh
 
       - name: Smoke Test - OpenClaw Injection
         run: ./scripts/smoke_test_openclaw_injection.sh
+        run: sleep 2 && pkill -f "bill_proxy.py" || true
 
       - name: Smoke Test - The Fuel (Bill Gauge)
         run: ./scripts/smoke_test_bill_gauge.sh
+        run: sleep 2 && pkill -f "bill_proxy.py" || true
 
       - name: Smoke Test - Keyman Rotation (Hot-Swap)
         run: ./scripts/smoke_test_key_rotation.sh
+        run: sleep 2 && pkill -f "bill_proxy.py" || true
 
       - name: Smoke Test - C2 Commander (Telegram Bridge)
         run: ./scripts/smoke_test_commander.sh
+        run: sleep 2 && pkill -f "bill_proxy.py" || true
 
       - name: Integrity Verified - Telegram Alert
         if: success()
