@@ -17,7 +17,7 @@ import subprocess
 
 BUDGET_FILE = "/tmp/unifai_budget.json"
 DEFAULT_BUDGET = 1000
-PROXY_PORT = 7701
+DEFAULT_PROXY_PORT = 7701
 ANTHROPIC_REAL_URL = "https://api.anthropic.com"
 KEY_STATUS_VALID = "VALID"
 KEY_STATUS_INVALID = "INVALID"
@@ -65,6 +65,15 @@ console = logging.StreamHandler()
 console.setFormatter(logging.Formatter("[BILL PROXY] %(message)s"))
 console.addFilter(RedactionFilter())
 logger.addHandler(console)
+
+def resolve_proxy_port():
+    raw_port = os.getenv("BILL_PROXY_PORT", os.getenv("UNIFAI_BILL_PROXY_PORT", str(DEFAULT_PROXY_PORT)))
+    try:
+        return int(raw_port)
+    except (TypeError, ValueError):
+        return DEFAULT_PROXY_PORT
+
+PROXY_PORT = resolve_proxy_port()
 
 def get_budget():
     state = get_state()

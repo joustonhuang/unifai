@@ -8,6 +8,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/opt/little7/supervisor
+Environment=BILL_PROXY_PORT=7701
 
 ExecStart=/usr/bin/python3 /opt/little7/supervisor/plugins/bill_guardian/bill_proxy.py
 

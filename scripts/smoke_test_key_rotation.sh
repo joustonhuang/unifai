@@ -13,6 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BILL_PROXY="$REPO_ROOT/supervisor/plugins/bill_guardian/bill_proxy.py"
 KEYMAN_CLI="$REPO_ROOT/supervisor/plugins/keyman_guardian/keyman_auth_cli.py"
+BILL_PROXY_PORT="${BILL_PROXY_PORT:-7701}"
+BILL_PROXY_URL="http://127.0.0.1:${BILL_PROXY_PORT}"
 STATE_FILE="/tmp/unifai_budget.json"
 ALERT_LOG="/tmp/unifai_signal_alert.log"
 SHADOW_LOG="/tmp/unifai_shadow.log"
@@ -23,7 +25,7 @@ pkill -f "bill_proxy.py" || true
 rm -f "$ALERT_LOG" "$SHADOW_LOG" "$GRANT_PATH_POINTER" "$FAKE_ROTATED_SECRET"
 
 echo "[INFO] Starting Bill Proxy in test mode (simulated upstream auth failure)..."
-UNIFAI_PROXY_TEST_MODE=1 UNIFAI_ALERT_LOG_PATH="$ALERT_LOG" python3 "$BILL_PROXY" &
+UNIFAI_PROXY_TEST_MODE=1 UNIFAI_ALERT_LOG_PATH="$ALERT_LOG" BILL_PROXY_PORT="$BILL_PROXY_PORT" python3 "$BILL_PROXY" &
 PROXY_PID=$!
 sleep 2
 
@@ -31,7 +33,7 @@ echo '{"budget": 1000, "key_status": "VALID"}' > "$STATE_FILE"
 
 echo "[INFO] Sending request with simulated upstream 401..."
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-	-X POST http://127.0.0.1:7701/v1/messages \
+	-X POST "${BILL_PROXY_URL}/v1/messages" \
 	-H "x-unifai-simulate-status: 401" \
 	-H "x-api-key: test-rotation-key" \
 	-H "anthropic-version: 2023-06-01" \
