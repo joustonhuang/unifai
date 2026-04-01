@@ -11,6 +11,8 @@ import os, time, json, sqlite3, subprocess
 from datetime import datetime, timezone, timedelta
 import sys
 
+from oracle.oracle import IncidentInput, OracleIncidentInterpreter
+
 # Importa o Plugin do Neo Guardian
 # Adiciona o diretório atual ao sys.path para garantir que os plugins sejam encontrados
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +26,7 @@ except ImportError:
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
+ORACLE = OracleIncidentInterpreter()
 
 # Hard limits (safe defaults)
 MAX_LLM_CALLS_PER_TASK = int(os.getenv("LYRA_MAX_LLM_CALLS_PER_TASK", "3"))
@@ -59,6 +62,18 @@ def db():
       error TEXT
     );
     """)
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS oracle_incidents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at TEXT NOT NULL,
+      task_id INTEGER,
+      stage TEXT NOT NULL,
+      source TEXT NOT NULL,
+      incident_type TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      result_json TEXT NOT NULL
+    );
+    """)
     return conn
 
 def run_allowlisted(cmd_key: str, args: list[str]) -> dict:
@@ -74,6 +89,63 @@ def run_allowlisted(cmd_key: str, args: list[str]) -> dict:
         "stdout": p.stdout[-8000:],
         "stderr": p.stderr[-8000:],
     }
+
+
+def supervisor_decision_hook(result) -> dict:
+    """Non-executing hook: returns a decision envelope without taking action."""
+    return {
+        "recommended_supervisor_state": result.recommended_supervisor_state,
+        "notify_wilson": result.should_notify_wilson,
+        "wilson_message": result.wilson_message,
+        "no_action_taken": True,
+        "todo": None if result.should_notify_wilson else "TODO: wire Wilson-facing Supervisor notification path if/when a supported channel exists.",
+    }
+
+
+def interpret_and_record_incident(conn, task_id: int | None, spec: dict, stage: str, *, error: str | None = None, neo_eval: dict | None = None, metadata: dict | None = None) -> dict:
+    incident = IncidentInput(
+        source="Neo" if neo_eval else "Supervisor",
+        task_id=task_id,
+        stage=stage,
+        task_spec=spec,
+        error=error,
+        neo_report=neo_eval,
+        metadata=metadata or {},
+    )
+    result = ORACLE.interpret(incident)
+    decision = supervisor_decision_hook(result)
+    conn.execute(
+        """
+        INSERT INTO oracle_incidents (
+          created_at, task_id, stage, source, incident_type, severity, result_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            task_id,
+            stage,
+            incident.source,
+            result.incident_type,
+            result.severity,
+            result.to_json(),
+        ),
+    )
+    log(
+        "oracle " + json.dumps(
+            {
+                "task_id": task_id,
+                "stage": stage,
+                "source": incident.source,
+                "incident_type": result.incident_type,
+                "severity": result.severity,
+                "decision": decision,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+    return {"oracle": result, "decision": decision}
+
 
 def main():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
@@ -103,10 +175,17 @@ def main():
         if neo:
             neo_eval = neo.analyze_task_spec(spec)
             if not neo_eval["is_safe"]:
-                # Neo recomenda que o Supervisor ative o Kill Switch
+                # Neo recommends blocking; Oracle only interprets the incident for audit.
                 error_msg = f"BLOCKED_BY_NEO: {neo_eval['reason']}"
+                interpret_and_record_incident(
+                    conn,
+                    task_id,
+                    spec,
+                    "pre_execution",
+                    error=error_msg,
+                    neo_eval=neo_eval,
+                )
                 log(f"task {task_id} {error_msg}")
-                # Supervisor marca a tarefa como 'failed' de imediato para abortar
                 conn.execute(
                     "UPDATE tasks SET status='failed', error=? WHERE id=?",
                     (error_msg, task_id),
@@ -150,6 +229,16 @@ def main():
                 raise RuntimeError(f"unknown task type: {ttype}")
 
         except Exception as e:
+            interpret_and_record_incident(
+                conn,
+                task_id,
+                spec,
+                "execution",
+                error=str(e),
+                metadata={
+                    "restart_count": int(spec.get("restart_count", 0) or 0),
+                },
+            )
             conn.execute(
                 "UPDATE tasks SET status='failed', error=? WHERE id=?",
                 (str(e), task_id),
