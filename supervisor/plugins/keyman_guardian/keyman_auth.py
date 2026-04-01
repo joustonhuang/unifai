@@ -6,6 +6,9 @@ Denials from Keyman are routed to Neo as security signals for active auditing.
 """
 from typing import Dict, Any
 import uuid
+import json
+import os
+from pathlib import Path
 
 class MockNeo:
     """
@@ -89,18 +92,20 @@ class MockSupervisor:
 
         # 2. Handle Approval via Grants (No raw secrets returned!)
         if authz_report["recommended_action"] == "issue_grant":
-            import os
-            import json
             grant_id = str(uuid.uuid4())
             secret_key = authz_report["mapped_secret"]
-            raw_secret = self.vault.get(secret_key, "")
+            raw_secret = self.vault.get(secret_key, "MOCK_SECRET_KEY_FOR_TEST")
             
             # Simulated ephemeral file/handle creation adhering to KEYMAN_CONTRACT
-            os.makedirs("/tmp/grants", exist_ok=True)
-            grant_path = f"/tmp/grants/{grant_id}.secret"
+            Path("/tmp/grants/").mkdir(parents=True, exist_ok=True)
+            grant_path = f"/tmp/grants/{grant_id}.json"
             
             with open(grant_path, "w") as f:
-                f.write(raw_secret)
+                json.dump({
+                    "secret_alias": req_cap,
+                    "token": raw_secret,
+                    "ttl": 30
+                }, f)
             
             self.active_grants[grant_id] = {"secret": raw_secret, "ttl": 30} # 30 seconds TTL
             
