@@ -28,13 +28,15 @@ class KeymanGuardian:
         self.capability_to_secret = {
             "web_search": "GOOGLE_API_KEY",
             "repo_access": "GITHUB_TOKEN",
-            "database_rw": "DATABASE_URL"
+            "database_rw": "DATABASE_URL",
+            "codex-oauth": "ANTHROPIC_API_KEY"
         }
         
         # RBAC mock - now checking CAPABILITIES, not raw secrets
         self.role_permissions = {
             "research_agent": ["web_search"],
             "github_agent": ["repo_access"],
+            "admin_agent": ["codex-oauth"],
         }
 
     def evaluate_capability_request(self, requester_role: str, requested_capability: str) -> Dict[str, Any]:
@@ -87,12 +89,19 @@ class MockSupervisor:
 
         # 2. Handle Approval via Grants (No raw secrets returned!)
         if authz_report["recommended_action"] == "issue_grant":
+            import os
+            import json
             grant_id = str(uuid.uuid4())
             secret_key = authz_report["mapped_secret"]
-            raw_secret = self.vault.get(secret_key)
+            raw_secret = self.vault.get(secret_key, "")
             
-            # Simulated ephemeral file/handle creation
+            # Simulated ephemeral file/handle creation adhering to KEYMAN_CONTRACT
+            os.makedirs("/tmp/grants", exist_ok=True)
             grant_path = f"/tmp/grants/{grant_id}.secret"
+            
+            with open(grant_path, "w") as f:
+                f.write(raw_secret)
+            
             self.active_grants[grant_id] = {"secret": raw_secret, "ttl": 30} # 30 seconds TTL
             
             print(f"[SUPERVISOR] -> Action: APPROVED. Issued Temporal Grant ID {grant_id} (Alias for {req_cap}).\n")
