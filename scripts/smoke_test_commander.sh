@@ -11,6 +11,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 BILL_PROXY="$REPO_ROOT/supervisor/plugins/bill_guardian/bill_proxy.py"
 BOT_LISTENER="$REPO_ROOT/supervisor/plugins/telegram_bridge/bot_listener.py"
+BILL_PROXY_PORT="${BILL_PROXY_PORT:-7701}"
+BILL_PROXY_URL="http://127.0.0.1:${BILL_PROXY_PORT}"
 STATE_FILE="/tmp/unifai_budget.json"
 ALERT_LOG="/tmp/unifai_signal_alert.log"
 export UNIFAI_AUDIT_LOG="/tmp/unifai_audit.log"
@@ -26,13 +28,13 @@ rm -f "$ALERT_LOG"
 echo '{"budget": 0, "key_status": "VALID"}' > "$STATE_FILE"
 
 echo "[INFO] Starting Bill Proxy in test mode..."
-UNIFAI_PROXY_TEST_MODE=1 python3 "$BILL_PROXY" &
+UNIFAI_PROXY_TEST_MODE=1 BILL_PROXY_PORT="$BILL_PROXY_PORT" python3 "$BILL_PROXY" &
 PROXY_PID=$!
 sleep 2
 
 echo "[INFO] Verifying fuel cut at zero budget..."
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X POST http://127.0.0.1:7701/v1/messages \
+  -X POST "${BILL_PROXY_URL}/v1/messages" \
   -H "x-unifai-simulate-status: 200" \
   -H "x-api-key: test-commander" \
   -H "anthropic-version: 2023-06-01" \
@@ -61,7 +63,7 @@ fi
 
 echo "[INFO] Verifying proxy release after budget update..."
 HTTP_STATUS_AFTER=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X POST http://127.0.0.1:7701/v1/messages \
+  -X POST "${BILL_PROXY_URL}/v1/messages" \
   -H "x-unifai-simulate-status: 200" \
   -H "x-api-key: test-commander" \
   -H "anthropic-version: 2023-06-01" \

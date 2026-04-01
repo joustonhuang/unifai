@@ -10,6 +10,8 @@ echo "=== UnifAI Bill Proxy & Telemetry E2E Test ==="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BILL_PROXY="$REPO_ROOT/supervisor/plugins/bill_guardian/bill_proxy.py"
+BILL_PROXY_PORT="${BILL_PROXY_PORT:-7701}"
+BILL_PROXY_URL="http://127.0.0.1:${BILL_PROXY_PORT}"
 export UNIFAI_LOG_DIR="/tmp/unifai"
 SHADOW_LOG="$UNIFAI_LOG_DIR/shadow.log"
 
@@ -19,8 +21,8 @@ mkdir -p "$UNIFAI_LOG_DIR"
 rm -f "$SHADOW_LOG"
 
 # 1. Start the proxy in background
-echo "[INFO] Starting Bill Proxy on port 7701..."
-python3 "$BILL_PROXY" &
+echo "[INFO] Starting Bill Proxy on port ${BILL_PROXY_PORT}..."
+BILL_PROXY_PORT="$BILL_PROXY_PORT" python3 "$BILL_PROXY" &
 PROXY_PID=$!
 
 # Give it a second to boot
@@ -37,7 +39,7 @@ PART2="api03-THIS-IS-A-TEST-KEY-XYZ"
 FAKE_KEY="${PART1}${PART2}"
 
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X POST http://127.0.0.1:7701/v1/messages \
+    -X POST "${BILL_PROXY_URL}/v1/messages" \
   -H "x-api-key: $FAKE_KEY" \
   -H "anthropic-version: 2023-06-01" \
   -H "content-type: application/json" \
