@@ -7,7 +7,7 @@ enforcement boundary, while Secret Safe, Bill/Budget gate, and Fuse/Kill
 Switch remain separate world-physics primitives.
 """
 
-import os, time, json, sqlite3, subprocess
+import os, time, json, sqlite3, subprocess, signal
 from datetime import datetime, timezone, timedelta
 import sys
 
@@ -32,6 +32,11 @@ try:
     from supervisor.plugins.neo_guardian.prompt_injector import SystemInjector
 except ImportError:
     from plugins.neo_guardian.prompt_injector import SystemInjector
+
+try:
+    from supervisor.fuse_manager import KillSwitchRegistry, FuseManager
+except ImportError:
+    from fuse_manager import KillSwitchRegistry, FuseManager
 
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
@@ -96,18 +101,76 @@ def db():
     """)
     return conn
 
-def run_allowlisted(cmd_key: str, args: list[str]) -> dict:
+def run_allowlisted(
+    cmd_key: str,
+    args: list[str],
+    *,
+    task_id: str | None = None,
+    kill_registry: KillSwitchRegistry | None = None,
+    fuse_manager: FuseManager | None = None,
+    timeout_seconds: int = 30,
+) -> dict:
     if cmd_key not in ALLOW_CMDS:
         raise RuntimeError(f"command not allowlisted: {cmd_key}")
     base = ALLOW_CMDS[cmd_key]
-    full = base + args
-    # No shell=True (avoid injection). Hard timeout.
-    p = subprocess.run(full, capture_output=True, text=True, timeout=30)
+    full = base + [str(arg) for arg in args]
+
+    process = subprocess.Popen(
+        full,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+
+    tracked_task_id = str(task_id) if task_id is not None else None
+    if kill_registry and tracked_task_id is not None:
+        kill_registry.register_process(
+            task_id=tracked_task_id,
+            pid=process.pid,
+            pgid=os.getpgid(process.pid),
+            status="running",
+            popen_proc=process,
+        )
+
+    try:
+        stdout, stderr = process.communicate(timeout=timeout_seconds)
+
+        if kill_registry and tracked_task_id is not None:
+            tracked = kill_registry.get(tracked_task_id)
+            if tracked and tracked.get("status") in {"killed", "already_dead", "tripping"}:
+                raise RuntimeError(f"task {tracked_task_id} killed by fuse manager")
+
+        if process.returncode in (-signal.SIGTERM, -signal.SIGKILL):
+            raise RuntimeError(f"task {tracked_task_id or 'unknown'} killed by signal")
+
+    except subprocess.TimeoutExpired as timeout_error:
+        timeout_reason = f"tool call timeout after {timeout_seconds}s"
+        if fuse_manager and tracked_task_id is not None:
+            fuse_manager.trip_agent(task_id=tracked_task_id, reason=timeout_reason, grace_seconds=2)
+        else:
+            try:
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                time.sleep(1)
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+        try:
+            stdout, stderr = process.communicate(timeout=1)
+        except Exception:
+            stdout, stderr = "", ""
+
+        raise RuntimeError(timeout_reason) from timeout_error
+    finally:
+        if kill_registry and tracked_task_id is not None:
+            kill_registry.unregister(tracked_task_id)
+
     return {
         "cmd": full,
-        "returncode": p.returncode,
-        "stdout": p.stdout[-8000:],
-        "stderr": p.stderr[-8000:],
+        "returncode": process.returncode,
+        "stdout": stdout[-8000:],
+        "stderr": stderr[-8000:],
     }
 
 
@@ -263,10 +326,24 @@ def interpret_and_record_incident(conn, task_id: int | None, spec: dict, stage: 
 class SupervisorRuntime:
     """Runtime holder for guarded persistence and plugin wiring."""
 
-    def __init__(self, neo_guardian=None, session_vault=None, system_injector=None):
+    def __init__(
+        self,
+        neo_guardian=None,
+        session_vault=None,
+        system_injector=None,
+        kill_registry=None,
+        fuse_manager=None,
+    ):
         self.neo = neo_guardian
         self.session_vault = session_vault if session_vault is not None else SessionVault()
         self.system_injector = system_injector if system_injector is not None else SystemInjector()
+        self.kill_registry = kill_registry if kill_registry is not None else KillSwitchRegistry()
+        self.fuse_manager = fuse_manager if fuse_manager is not None else FuseManager(self.kill_registry, audit_writer=log)
+        self.fuse = self.fuse_manager
+
+    def trip_agent(self, task_id: int | str, reason: str, grace_seconds: int = 2) -> dict:
+        """Expose process kill path for Neo-triggered immediate containment."""
+        return self.fuse_manager.trip_agent(str(task_id), reason=reason, grace_seconds=grace_seconds)
 
     def prepare_task_spec(self, spec: dict) -> dict:
         """Mount dynamic physics and specs context into a task specification."""
@@ -362,7 +439,13 @@ def main():
                     raise RuntimeError("tool call limit exceeded")
                 cmd = mounted_spec.get("cmd")
                 args = mounted_spec.get("args", [])
-                out = run_allowlisted(cmd, args)
+                out = run_allowlisted(
+                    cmd,
+                    args,
+                    task_id=str(task_id),
+                    kill_registry=runtime.kill_registry,
+                    fuse_manager=runtime.fuse_manager,
+                )
                 if runtime.neo:
                     out["stdout"] = runtime.neo.sanitize_tool_output(cmd, str(out.get("stdout", "")))
                 runtime.persist_session_state(conn, task_id, out)
