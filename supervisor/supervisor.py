@@ -23,6 +23,11 @@ except ImportError:
     print("Warning: NeoGuardian plugin not found. Running without Guardian.", file=sys.stderr)
     neo = None
 
+try:
+    from supervisor.plugins.keyman_guardian.session_vault import SessionVault
+except ImportError:
+    from plugins.keyman_guardian.session_vault import SessionVault
+
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
@@ -250,10 +255,33 @@ def interpret_and_record_incident(conn, task_id: int | None, spec: dict, stage: 
     return {"oracle": result, "decision": decision}
 
 
+class SupervisorRuntime:
+    """Runtime holder for guarded persistence and plugin wiring."""
+
+    def __init__(self, neo_guardian=None, session_vault=None):
+        self.neo = neo_guardian
+        self.session_vault = session_vault if session_vault is not None else SessionVault()
+
+    def persist_session_state(self, conn: sqlite3.Connection, task_id: int, session_data: dict) -> dict:
+        session_path = self.session_vault.save_session(str(task_id), session_data)
+        redacted_payload = self.session_vault.redact_payload(session_data)
+        persistence_payload = {
+            "session_path": str(session_path),
+            "payload": redacted_payload,
+        }
+        conn.execute(
+            "UPDATE tasks SET tool_calls=tool_calls+1, status='done', result=? WHERE id=?",
+            (json.dumps(persistence_payload, ensure_ascii=False), task_id),
+        )
+        conn.commit()
+        return persistence_payload
+
+
 def main():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     log("supervisor start")
+    runtime = SupervisorRuntime(neo_guardian=neo)
 
     conn = db()
     conn.close()
@@ -275,8 +303,8 @@ def main():
         spec = json.loads(row["spec"])
         
         # === INÍCIO: INTEGRAÇÃO NEO GUARDIAN (RULE 4) ===
-        if neo:
-            neo_eval = neo.analyze_task_spec(spec)
+        if runtime.neo:
+            neo_eval = runtime.neo.analyze_task_spec(spec)
             if not neo_eval["is_safe"]:
                 # Neo recommends blocking; Oracle only interprets the incident for audit.
                 error_msg = f"BLOCKED_BY_NEO: {neo_eval['reason']}"
@@ -313,13 +341,9 @@ def main():
                 cmd = spec.get("cmd")
                 args = spec.get("args", [])
                 out = run_allowlisted(cmd, args)
-                if neo:
-                    out["stdout"] = neo.sanitize_tool_output(cmd, str(out.get("stdout", "")))
-                conn.execute(
-                    "UPDATE tasks SET tool_calls=tool_calls+1, status='done', result=? WHERE id=?",
-                    (json.dumps(out, ensure_ascii=False), task_id),
-                )
-                conn.commit()
+                if runtime.neo:
+                    out["stdout"] = runtime.neo.sanitize_tool_output(cmd, str(out.get("stdout", "")))
+                runtime.persist_session_state(conn, task_id, out)
                 log(f"task {task_id} done tool={cmd}")
 
             elif ttype == "llm":
