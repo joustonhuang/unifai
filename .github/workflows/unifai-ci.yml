@@ -94,6 +94,12 @@ jobs:
       - name: Run Fuse Kill Smoke Test
         run: python scripts/smoke_test_fuse_kill.py
 
+      - name: Run Neo Hook Smoke Test
+        run: python scripts/smoke_test_neo_hook.py
+
+      - name: Run Neo Full Loop Smoke Test
+        run: python scripts/smoke_test_neo_full_loop.py
+
       - name: Integrity Verified - Telegram Alert
         if: success()
         run: |

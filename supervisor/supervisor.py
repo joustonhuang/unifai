@@ -38,6 +38,11 @@ try:
 except ImportError:
     from fuse_manager import KillSwitchRegistry, FuseManager
 
+try:
+    from supervisor.hooks.neo_pipeline import ToolEnvelope, ToolHookPipeline
+except ImportError:
+    from hooks.neo_pipeline import ToolEnvelope, ToolHookPipeline
+
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
@@ -333,6 +338,7 @@ class SupervisorRuntime:
         system_injector=None,
         kill_registry=None,
         fuse_manager=None,
+        neo_pipeline=None,
     ):
         self.neo = neo_guardian
         self.session_vault = session_vault if session_vault is not None else SessionVault()
@@ -340,6 +346,7 @@ class SupervisorRuntime:
         self.kill_registry = kill_registry if kill_registry is not None else KillSwitchRegistry()
         self.fuse_manager = fuse_manager if fuse_manager is not None else FuseManager(self.kill_registry, audit_writer=log)
         self.fuse = self.fuse_manager
+        self.neo_pipeline = neo_pipeline if neo_pipeline is not None else ToolHookPipeline()
 
     def trip_agent(self, task_id: int | str, reason: str, grace_seconds: int = 2) -> dict:
         """Expose process kill path for Neo-triggered immediate containment."""
@@ -374,6 +381,147 @@ class SupervisorRuntime:
         conn.commit()
         return persistence_payload
 
+    def execute_tool_task(self, task_id: int | str, mounted_spec: dict) -> dict:
+        cmd = mounted_spec.get("cmd")
+        args = mounted_spec.get("args", [])
+        envelope = self._build_tool_envelope(cmd, args, mounted_spec)
+        decision = self.neo_pipeline.run_pre_hook(envelope)
+
+        if decision.action == "block":
+            log(f"neo_pre_hook action=block task_id={task_id} tool={cmd} reason={decision.reason}")
+            return {
+                "error": f"Execution blocked by Neo: {decision.reason}",
+                "action": "block",
+            }
+
+        if decision.action == "kill_now":
+            trip_result = self.fuse_manager.trip_agent(
+                task_id=str(task_id),
+                reason=decision.reason,
+                grace_seconds=1,
+            )
+            log(
+                "neo_pre_hook action=kill_now "
+                f"task_id={task_id} tool={cmd} reason={decision.reason} "
+                f"fuse_status={trip_result.get('status')}"
+            )
+            return {
+                "error": f"Execution terminated by Neo: {decision.reason}",
+                "action": "kill_now",
+                "fuse_result": trip_result,
+            }
+
+        out = run_allowlisted(
+            cmd,
+            args,
+            task_id=str(task_id),
+            kill_registry=self.kill_registry,
+            fuse_manager=self.fuse_manager,
+        )
+        if self.neo:
+            out["stdout"] = self.neo.sanitize_tool_output(cmd, str(out.get("stdout", "")))
+        return out
+
+    def _build_tool_envelope(self, cmd, args, mounted_spec: dict) -> ToolEnvelope:
+        normalized_args = [str(arg) for arg in args] if isinstance(args, list) else [str(args)]
+        payload = {"args": normalized_args}
+
+        if isinstance(mounted_spec, dict):
+            for key, value in mounted_spec.items():
+                if key in {"type", "cmd", "args"}:
+                    continue
+                payload[key] = value
+
+        return ToolEnvelope(tool_name=str(cmd), payload=payload)
+
+    def tick(self) -> bool:
+        conn = db()
+        conn.row_factory = sqlite3.Row
+
+        try:
+            row = conn.execute(
+                "SELECT * FROM tasks WHERE status='queued' ORDER BY id ASC LIMIT 1"
+            ).fetchone()
+
+            if not row:
+                return False
+
+            task_id = row["id"]
+            spec = json.loads(row["spec"])
+            mounted_spec = self.prepare_task_spec(spec)
+
+            if self.neo:
+                neo_eval = self.neo.analyze_task_spec(mounted_spec)
+                if not neo_eval["is_safe"]:
+                    error_msg = f"BLOCKED_BY_NEO: {neo_eval['reason']}"
+                    interpret_and_record_incident(
+                        conn,
+                        task_id,
+                        mounted_spec,
+                        "pre_execution",
+                        error=error_msg,
+                        neo_eval=neo_eval,
+                        metadata={
+                            "restart_count": extract_restart_count(mounted_spec),
+                        },
+                    )
+                    log(f"task {task_id} {error_msg}")
+                    conn.execute(
+                        "UPDATE tasks SET status='failed', error=? WHERE id=?",
+                        (error_msg, task_id),
+                    )
+                    conn.commit()
+                    return True
+
+            conn.execute("UPDATE tasks SET status='running' WHERE id=?", (task_id,))
+            conn.commit()
+
+            try:
+                ttype = mounted_spec.get("type")
+                if ttype == "tool":
+                    if row["tool_calls"] >= MAX_TOOL_CALLS_PER_TASK:
+                        raise RuntimeError("tool call limit exceeded")
+                    out = self.execute_tool_task(task_id, mounted_spec)
+                    if out.get("error"):
+                        raise RuntimeError(json.dumps(out, ensure_ascii=False, default=str))
+                    self.persist_session_state(conn, task_id, out)
+                    log(f"task {task_id} done tool={mounted_spec.get('cmd')}")
+
+                elif ttype == "llm":
+                    if row["llm_calls"] >= MAX_LLM_CALLS_PER_TASK:
+                        raise RuntimeError("llm call limit exceeded")
+                    conn.execute(
+                        "UPDATE tasks SET llm_calls=llm_calls+1, status='failed', error=? WHERE id=?",
+                        ("LLM not wired yet. Configure provider.", task_id),
+                    )
+                    conn.commit()
+                    log(f"task {task_id} failed llm not wired")
+
+                else:
+                    raise RuntimeError(f"unknown task type: {ttype}")
+
+            except Exception as error:
+                interpret_and_record_incident(
+                    conn,
+                    task_id,
+                    mounted_spec,
+                    "execution",
+                    error=str(error),
+                    metadata={
+                        "restart_count": extract_restart_count(mounted_spec),
+                    },
+                )
+                conn.execute(
+                    "UPDATE tasks SET status='failed', error=? WHERE id=?",
+                    (str(error), task_id),
+                )
+                conn.commit()
+                log(f"task {task_id} failed err={error}")
+
+            return True
+        finally:
+            conn.close()
+
 
 def main():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
@@ -385,105 +533,10 @@ def main():
     conn.close()
 
     while True:
-        conn = db()
-        conn.row_factory = sqlite3.Row
-
-        row = conn.execute(
-            "SELECT * FROM tasks WHERE status='queued' ORDER BY id ASC LIMIT 1"
-        ).fetchone()
-
-        if not row:
-            conn.close()
+        processed = runtime.tick()
+        if not processed:
             time.sleep(POLL_SECONDS)
             continue
-
-        task_id = row["id"]
-        spec = json.loads(row["spec"])
-        mounted_spec = runtime.prepare_task_spec(spec)
-        
-        # === INÍCIO: INTEGRAÇÃO NEO GUARDIAN (RULE 4) ===
-        if runtime.neo:
-            neo_eval = runtime.neo.analyze_task_spec(mounted_spec)
-            if not neo_eval["is_safe"]:
-                # Neo recommends blocking; Oracle only interprets the incident for audit.
-                error_msg = f"BLOCKED_BY_NEO: {neo_eval['reason']}"
-                interpret_and_record_incident(
-                    conn,
-                    task_id,
-                    mounted_spec,
-                    "pre_execution",
-                    error=error_msg,
-                    neo_eval=neo_eval,
-                    metadata={
-                        "restart_count": extract_restart_count(mounted_spec),
-                    },
-                )
-                log(f"task {task_id} {error_msg}")
-                conn.execute(
-                    "UPDATE tasks SET status='failed', error=? WHERE id=?",
-                    (error_msg, task_id),
-                )
-                conn.commit()
-                conn.close()
-                continue
-        # === FIM: INTEGRAÇÃO NEO GUARDIAN ===
-        
-        conn.execute("UPDATE tasks SET status='running' WHERE id=?", (task_id,))
-        conn.commit()
-
-        try:
-            # Minimal task spec: {"type":"tool","cmd":"date","args":[]}
-            ttype = mounted_spec.get("type")
-            if ttype == "tool":
-                if row["tool_calls"] >= MAX_TOOL_CALLS_PER_TASK:
-                    raise RuntimeError("tool call limit exceeded")
-                cmd = mounted_spec.get("cmd")
-                args = mounted_spec.get("args", [])
-                out = run_allowlisted(
-                    cmd,
-                    args,
-                    task_id=str(task_id),
-                    kill_registry=runtime.kill_registry,
-                    fuse_manager=runtime.fuse_manager,
-                )
-                if runtime.neo:
-                    out["stdout"] = runtime.neo.sanitize_tool_output(cmd, str(out.get("stdout", "")))
-                runtime.persist_session_state(conn, task_id, out)
-                log(f"task {task_id} done tool={cmd}")
-
-            elif ttype == "llm":
-                # Placeholder: We don't actually call any LLM until you wire credentials.
-                if row["llm_calls"] >= MAX_LLM_CALLS_PER_TASK:
-                    raise RuntimeError("llm call limit exceeded")
-                conn.execute(
-                    "UPDATE tasks SET llm_calls=llm_calls+1, status='failed', error=? WHERE id=?",
-                    ("LLM not wired yet. Configure provider.", task_id),
-                )
-                conn.commit()
-                log(f"task {task_id} failed llm not wired")
-
-            else:
-                raise RuntimeError(f"unknown task type: {ttype}")
-
-        except Exception as e:
-            interpret_and_record_incident(
-                conn,
-                task_id,
-                mounted_spec,
-                "execution",
-                error=str(e),
-                metadata={
-                    "restart_count": extract_restart_count(mounted_spec),
-                },
-            )
-            conn.execute(
-                "UPDATE tasks SET status='failed', error=? WHERE id=?",
-                (str(e), task_id),
-            )
-            conn.commit()
-            log(f"task {task_id} failed err={e}")
-
-        conn.close()
         time.sleep(0.2)
 
 if __name__ == "__main__":
