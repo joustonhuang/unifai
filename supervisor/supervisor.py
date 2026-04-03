@@ -43,6 +43,16 @@ try:
 except ImportError:
     from hooks.neo_pipeline import ToolEnvelope, ToolHookPipeline
 
+try:
+    from supervisor.billing.bill_gate import BillGate, BudgetConfig, BudgetExceededError
+except ImportError:
+    from billing.bill_gate import BillGate, BudgetConfig, BudgetExceededError
+
+try:
+    from supervisor.llm.api_client import MessageDelta, MockProvider, ProviderAdapter
+except ImportError:
+    from llm.api_client import MessageDelta, MockProvider, ProviderAdapter
+
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
@@ -339,6 +349,8 @@ class SupervisorRuntime:
         kill_registry=None,
         fuse_manager=None,
         neo_pipeline=None,
+        bill_gate=None,
+        provider_adapter=None,
     ):
         self.neo = neo_guardian
         self.session_vault = session_vault if session_vault is not None else SessionVault()
@@ -347,6 +359,8 @@ class SupervisorRuntime:
         self.fuse_manager = fuse_manager if fuse_manager is not None else FuseManager(self.kill_registry, audit_writer=log)
         self.fuse = self.fuse_manager
         self.neo_pipeline = neo_pipeline if neo_pipeline is not None else ToolHookPipeline()
+        self.bill_gate = bill_gate if bill_gate is not None else BillGate(BudgetConfig(max_tokens=100000, max_usd=5.0))
+        self.provider_adapter = provider_adapter if provider_adapter is not None else MockProvider()
 
     def trip_agent(self, task_id: int | str, reason: str, grace_seconds: int = 2) -> dict:
         """Expose process kill path for Neo-triggered immediate containment."""
@@ -488,14 +502,65 @@ class SupervisorRuntime:
                     log(f"task {task_id} done tool={mounted_spec.get('cmd')}")
 
                 elif ttype == "llm":
+                    prompt_text = str(mounted_spec.get("prompt", ""))
+                    estimated_tokens = len(prompt_text) // 4
+                    try:
+                        self.bill_gate.request_budget(estimated_tokens)
+                    except BudgetExceededError as budget_error:
+                        error_message = f"Budget exceeded: {budget_error}"
+                        conn.execute(
+                            "UPDATE tasks SET status='failed', error=? WHERE id=?",
+                            (error_message, task_id),
+                        )
+                        conn.commit()
+                        log(
+                            "bill_gate action=block "
+                            f"task_id={task_id} estimated_tokens={estimated_tokens} "
+                            f"error={budget_error}"
+                        )
+                        return True
+
                     if row["llm_calls"] >= MAX_LLM_CALLS_PER_TASK:
                         raise RuntimeError("llm call limit exceeded")
+
+                    provider = self.provider_adapter if isinstance(self.provider_adapter, ProviderAdapter) else MockProvider()
+                    output_parts = []
+                    last_delta = None
+
+                    try:
+                        for delta in provider.stream_message(prompt_text):
+                            if not isinstance(delta, MessageDelta):
+                                raise RuntimeError("Provider emitted invalid message delta")
+                            output_parts.append(delta.content)
+                            last_delta = delta
+                    except Exception as stream_error:
+                        raise RuntimeError("Stream truncated without usage metrics") from stream_error
+
+                    if last_delta is None or not isinstance(last_delta.usage, dict):
+                        raise RuntimeError("Stream truncated without usage metrics")
+
+                    if "total_tokens" not in last_delta.usage or not isinstance(last_delta.usage["total_tokens"], int):
+                        raise RuntimeError("Stream truncated without usage metrics")
+
+                    self.bill_gate.commit_usage(last_delta.usage["total_tokens"])
+
+                    llm_payload = {
+                        "response": "".join(output_parts),
+                        "finish_reason": last_delta.finish_reason,
+                        "usage": last_delta.usage,
+                    }
+                    session_path = self.session_vault.save_session(str(task_id), llm_payload)
+                    redacted_payload = self.session_vault.redact_payload(llm_payload)
+                    persistence_payload = {
+                        "session_path": str(session_path),
+                        "payload": redacted_payload,
+                    }
                     conn.execute(
-                        "UPDATE tasks SET llm_calls=llm_calls+1, status='failed', error=? WHERE id=?",
-                        ("LLM not wired yet. Configure provider.", task_id),
+                        "UPDATE tasks SET llm_calls=llm_calls+1, status='done', result=? WHERE id=?",
+                        (json.dumps(persistence_payload, ensure_ascii=False), task_id),
                     )
                     conn.commit()
-                    log(f"task {task_id} failed llm not wired")
+                    log(f"task {task_id} done llm provider={provider.__class__.__name__}")
 
                 else:
                     raise RuntimeError(f"unknown task type: {ttype}")
