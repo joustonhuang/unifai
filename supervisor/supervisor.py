@@ -53,6 +53,11 @@ try:
 except ImportError:
     from llm.api_client import MessageDelta, MockProvider, ProviderAdapter
 
+try:
+    from supervisor.security.secret_injector import ephemeral_env
+except ImportError:
+    from security.secret_injector import ephemeral_env
+
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
@@ -523,16 +528,23 @@ class SupervisorRuntime:
                     if row["llm_calls"] >= MAX_LLM_CALLS_PER_TASK:
                         raise RuntimeError("llm call limit exceeded")
 
+                    provider_secrets = mounted_spec.get("provider_secrets", {})
+                    if provider_secrets is None:
+                        provider_secrets = {}
+                    if not isinstance(provider_secrets, dict):
+                        raise RuntimeError("provider_secrets must be a dictionary")
+
                     provider = self.provider_adapter if isinstance(self.provider_adapter, ProviderAdapter) else MockProvider()
                     output_parts = []
                     last_delta = None
 
                     try:
-                        for delta in provider.stream_message(prompt_text):
-                            if not isinstance(delta, MessageDelta):
-                                raise RuntimeError("Provider emitted invalid message delta")
-                            output_parts.append(delta.content)
-                            last_delta = delta
+                        with ephemeral_env(provider_secrets):
+                            for delta in provider.stream_message(prompt_text):
+                                if not isinstance(delta, MessageDelta):
+                                    raise RuntimeError("Provider emitted invalid message delta")
+                                output_parts.append(delta.content)
+                                last_delta = delta
                     except Exception as stream_error:
                         raise RuntimeError("Stream truncated without usage metrics") from stream_error
 
