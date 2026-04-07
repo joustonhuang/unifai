@@ -19,8 +19,14 @@
 [PASS] Supervisor loop: Bill gate → BILL_DENIED (token_budget > world_charter max)
 [PASS] Supervisor loop: Neo input block → BLOCKED_BY_NEO (prompt injection)
 [PASS] Gaia: Keyman spawn → authorized
+       ↳ Gen1 behavior: superseded in Gen3. Keyman is now secret gatekeeper only,
+          not a spawn requester. Gaia accepts Oracle-issued plans exclusively.
 [PASS] Gaia: Wilson spawn → blocked (not allowed)
+       ↳ Blocked because Wilson is intake/human-facing layer (writes Uncleared Ledger only).
+          Wilson has no spawn authority — only Oracle-issued plans may reach Gaia.
 [PASS] Gaia: Neo terminate → OK
+       ↳ Gen1 behavior: superseded in Gen3. Neo emits escalation signals only;
+          it has no direct terminate authority. Supervisor performs final termination.
 ```
 
 ---
