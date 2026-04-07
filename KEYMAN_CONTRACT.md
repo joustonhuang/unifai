@@ -61,7 +61,7 @@ The bootstrap installer configures SecretVault to invoke the installed wrapper p
 | Field | Type | Required | Constraints | Values |
 |-------|------|----------|-------------|--------|
 | `is_authorized` | boolean | YES | — | `true` or `false` |
-| `decision` | string | YES | Enum | `"issue_grant"` (approve), `"block_task"` (deny), `"quarantine"` (agent threat) |
+| `decision` | string | YES | Enum | `"issue_grant"` (approve), `"block_task"` (deny), `"quarantine"` (deny + suspicious probing flag for Neo analysis) |
 | `reason` | string | YES | Human-readable, max 512 chars | `"research_agent not authorized for high-risk ops"` |
 | `ttl_seconds` | integer | YES | 0 if denied, 1-3600 if approved | — |
 | `request_id` | string | YES | Must match incoming request UUID | — |
@@ -77,7 +77,7 @@ The bootstrap installer configures SecretVault to invoke the installed wrapper p
 }
 ```
 
-### Example Response (Denied with Quarantine Signal)
+### Example Response (Denied — Probing Detected)
 ```json
 {
   "is_authorized": false,
@@ -109,9 +109,10 @@ Keyman (Python script)
     ↓
 SecretVault reads response
     ↓
-    [if is_authorized=true] issue_grant (create /grants/uuid.secret with TTL)
-    [if is_authorized=false] block_task (fail request cleanly)
-    [if decision=quarantine] forward to Neo Guardian for agent isolation
+    [if is_authorized=true]  issue_grant (create /grants/uuid.secret with TTL)
+    [if decision=block_task] fail request cleanly; write denial to audit log
+    [if decision=quarantine] fail request; write quarantine event to audit log
+    Neo reads audit log → uses quarantine flag to distinguish probing from routine denial → emits escalation signal if pattern confirmed
 ```
 
 ---
@@ -141,7 +142,7 @@ All response paths should preserve `request_id` when available. The bootstrap wr
 
 4. **Audit Logging**: Every request/response pair is appended to `/audit/YYYY-MM-DD.jsonl` in chronological order.
 
-5. **Quarantine Signal**: If Keyman returns `decision: "quarantine"`, SecretVault immediately alerts the Neo Guardian layer (future integration).
+5. **Audit Log as Communication Medium**: All Keyman decisions are written to the audit log. The `quarantine` decision type acts as a richer signal — it marks the event as suspicious probing, giving Neo structured data to distinguish it from routine denials. Neo reads the audit log to detect patterns and emits escalation signals. There is no direct push from SecretVault or Keyman to Neo.
 
 ---
 

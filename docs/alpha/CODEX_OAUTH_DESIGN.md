@@ -94,6 +94,30 @@ self.role_permissions = {
 Oracle is the only agent allowed to call the Claude API directly.
 All other agents must route through Oracle.
 
+### Bill budget gate — pre-grant check
+
+Before Keyman issues any grant, it reads Bill's fuse state. RBAC authorization
+alone is not sufficient — the budget gate must also be open:
+
+```
+Grant decision order:
+  1. RBAC check  — is this agent/alias pair permitted?        (Keyman)
+  2. Bill fuse check — is the budget fuse tripped?            (Keyman reads Bill)
+  3. Only if BOTH pass → grant issued
+
+If Bill's fuse is tripped → Keyman denies regardless of RBAC result.
+```
+
+**Authority separation:** Bill evaluates spend and writes `bill_fuse.json`.
+Keyman reads that file — it does not compute budget or token costs itself.
+Bill signals; Keyman gates.
+
+| Check | Performed by | Source of truth |
+|---|---|---|
+| Role permitted to use alias | Keyman (RBAC table) | `keyman_authorize.py` |
+| Budget limit reached | Bill (fuse write) | `bill_fuse.json` |
+| Final grant/deny | Keyman (deterministic) | Both of the above |
+
 ---
 
 ## Gap vs. Current State

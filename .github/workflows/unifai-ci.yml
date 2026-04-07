@@ -45,67 +45,115 @@ jobs:
       - name: Ignition Sequence - Grant Permissions
         run: chmod +x scripts/smoke_test_*.sh
 
+      # Charter boundary: Neo pre-hook + JohnDoe isolation
+      # Validates that prompt injection and tool-argument poisoning are detected
+      # before execution reaches the tool layer (world_charter Rule 3 — Neo authority).
       - name: Smoke Test - OpenClaw Injection
         run: |
           ./scripts/smoke_test_openclaw_injection.sh
           sleep 2 && pkill -f "bill_proxy.py" || true
 
+      # Charter boundary: Bill resource governor (world_charter Rule 6 — Budget Gate)
+      # Validates that Bill correctly tracks token/cost consumption and emits
+      # pressure signals at configured thresholds without gating execution itself.
       - name: Smoke Test - The Fuel (Bill Gauge)
         run: |
           ./scripts/smoke_test_bill_gauge.sh
           sleep 2 && pkill -f "bill_proxy.py" || true
 
+      # Charter boundary: Keyman secret authority — hot-swap / rotation contract
+      # Validates that in-flight grants remain valid after a key rotation and that
+      # post-rotation requests receive a fresh grant (Keyman RBAC, deterministic rules).
       - name: Smoke Test - Keyman Rotation (Hot-Swap)
         run: |
           ./scripts/smoke_test_key_rotation.sh
           sleep 2 && pkill -f "bill_proxy.py" || true
 
+      # Charter boundary: C2 communication channel (Telegram bridge)
+      # Validates Architect ↔ Supervisor message delivery and that credential-shaped
+      # strings in inbound messages are intercepted before reaching agents.
       - name: Smoke Test - C2 Commander (Telegram Bridge)
         run: |
           ./scripts/smoke_test_commander.sh
           sleep 2 && pkill -f "bill_proxy.py" || true
 
+      # Charter boundary: Kill Switch / Fuse — rate-limit enforcement
+      # Validates that 429 responses from external APIs trigger the Fuse mechanism
+      # and that no further outbound calls are made until the fuse resets.
       - name: Smoke Test - XRDP Faraday Cage (429 Kill)
         run: |
           ./scripts/smoke_test_xrdp_cage.sh
           sleep 2 && pkill -f "bill_proxy.py" || true
 
+      # Charter boundary: JohnDoe process isolation — env-variable leak prevention
+      # Validates that host environment variables are not inherited by agent-browser
+      # subprocesses (secret isolation, world_charter Rule 4).
       - name: Smoke Test - Agent Browser Env Leak Guard
         run: |
           ./scripts/smoke_test_agent_browser_env_leak.sh
           sleep 1 && pkill -f "agent-browser" || true
 
+      # Charter boundary: JohnDoe scope eradication — process isolation
+      # Validates that agent-browser cannot access filesystem paths or network
+      # endpoints outside its declared task scope (world_charter Rule 4).
       - name: Smoke Test - Agent Browser Scope Eradication
         run: |
           ./scripts/smoke_test_agent_browser_scope_eradication.sh
           sleep 1 && pkill -f "agent-browser" || true
 
+      # Charter boundary: Morpheus dream contract — lifecycle reclamation
+      # Validates that a JohnDoe agent completes dreaming (context compression +
+      # reset) within the 15-minute deadline and is correctly released to Gaia.
       - name: Smoke Test - Wash and Sleep (Respawn)
         run: |
           ./scripts/smoke_test_wash_and_sleep.sh
           sleep 2 && pkill -f "openclaw-gateway" || true
 
+      # Charter boundary: JohnDoe session isolation
+      # Validates that completed-session context does not bleed into a newly
+      # spawned JohnDoe operating on a different task.
       - name: Run Session Leakage Smoke Test
         run: bash ./scripts/smoke_test_session_leakage.sh
 
+      # Charter boundary: JohnDoe file-access scope (Rule 4 — isolation)
+      # Validates that file pagination stays within the agent's declared working
+      # directory and does not traverse into sibling task directories.
       - name: Run File Pagination Smoke Test
         run: python scripts/smoke_test_file_pagination.py
 
+      # Charter boundary: Kill Switch / Fuse mechanism (world_physics enforcement)
+      # Validates that the Fuse fires correctly on threshold breach and that
+      # Keyman denies all subsequent grants until the fuse is explicitly reset.
       - name: Run Fuse Kill Smoke Test
         run: python scripts/smoke_test_fuse_kill.py
 
+      # Charter boundary: Neo pre-hook boundary (Rule 3 — Neo authority)
+      # Validates that Neo emits exactly one structured signal per evaluation
+      # cycle and that the signal schema (including trace_id) is well-formed.
       - name: Run Neo Hook Smoke Test
         run: python scripts/smoke_test_neo_hook.py
 
+      # Charter boundary: Neo → Supervisor enforcement chain (authority separation)
+      # Validates the full loop: Neo emits deny_recommendation → Supervisor
+      # evaluates → executes hard block. Neo itself takes no enforcement action.
       - name: Run Neo Full Loop Smoke Test
         run: python scripts/smoke_test_neo_full_loop.py
 
+      # Charter boundary: Bill fuse → Keyman gate authority separation (Rule 6)
+      # Validates end-to-end: Bill trips fuse on budget breach → Keyman reads
+      # bill_fuse.json → denies codex-oauth grant → Oracle cannot call API.
       - name: Run Bill Gate E2E Smoke Test
         run: python scripts/smoke_test_bill_gate_e2e.py
 
+      # Charter boundary: Bill budget gate — truncated/partial stream edge case
+      # Validates that Bill correctly accounts for cost even when the provider
+      # response stream is cut short, preventing under-counting of spend.
       - name: Run Bill Gate Truncated Stream Smoke Test
         run: python scripts/smoke_test_bill_gate_truncated.py
 
+      # Charter boundary: Gaia spawn/kill authority (Rule 2 — Gaia orchestrator)
+      # Validates that only Gaia spawns and reclaims JohnDoe agents, that Oracle
+      # cannot spawn directly, and that the Agile ledger cap (max 5) is enforced.
       - name: Run Gaia Orchestration Smoke Test
         run: python scripts/smoke_test_gaia_orchestration.py
 

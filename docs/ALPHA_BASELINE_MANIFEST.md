@@ -12,6 +12,11 @@ This document freezes the Alpha baseline after PR #13 so future debugging, audit
 
 - Oracle Interpreter: Explicit detection for 401/403/503 (Codex/Gateway failures).
 - Morpheus Daemon: Skeptical Memory logic (Codebase-first validation).
+  ↳ Gen1 implementation: evidence integrity checker using SHA256 hash verification.
+     Superseded in PR22 (Gen3): Morpheus redefined as write-only dreaming/reclamation
+     lifecycle step. No decision authority. Trigger: task_completed log → dreaming
+     (memory consolidation + context reset) → worker_dreamed log. The validation role
+     was removed; governance enforcement moved entirely to world_physics layer.
 - Delivery Path: Structured incident signaling via Telegram.
 - MCP Interceptor Security Hardening: Active detection and blockage of sandbox bypass parameters (dangerouslyDisableSandbox) inspired by Claude Code leak analysis.
 
