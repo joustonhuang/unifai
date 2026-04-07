@@ -290,6 +290,10 @@ Used:
 - Gaia (first-pass)
 - Bill (classification)
 - Keyman (parsing only)
+  - Local LLM converts the raw request into a structured intent object only
+  - The LLM output is never the decision; it only extracts fields (alias, agent, purpose, task_id)
+  - All grant/deny decisions are deterministic rule evaluation (RBAC table + fuse state)
+  - If the LLM parse step fails or returns ambiguous output, Keyman defaults to DENY
 
 NOT allowed:
 - decisions (Keyman)
