@@ -49,7 +49,7 @@ The bootstrap installer configures SecretVault to invoke the installed wrapper p
 ```json
 {
   "is_authorized": "boolean (true if access approved)",
-  "decision": "string (enum: 'issue_grant' | 'block_task')",
+  "decision": "string (enum: 'issue_grant' | 'block_task' | 'quarantine')",
   "reason": "string (human-readable explanation)",
   "ttl_seconds": "integer (approved TTL, capped at maxTtlSeconds)",
   "request_id": "string (echoed from request for audit linking)"
@@ -61,7 +61,7 @@ The bootstrap installer configures SecretVault to invoke the installed wrapper p
 | Field | Type | Required | Constraints | Values |
 |-------|------|----------|-------------|--------|
 | `is_authorized` | boolean | YES | — | `true` or `false` |
-| `decision` | string | YES | Enum | `"issue_grant"` (approve), `"block_task"` (deny — covers all refusals including probing) |
+| `decision` | string | YES | Enum | `"issue_grant"` (approve), `"block_task"` (deny), `"quarantine"` (deny + suspicious probing flag for Neo analysis) |
 | `reason` | string | YES | Human-readable, max 512 chars | `"research_agent not authorized for high-risk ops"` |
 | `ttl_seconds` | integer | YES | 0 if denied, 1-3600 if approved | — |
 | `request_id` | string | YES | Must match incoming request UUID | — |
@@ -81,7 +81,7 @@ The bootstrap installer configures SecretVault to invoke the installed wrapper p
 ```json
 {
   "is_authorized": false,
-  "decision": "block_task",
+  "decision": "quarantine",
   "reason": "research_agent attempted unauthorized database_rw access (probing detected)",
   "ttl_seconds": 0,
   "request_id": "550e8400-e29b-41d4-a716-446655440000"
@@ -109,9 +109,10 @@ Keyman (Python script)
     ↓
 SecretVault reads response
     ↓
-    [if is_authorized=true] issue_grant (create /grants/uuid.secret with TTL)
-    [if is_authorized=false] block_task (fail request cleanly; write denial to audit log)
-    Neo reads audit log → detects patterns (e.g. repeated denials, probing) → emits escalation signal
+    [if is_authorized=true]  issue_grant (create /grants/uuid.secret with TTL)
+    [if decision=block_task] fail request cleanly; write denial to audit log
+    [if decision=quarantine] fail request; write quarantine event to audit log
+    Neo reads audit log → uses quarantine flag to distinguish probing from routine denial → emits escalation signal if pattern confirmed
 ```
 
 ---
@@ -141,7 +142,7 @@ All response paths should preserve `request_id` when available. The bootstrap wr
 
 4. **Audit Logging**: Every request/response pair is appended to `/audit/YYYY-MM-DD.jsonl` in chronological order.
 
-5. **Audit Log as Communication Medium**: All Keyman decisions (approval and denial) are written to the audit log. Neo reads the audit log to detect patterns such as repeated denials or probing attempts. Neo emits escalation signals based on what it observes — no direct push from SecretVault or Keyman to Neo.
+5. **Audit Log as Communication Medium**: All Keyman decisions are written to the audit log. The `quarantine` decision type acts as a richer signal — it marks the event as suspicious probing, giving Neo structured data to distinguish it from routine denials. Neo reads the audit log to detect patterns and emits escalation signals. There is no direct push from SecretVault or Keyman to Neo.
 
 ---
 
