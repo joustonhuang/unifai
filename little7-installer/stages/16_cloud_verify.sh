@@ -1,200 +1,173 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "== Stage 16: Secrets Verification (per-key OK/FAIL) =="
+echo "== Stage 16: Cloud LLM Secrets Verification (SecretVault grant → API ping) =="
+echo "   Checks: codex-oauth (Anthropic) | openai-oauth (OpenAI)"
+echo ""
 
-CLOUD_ENV="/etc/little7/cloud.env"
-SECRETS_DIR="/etc/little7/secrets"
-DEBUG="${LITTLE7_DEBUG:-0}"
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+MASTER_KEY_FILE="/etc/little7/secretvault_master.key"
+SV_CLI="/opt/little7/supervisor/supervisor-secretvault/src/cli.js"
 
-dbg() { if [ "$DEBUG" = "1" ]; then echo "[DEBUG] $*" >&2; fi; }
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+fail() { echo "[FAIL] $*" >&2; exit 1; }
+ok()   { echo "[OK]   $*"; }
+warn() { echo "[WARN] $*"; }
+skip() { echo "[SKIP] $*"; }
 
-have_cmd() { command -v "$1" >/dev/null 2>&1; }
+# ---------------------------------------------------------------------------
+# Prerequisites
+# ---------------------------------------------------------------------------
+[ -f "$MASTER_KEY_FILE" ] || fail "Master key not found at $MASTER_KEY_FILE. Run stage 20 first."
+[ -f "$SV_CLI" ]          || fail "SecretVault CLI not found at $SV_CLI. Run stage 20 first."
+command -v node    >/dev/null 2>&1 || fail "node not found."
+command -v curl    >/dev/null 2>&1 || fail "curl not found."
+command -v python3 >/dev/null 2>&1 || fail "python3 not found."
 
-# Normalize path:
-# - If absolute: keep
-# - If filename only: treat as /etc/little7/secrets/<file>
-norm_path() {
-  local p="$1"
-  if [[ "$p" == /* ]]; then
-    echo "$p"
-  else
-    echo "${SECRETS_DIR}/${p}"
-  fi
-}
+MASTER_KEY="$(sudo cat "$MASTER_KEY_FILE")"
 
-# Decrypt a .gpg file and return plaintext on stdout.
-# On failure returns a single line like: FAIL:<reason>:<fullpath>
-decrypt_gpg() {
-  local gpg_file="$1"
-  gpg_file="$(norm_path "$gpg_file")"
+# ---------------------------------------------------------------------------
+# verify_alias <alias> <provider-label>
+#
+# Return codes:
+#   0  — alias seeded, API connectivity verified
+#   1  — alias seeded but API check failed (hard error — key invalid / network fail)
+#    2  — alias not seeded (soft skip)
+# ---------------------------------------------------------------------------
+verify_alias() {
+  local alias="$1"
+  local provider_label="$2"
 
-  dbg "decrypt_gpg(): fullpath=$gpg_file"
+  echo "--- $alias ($provider_label) ---"
 
-  # IMPORTANT: secrets dir is root:root 700, so existence checks must use sudo.
-  if ! sudo test -f "$gpg_file"; then
-    echo "FAIL:missing_file:${gpg_file}"
-    return 0
-  fi
+  # Request a short-lived grant (TTL=30s, for verification only)
+  local grant_json
+  grant_json="$(SECRETVAULT_MASTER_KEY="$MASTER_KEY" node "$SV_CLI" request \
+    --alias  "$alias" \
+    --purpose "stage16-connectivity-verify" \
+    --agent  "installer-verify" \
+    --ttl    30 2>&1)" || true
 
-  local out=""
-  if ! out="$(sudo gpg -q -d "$gpg_file" 2>/dev/null)"; then
-    echo "FAIL:decrypt_error:${gpg_file}"
-    return 0
-  fi
+  # Parse ok flag
+  local sv_ok
+  sv_ok="$(echo "$grant_json" | python3 -c \
+    "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('ok') else 'no')" 2>/dev/null || echo "no")"
 
-  if [ -z "$out" ]; then
-    echo "FAIL:empty_secret:${gpg_file}"
-    return 0
-  fi
-
-  echo "$out"
-}
-
-# curl wrapper returns: "<http_code> <curl_exit>"
-http_check() {
-  local url="$1"; shift
-  local code=""
-  local tmp=""
-  tmp="$(mktemp)"
-  set +e
-  code="$(curl -sS -m 10 -o "$tmp" -w "%{http_code}" "$url" "$@")"
-  local rc=$?
-  set -e
-  rm -f "$tmp"
-  echo "${code} ${rc}"
-}
-
-verify_openai() {
-  local api_key="$1"
-  local code_rc
-  code_rc="$(http_check "https://api.openai.com/v1/models" -H "Authorization: Bearer ${api_key}")"
-  local code="${code_rc%% *}"
-  local rc="${code_rc##* }"
-
-  if [ "$rc" != "0" ]; then
-    echo "FAIL:curl_rc_${rc}"
-    return 0
+  if [ "$sv_ok" != "yes" ]; then
+    local sv_err
+    sv_err="$(echo "$grant_json" | python3 -c \
+      "import sys,json; d=json.load(sys.stdin); print(d.get('error','unknown'))" 2>/dev/null || echo "unknown")"
+    case "$sv_err" in
+      alias-not-found)
+        skip "$alias: not seeded — run stage 15 to seed this provider"
+        return 2
+        ;;
+      *)
+        warn "$alias: SecretVault grant denied (${sv_err})"
+        return 1
+        ;;
+    esac
   fi
 
-  if [ "$code" = "200" ]; then
-    echo "OK"
-  else
-    echo "FAIL:http_${code}"
-  fi
-}
+  local grant_path
+  grant_path="$(echo "$grant_json" | \
+    python3 -c "import sys,json; print(json.load(sys.stdin)['path'])")"
 
-# Provider routing:
-# Add more providers later by implementing verify_<provider>() and adding cases here.
-verify_provider() {
-  local provider="$1"
-  local api_key="$2"
-  case "$provider" in
-    OPENAI) verify_openai "$api_key" ;;
-    *) echo "FAIL:unsupported_provider_${provider}" ;;
+  if [ ! -f "$grant_path" ]; then
+    warn "$alias: Grant file missing at $grant_path"
+    return 1
+  fi
+
+  local api_key
+  api_key="$(cat "$grant_path")"
+  # Wipe grant file immediately after reading — we don't want it on disk
+  rm -f "$grant_path"
+
+  # ---------------------------------------------------------------------------
+  # API connectivity check (provider-specific, token-free where possible)
+  # ---------------------------------------------------------------------------
+  local http_code
+  case "$alias" in
+    codex-oauth)
+      # Anthropic /v1/models — zero token cost, validates key without spending budget
+      http_code="$(curl -sS -m 15 -o /dev/null -w "%{http_code}" \
+        "https://api.anthropic.com/v1/models" \
+        -H "x-api-key: ${api_key}" \
+        -H "anthropic-version: 2023-06-01" \
+        2>/dev/null || echo "000")"
+      ;;
+    openai-oauth)
+      # OpenAI /v1/models — zero token cost
+      http_code="$(curl -sS -m 15 -o /dev/null -w "%{http_code}" \
+        "https://api.openai.com/v1/models" \
+        -H "Authorization: Bearer ${api_key}" \
+        2>/dev/null || echo "000")"
+      ;;
+  esac
+
+  case "$http_code" in
+    200)
+      ok "$alias ($provider_label): API connectivity verified (HTTP 200)"
+      return 0
+      ;;
+    401)
+      warn "$alias ($provider_label): HTTP 401 — key rejected by provider (invalid or expired)"
+      return 1
+      ;;
+    403)
+      warn "$alias ($provider_label): HTTP 403 — key lacks required permissions"
+      return 1
+      ;;
+    429)
+      # Rate limited but key is valid — treat as pass
+      ok "$alias ($provider_label): HTTP 429 — rate limited, key accepted by provider"
+      return 0
+      ;;
+    000)
+      warn "$alias ($provider_label): curl failed — network or DNS issue"
+      return 1
+      ;;
+    *)
+      warn "$alias ($provider_label): unexpected HTTP ${http_code} from provider"
+      return 1
+      ;;
   esac
 }
 
-# Guess provider from file name or env var key name.
-guess_provider() {
-  local token="$1"
-  token="$(echo "$token" | tr '[:lower:]' '[:upper:]')"
-  token="${token##*/}"     # strip path
-  token="${token%.GPG}"    # remove suffix
-  token="${token%_API_KEY}"
-  token="${token%_KEY}"
-  case "$token" in
-    OPENAI|OPENAI_API_KEY|OPENAI_API_KEY_GPG) echo "OPENAI" ;;
-    *) echo "$token" ;;
+# ---------------------------------------------------------------------------
+# Main — check both known aliases
+# ---------------------------------------------------------------------------
+VERIFIED=0
+HARD_FAILURES=0
+
+for entry in "codex-oauth:Anthropic/Claude" "openai-oauth:OpenAI"; do
+  alias="${entry%%:*}"
+  label="${entry##*:}"
+
+  rc=0
+  verify_alias "$alias" "$label" || rc=$?
+
+  case "$rc" in
+    0) VERIFIED=$((VERIFIED + 1)) ;;
+    1) HARD_FAILURES=$((HARD_FAILURES + 1)) ;;
+    2) ;; # soft skip — alias not seeded
   esac
-}
-
-# ---------- preflight ----------
-if ! have_cmd curl; then
-  echo "ERROR: curl not found."
-  exit 1
-fi
-
-if ! have_cmd gpg; then
-  echo "ERROR: gpg not found."
-  exit 1
-fi
-
-if [ "$DEBUG" = "1" ]; then
-  echo "[DEBUG] whoami=$(whoami)" >&2
-  echo "[DEBUG] cloud.env exists: $([ -f "$CLOUD_ENV" ] && echo yes || echo no)" >&2
-  echo "[DEBUG] secrets dir exists: $([ -d "$SECRETS_DIR" ] && echo yes || echo no)" >&2
-  echo "[DEBUG] cloud.env content:" >&2
-  sudo cat "$CLOUD_ENV" 2>/dev/null >&2 || true
-  echo "[DEBUG] secrets dir listing:" >&2
-  sudo ls -al "$SECRETS_DIR" 2>&1 >&2 || true
-  echo "[DEBUG] find *.gpg under /etc/little7:" >&2
-  sudo find /etc/little7 -maxdepth 3 -type f -name "*.gpg" -print 2>/dev/null >&2 || true
-fi
-
-declare -A seen=()
-
-# 1) Collect from cloud.env (preferred)
-if [ -f "$CLOUD_ENV" ]; then
-  while IFS= read -r line; do
-    line="${line%%#*}"
-    line="$(echo "$line" | sed 's/[[:space:]]//g')"
-    [ -z "$line" ] && continue
-
-    if [[ "$line" =~ ^([A-Z0-9_]+)_API_KEY_GPG=(.+)$ ]]; then
-      p="${BASH_REMATCH[2]}"
-      p="$(norm_path "$p")"
-      dbg "cloud.env detected secret path: $p"
-      seen["$p"]=1
-    fi
-  done < "$CLOUD_ENV"
-fi
-
-# 2) Collect from secrets dir (*.gpg)
-if [ -d "$SECRETS_DIR" ]; then
-  while IFS= read -r p; do
-    [ -z "$p" ] && continue
-    p="$(norm_path "$p")"
-    dbg "secrets dir detected secret path: $p"
-    seen["$p"]=1
-  done < <(sudo find "$SECRETS_DIR" -maxdepth 1 -type f -name "*.gpg" 2>/dev/null | sort)
-fi
-
-printf "\n%-8s  %-35s  %-6s  %s\n" "PROVIDER" "SECRET_FILE" "RESULT" "DETAIL"
-printf "%-8s  %-35s  %-6s  %s\n" "--------" "-----------------------------------" "------" "------------------------------"
-
-any_fail=0
-
-# Deterministic order
-for fullpath in $(printf "%s\n" "${!seen[@]}" | sort); do
-  provider="$(guess_provider "$fullpath")"
-  display="$(basename "$fullpath")"
-
-  dec="$(decrypt_gpg "$fullpath")"
-  if [[ "$dec" == FAIL:* ]]; then
-    reason="$(echo "$dec" | cut -d: -f2)"
-    path_in_msg="$(echo "$dec" | cut -d: -f3-)"
-    printf "%-8s  %-35s  %-6s  %s\n" "$provider" "$display" "FAIL" "${reason} (${path_in_msg})"
-    any_fail=1
-    continue
-  fi
-
-  # Trim whitespace/newlines from decrypted secret (do NOT print it)
-  key="$(echo -n "$dec" | tr -d '\r' | tr -d '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-
-  result="$(verify_provider "$provider" "$key")"
-  if [ "$result" = "OK" ]; then
-    printf "%-8s  %-35s  %-6s  %s\n" "$provider" "$display" "OK" "api_ok"
-  else
-    printf "%-8s  %-35s  %-6s  %s\n" "$provider" "$display" "FAIL" "${result#FAIL:}"
-    any_fail=1
-  fi
+  echo ""
 done
 
-echo
-if [ "$any_fail" = "1" ]; then
-  echo "One or more secrets failed verification."
-  exit 1
+# ---------------------------------------------------------------------------
+# Result
+# ---------------------------------------------------------------------------
+if [ "$HARD_FAILURES" -gt 0 ]; then
+  fail "One or more seeded secrets failed API verification. Check key validity and network access."
 fi
 
-echo "All detected secrets verified OK."
+if [ "$VERIFIED" -eq 0 ]; then
+  fail "No cloud LLM secrets found in SecretVault. Run stage 15 to seed at least one provider."
+fi
+
+echo "== Stage 16 complete — ${VERIFIED} provider(s) verified. =="

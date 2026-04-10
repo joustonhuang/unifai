@@ -13,16 +13,35 @@ OPENCLAW_CONFIG_DIR="${HOME}/.openclaw"
 OPENCLAW_LAUNCHER="${DST_BASE}/bin/openclaw-start"
 
 # -----------------------------------------------------------------------
-# 1. Install OpenClaw via npm
+# 1. Install OpenClaw via official installer (Ubuntu/Debian only)
 # -----------------------------------------------------------------------
 echo "[1/4] Installing OpenClaw..."
 if command -v openclaw >/dev/null 2>&1; then
   INSTALLED_VER="$(openclaw --version 2>/dev/null || echo 'unknown')"
   echo "OpenClaw already installed: ${INSTALLED_VER}"
 else
-  echo "Installing openclaw via npm (this may take a few minutes)..."
-  sudo npm install -g openclaw@latest --quiet
-  echo "[OK] OpenClaw installed: $(openclaw --version 2>/dev/null || echo 'version unknown')"
+  echo "Installing OpenClaw via official installer (https://openclaw.ai/install.sh)..."
+
+  # Ensure curl is available (should be from stage 00)
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "[ERROR] curl not found. Run stage 00 (bigbang) first." >&2
+    exit 1
+  fi
+
+  # Fetch and run the official installer as the current user (not root).
+  # The installer may require sudo internally for PATH registration.
+  curl -fsSL https://openclaw.ai/install.sh | bash
+
+  # Reload PATH in case the installer wrote to ~/.local/bin or /usr/local/bin
+  export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
+
+  if command -v openclaw >/dev/null 2>&1; then
+    echo "[OK] OpenClaw installed: $(openclaw --version 2>/dev/null || echo 'version unknown')"
+  else
+    echo "[ERROR] openclaw binary not found in PATH after installation." >&2
+    echo "        Check installer output above, or add the install dir to PATH." >&2
+    exit 1
+  fi
 fi
 
 # -----------------------------------------------------------------------
