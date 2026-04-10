@@ -78,10 +78,22 @@ Each event is categorized by risk class.
 
 Definition:
 - Attempt to access secret outside Keyman flow
-- Attempt to persist or leak secret
+- Attempt to persist secret
+- Attempt to exfiltrate secret
 - Unauthorized secret reuse
 
 Severity: CRITICAL
+
+---
+
+Response Rule:
+
+Any SECRET_VIOLATION results in immediate SYSTEM FUSE.
+
+- The current action MUST be blocked immediately
+- Any active token or grant MUST be revoked immediately
+
+These actions are executed concurrently, NOT as staged escalation.
 
 ---
 
@@ -163,7 +175,7 @@ Severity: MEDIUM → HIGH
 
 | Event Type | First Response | Escalation | Final Action |
 |-----------|--------------|-----------|-------------|
-| SECRET_VIOLATION | Immediate block | Revoke token | SYSTEM FUSE |
+| SECRET_VIOLATION | Block current action | Revoke active token | SYSTEM FUSE (immediate) |
 | TOOL_SCOPE_VIOLATION | Deny call | Suspend agent | Agent isolation |
 | UNAUTHORIZED_NETWORK_ACCESS | Block network | Kill session | SYSTEM FUSE |
 | TRACE_INTEGRITY_FAILURE | Reject execution | Flag anomaly | Suspend flow |
@@ -260,15 +272,31 @@ Neo MUST NOT:
 
 ---
 
-# 7. Bill's Role (Budget Fuse)
+# 7. Bill's Role (Budget / Resource Signal)
 
-Bill triggers fuse on:
+Bill does NOT execute fuse actions.
 
-- Cost threshold breach
-- Token anomaly
-- Provider abuse
+Bill is responsible for:
 
-Bill → Supervisor → Fuse
+- Monitoring token usage, budget consumption, and provider limits
+- Detecting resource anomalies
+- Emitting structured signals when thresholds are exceeded
+
+---
+
+### Enforcement Flow
+
+Bill signals → Supervisor evaluates → SYSTEM FUSE (if required)
+
+---
+
+### Constraints
+
+Bill MUST NOT:
+
+- trigger fuse directly
+- execute system shutdown
+- bypass Supervisor authority
 
 ---
 
