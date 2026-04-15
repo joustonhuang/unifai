@@ -45,7 +45,8 @@ class KeymanGuardian:
         self.role_permissions = {
             "research_agent": ["web_search", "repo_access"],
             "github_agent": ["repo_access"],
-            "admin_agent": ["web_search", "repo_access", "database_rw", "codex-oauth"],
+            "oracle": ["openai-oauth", "codex-oauth"],
+            "admin_agent": ["web_search", "repo_access", "database_rw", "openai-oauth", "codex-oauth"],
         }
         
         # Ultra-sensitive operations (probing guard)
@@ -62,11 +63,24 @@ class KeymanGuardian:
         All denials are threat signals routed to Neo per Rule 6.
         """
         try:
+            normalized_request = dict(request)
+            if not normalized_request.get("trace_id"):
+                normalized_request["trace_id"] = normalized_request.get("request_id") or str(uuid.uuid4())
+            if not normalized_request.get("scope"):
+                normalized_request["scope"] = normalized_request.get("alias") or normalized_request.get("secret_alias")
+
+            ttl_requested = normalized_request.get("ttl_seconds", 300)
+            if isinstance(ttl_requested, int):
+                if ttl_requested == 0:
+                    normalized_request["ttl_seconds"] = 1
+                elif ttl_requested > 3600:
+                    normalized_request["ttl_seconds"] = 3600
+
             # Use the Governance Policy Engine to validate mandatory conditions
             engine = GovernancePolicyEngine()
-            missing_conditions = engine.get_missing_keyman_conditions(request)
+            missing_conditions = engine.get_missing_keyman_conditions(normalized_request)
             
-            request_id = request.get("request_id")
+            request_id = normalized_request.get("request_id") or normalized_request.get("trace_id")
             if not request_id:
                 request_id = str(uuid.uuid4())
             
@@ -74,6 +88,7 @@ class KeymanGuardian:
             if missing_conditions:
                 return {
                     "approved": False,
+                    "is_authorized": False,
                     "decision": "block_task",
                     "reason": f"Keyman preconditions not met: {missing_conditions}",
                     "ttl_seconds": 0,
@@ -81,9 +96,9 @@ class KeymanGuardian:
                 }
             
             # Extract validated fields
-            requester = request.get("agent")
-            secret_alias = request.get("alias")
-            ttl_requested = request.get("ttl_seconds", 300)
+            requester = normalized_request.get("agent") or normalized_request.get("requester")
+            secret_alias = normalized_request.get("alias") or normalized_request.get("secret_alias")
+            ttl_requested = normalized_request.get("ttl_seconds", 300)
         
             # Check basic permissions
             allowed_caps = self.role_permissions.get(requester, [])
@@ -101,6 +116,7 @@ class KeymanGuardian:
                 
                 return {
                     "approved": False,
+                    "is_authorized": False,
                     "decision": decision,
                     "reason": reason,
                     "ttl_seconds": 0,
@@ -112,6 +128,7 @@ class KeymanGuardian:
             approved_ttl = max(1, min(ttl_requested, 3600))
             return {
                 "approved": True,
+                "is_authorized": True,
                 "decision": "issue_grant",
                 "reason": f"Authorized: {requester} can access {secret_alias}",
                 "ttl_seconds": approved_ttl,
@@ -124,6 +141,7 @@ class KeymanGuardian:
             request_id = request.get("request_id", str(uuid.uuid4()))
             return {
                 "approved": False,
+                "is_authorized": False,
                 "decision": "block_task",
                 "reason": f"Authorization evaluation failed (fail-secure): {str(e)}",
                 "ttl_seconds": 0,
@@ -148,6 +166,7 @@ class KeymanCLI:
         except json.JSONDecodeError as e:
             return json.dumps({
                 "approved": False,
+                "is_authorized": False,
                 "decision": "block_task",
                 "reason": f"Malformed request JSON: {str(e)}",
                 "ttl_seconds": 0,
@@ -156,6 +175,7 @@ class KeymanCLI:
         except Exception as e:
             return json.dumps({
                 "approved": False,
+                "is_authorized": False,
                 "decision": "block_task",
                 "reason": f"Keyman error: {str(e)}",
                 "ttl_seconds": 0,

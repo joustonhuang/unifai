@@ -25,14 +25,19 @@ DEFAULT_PROXY_PORT = 7701
 # Future: "anthropic", "gemini", "nemo" (NemoClaw), "opencode"
 PROVIDER_REGISTRY = {
     "openai": {
-        "base_url": "https://api.openai.com",
-        # OpenAI chat completions usage object fields
-        "token_fields": ("prompt_tokens", "completion_tokens"),
+        "upstream_url": "https://api.openai.com",
+        "token_extractor": lambda usage: (
+            usage["prompt_tokens"],
+            usage["completion_tokens"],
+        ),
     },
-    # "anthropic": {
-    #     "base_url": "https://api.anthropic.com",
-    #     "token_fields": ("input_tokens", "output_tokens"),
-    # },
+    "anthropic": {
+        "upstream_url": "https://api.anthropic.com",
+        "token_extractor": lambda usage: (
+            usage["input_tokens"],
+            usage["output_tokens"],
+        ),
+    },
     # "gemini": {
     #     "base_url": "https://generativelanguage.googleapis.com",
     #     "token_fields": ("promptTokenCount", "candidatesTokenCount"),
@@ -105,7 +110,26 @@ def resolve_provider() -> str:
     return p
 
 ACTIVE_PROVIDER = resolve_provider()
-REAL_URL = PROVIDER_REGISTRY[ACTIVE_PROVIDER]["base_url"]
+REAL_URL = PROVIDER_REGISTRY[ACTIVE_PROVIDER]["upstream_url"]
+
+
+def extract_usage_tokens(provider: str, usage_payload: dict) -> int:
+    """Extract token accounting from a provider usage payload without silent fallbacks."""
+    if provider not in PROVIDER_REGISTRY:
+        raise ValueError(f"unsupported provider: {provider}")
+    if not isinstance(usage_payload, dict):
+        raise TypeError("usage payload must be a dict")
+
+    prompt_tokens, completion_tokens = PROVIDER_REGISTRY[provider]["token_extractor"](usage_payload)
+
+    if not isinstance(prompt_tokens, int) or not isinstance(completion_tokens, int):
+        raise TypeError(
+            f"token counts must be integers, got {type(prompt_tokens).__name__}/{type(completion_tokens).__name__}"
+        )
+    if prompt_tokens < 0 or completion_tokens < 0:
+        raise ValueError(f"token counts must be non-negative, got {prompt_tokens}/{completion_tokens}")
+
+    return prompt_tokens + completion_tokens
 
 
 class BillGuardian:
@@ -324,10 +348,9 @@ class BillProxyHandler(BaseHTTPRequestHandler):
             try:
                 body_json = json.loads(safe_response_body)
                 if "usage" in body_json:
-                    t_in, t_out = PROVIDER_REGISTRY[ACTIVE_PROVIDER]["token_fields"]
-                    cost = body_json["usage"].get(t_in, 0) + body_json["usage"].get(t_out, 0)
-            except Exception:
-                pass
+                    cost = extract_usage_tokens(ACTIVE_PROVIDER, body_json["usage"])
+            except Exception as exc:
+                logger.warning(f"TOKEN ACCOUNTING WARNING: provider={ACTIVE_PROVIDER} extraction_failed={exc}")
 
         if cost > 0:
             new_budget = current_budget - cost
