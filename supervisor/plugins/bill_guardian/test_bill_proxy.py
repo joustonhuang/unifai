@@ -11,6 +11,7 @@ assert spec.loader is not None
 spec.loader.exec_module(bill_proxy)
 
 BillGuardian = bill_proxy.BillGuardian
+extract_usage_tokens = bill_proxy.extract_usage_tokens
 
 
 def test_estimate_tokens_uses_fast_heuristic():
@@ -37,3 +38,23 @@ def test_evaluate_budget_blocks_large_payload():
     result = guardian.evaluate_budget("anthropic-api", "A" * 50000)
     assert result["gate_open"] is False
     assert "BUDGET_EXCEEDED" in result["reason"]
+
+
+def test_extract_usage_tokens_openai_provider_returns_non_zero_total():
+    usage = {"prompt_tokens": 11, "completion_tokens": 7}
+    assert extract_usage_tokens("openai", usage) == 18
+
+
+def test_extract_usage_tokens_anthropic_provider_returns_non_zero_total():
+    usage = {"input_tokens": 13, "output_tokens": 5}
+    assert extract_usage_tokens("anthropic", usage) == 18
+
+
+def test_extract_usage_tokens_rejects_missing_fields_instead_of_silent_zero():
+    usage = {"prompt_tokens": 11}
+    try:
+        extract_usage_tokens("openai", usage)
+    except KeyError as exc:
+        assert str(exc) == "'completion_tokens'"
+    else:
+        raise AssertionError("expected missing token field to raise KeyError")
