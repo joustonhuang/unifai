@@ -66,17 +66,20 @@ Agents must read the charter before implementing or modifying code related to:
 - Wilson is the intake and human-facing interface layer.
 - Wilson accepts Architect input and writes to the Uncleared Ledger.
 - Wilson presents human-readable state and mirrors logs without mutating raw logs.
+- Wilson must surface governed rollback events to the human when tasks are returned from Cleared or Agile back to the Uncleared Ledger.
 - Wilson must not execute tasks, dispatch to Keyman, or fabricate authority.
 
 - Oracle is the structuring intelligence layer.
 - Oracle transforms Uncleared and Cleared Ledger content into structured work and Agile priorities.
 - Oracle issues execution plans to Gaia.
+- Oracle is responsible for re-processing tasks returned to the Uncleared Ledger after governed rollback.
 - Oracle must not execute tasks, directly control workers, or bypass governance.
 
 - Neo is a parallel audit and anomaly detection layer.
 - Neo audits logs, ledger mutations, and trace chains system-wide.
 - Neo detects missing logs, broken trace chains, loop/stalk patterns, and abnormal persistence.
 - Neo emits governed escalation findings only — it does not execute, dispatch, or terminate directly.
+- Neo findings may cause Supervisor review, fuse, or task rollback to the Uncleared Ledger.
 - Neo must not replace Gaia or Supervisor.
 
 - Morpheus performs dreaming, memory consolidation, or context reset for completed or marked workers.
@@ -101,6 +104,8 @@ Wilson → Uncleared Ledger → Oracle → Cleared + Agile Ledger → Gaia → J
 ```
 
 Neo audits throughout the entire lifecycle in parallel by consuming logs and ledger mutations.
+
+If a governed rollback returns work from Cleared or Agile back to the Uncleared Ledger, Wilson must surface that state change to the human.
 
 ## Governed Escalation Flow
 

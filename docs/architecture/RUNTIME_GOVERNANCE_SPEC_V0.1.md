@@ -316,6 +316,7 @@ Wilson:
 
 - Human-readable reporting
 - Incident surfacing
+- Governed rollback visibility to the human when tasks return from Cleared or Agile to the Uncleared Ledger
 - NO modification of source logs
 
 ---
@@ -341,6 +342,7 @@ A system with:
 - logs but no enforcement
 - rules but no fuse
 - detection but no action
+- rollback that never becomes visible to the human
 
 is NOT governed.
 
