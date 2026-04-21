@@ -291,6 +291,7 @@ Responsibilities:
 - write Uncleared Ledger entries
 - present human-readable state
 - help WebUI present system activity in human-readable form
+- surface governed rollback events to the human when tasks are returned from Cleared or Agile back to the Uncleared Ledger
 
 Wilson has:
 
@@ -310,6 +311,8 @@ The system uses four operational ledgers.
 
 Approved tasks that are eligible for execution.
 
+Tasks may be returned from Cleared or Agile back to the Uncleared Ledger when governed review determines that execution should not continue.
+
 ---
 
 ### Uncleared Ledger
@@ -323,6 +326,7 @@ Uncleared Ledger may be read and changed by:
 - Gaia
 
 All ledger changes must be logged so Neo can audit them.
+If a task is returned here through governed rollback, that rollback must also be surfaced to the human through Wilson.
 
 ---
 
@@ -335,6 +339,18 @@ The top five tasks selected by Oracle for active execution planning.
 ### Current Task Ledger
 
 The live execution ledger maintained by Gaia, including assigned agents, timestamps, duration, token usage, and completion state.
+
+---
+
+### Governed Rollback Path
+
+When ledger conflict, loop/stalk behavior, abnormal persistence, or severe execution mismatch is detected:
+
+- Neo emits governed findings
+- Supervisor decides whether rollback or fuse action is required
+- Cleared or Agile tasks may be returned to the Uncleared Ledger
+- Oracle and Gaia must re-enter governed planning from the Uncleared Ledger state
+- Wilson must notify the human that rollback occurred
 
 ---
 

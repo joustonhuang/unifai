@@ -69,6 +69,7 @@ logging_invariant:
     - "Logs must be immutable once written."
     - "Logs must be auditable by Neo."
     - "Logs must be consumable by Wilson (human interface)."
+    - "Rollback events that return tasks to the Uncleared Ledger must be surfaced to the human through Wilson."
     - "Logs must be usable by Morpheus (memory consolidation)."
     - "Logs must be encrypted and make it auditable (Blackbox-like behavior)."
   minimum_required_fields:
@@ -205,6 +206,7 @@ agents:
         - "Write Uncleared Ledger"
         - "Present human-readable state"
         - "Mirror logs without mutating raw logs"
+        - "Notify the human when governed rollback returns tasks from Cleared or Agile to the Uncleared Ledger"
       logging:
         must_log:
           - "input ingestion"
@@ -244,6 +246,7 @@ agents:
         - "Transform Uncleared and Cleared into structured work and Agile priorities"
         - "Prepare Agile priorities"
         - "Escalate difficult reasoning through governed paths when needed"
+        - "Re-process tasks returned to the Uncleared Ledger after governed rollback"
       logging:
         must_log:
           - "reasoning steps (compressed but traceable)"
@@ -270,6 +273,7 @@ agents:
         - "Detect missing logs and broken trace chains"
         - "Detect loop, stalk, and pathological persistence patterns"
         - "Emit governed escalation findings"
+        - "Trigger governed review when conflict or persistence requires rollback consideration"
       logging:
         must_log:
           - "audit findings"
@@ -482,6 +486,24 @@ event_flow:
       - step: 6
         actor: "Supervisor"
         action: "Perform final termination if lifecycle policy requires it"
+
+  governed_rollback_visibility:
+    notes:
+      - "Governed rollback is not complete until the human can see that work was returned to the Uncleared Ledger."
+      - "Rollback may be triggered by Neo findings, Supervisor review, fuse conditions, or unresolved execution conflict."
+    steps:
+      - step: 1
+        actor: "Neo"
+        action: "Detect loop, stalk, persistence, or conflict pattern and emit governed finding"
+      - step: 2
+        actor: "Supervisor"
+        action: "Decide rollback, fuse, or continuation"
+      - step: 3
+        actor: "Oracle / Gaia"
+        action: "Return affected work from Cleared or Agile to the Uncleared Ledger when rollback is required"
+      - step: 4
+        actor: "Wilson"
+        action: "Notify the human that rollback occurred and that work re-entered the Uncleared Ledger"
 
   governed_escalation:
     notes:

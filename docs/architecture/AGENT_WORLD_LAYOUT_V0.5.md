@@ -15,12 +15,14 @@
 ### 1.1 Cleared Ledger
 - Approved tasks
 - Eligible for execution
+- May be returned to the Unclear Ledger through governed rollback when execution should not continue
 
 ### 1.2 Unclear Ledger
 - Ambiguous / risky tasks
 - Written by:
   - Wilson
   - system ingestion
+- Receives governed rollback from Cleared / Agile when work must be re-opened
 - Cannot execute
 
 ### 1.3 Agile Ledger
@@ -154,6 +156,7 @@ Rule:
 
 - write Unclear Ledger
 - assist WebUI
+- notify human when governed rollback returns work to the Unclear Ledger
 
 No authority.
 
@@ -258,10 +261,13 @@ Secrets:
 | Promote Agile | Oracle |
 | Spawn | Gaia |
 | Enter Current | Gaia |
+| Trigger rollback review | Neo + Supervisor |
+| Notify human after rollback | Wilson |
 
 Constraints:
 - no bypass
 - Agile max 5
+- rollback to Unclear must be logged and human-visible
 
 ---
 
