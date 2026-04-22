@@ -45,6 +45,14 @@ security_model:
     - "Neo"
     - "Ledger system"
 
+runtime_baseline:
+  supported_os:
+    - "Debian"
+    - "Ubuntu"
+  supported_runtime:
+    - "OpenClaw"
+  statement: "OpenClaw is the sole supported runtime in the current baseline. Other runtimes may exist as future extension references only and must not appear in active execution paths."
+
 principles:
   - id: "P001"
     name: "Human Sovereignty"

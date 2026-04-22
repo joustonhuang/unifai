@@ -63,6 +63,22 @@ All automated reviewers and coding agents, including Codex and Claude, must flag
 - uses VM or container isolation as security justification for UnifAI itself
 - attributes system safety to containment instead of governance, audit, capability control, or Supervisor enforcement
 
+### Runtime Baseline Enforcement
+
+Current supported baseline:
+
+- OS: Debian / Ubuntu
+- Runtime: OpenClaw
+
+NanoClaw is not supported in the current baseline.
+Do not introduce:
+
+- NanoClaw into install logic, bootstrap logic, runtime execution paths, or agent/tool invocation
+- runtime-switching paths
+- parallel backend execution paths
+
+Future extensibility may be discussed in docs, but must remain inactive and outside executable paths.
+
 - UnifAI has three layers:
   - World Physics (enforcement mechanisms)
   - Constitution (governing law)

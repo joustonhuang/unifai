@@ -34,6 +34,9 @@ jobs:
       - name: Enforce No Sandbox Doctrine
         run: python scripts/check_no_sandbox_doctrine.py
 
+      - name: Enforce Runtime Baseline
+        run: python scripts/check_runtime_baseline.py
+
       - name: Install dependencies
         run: |
           pip install pyyaml

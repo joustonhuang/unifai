@@ -51,6 +51,15 @@ Therefore, UnifAI enforces:
 - audit and anomaly detection through Neo
 - final enforcement through Supervisor
 
+## Current Supported Baseline
+
+- OS: Debian / Ubuntu
+- Runtime: OpenClaw
+
+### Note
+
+Other runtimes, including NanoClaw, are not currently supported and are excluded from active execution.
+
 ---
 
 # UnifAI Constitution (v0.3)

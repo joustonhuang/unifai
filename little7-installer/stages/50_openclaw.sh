@@ -2,6 +2,8 @@
 set -euo pipefail
 
 echo "== Stage 50: OpenClaw Installation + World Physics Injection =="
+# Current supported runtime baseline: Debian/Ubuntu + OpenClaw only.
+# Other runtimes are excluded from active execution paths.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALLER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
