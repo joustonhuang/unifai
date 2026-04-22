@@ -13,7 +13,7 @@ class TestMCPGovernance(unittest.TestCase):
                 "command": {"type": "string"},
                 "timeout": {"type": "integer"},
                 "run_in_background": {"type": "boolean"},
-                "dangerouslyDisableSandbox": {"type": "boolean"}
+                "dangerouslyBypassGovernance": {"type": "boolean"}
             }},
             forbidden_values=["/etc/shadow", "rm -rf /"]
         )
@@ -32,16 +32,16 @@ class TestMCPGovernance(unittest.TestCase):
         
         self.interceptor = MCPInterceptor({"bash": bash_manifest, "write_file": write_manifest})
 
-    def test_claude_leak_bypass_blocked(self):
-        # O agente tenta usar o parâmetro perigoso do código vazado
+    def test_governance_bypass_flag_blocked(self):
+        # O agente tenta usar o parâmetro explícito de bypass de governança
         dangerous_args = {
             "command": "ls",
-            "dangerouslyDisableSandbox": True
+            "dangerouslyBypassGovernance": True
         }
         decision, reason = self.interceptor.inspect_call("bash", dangerous_args)
         
         self.assertEqual(decision, GovernanceDecision.REJECT)
-        self.assertIn("disable sandbox", reason)
+        self.assertIn("bypass governance", reason)
         print(f"PASSED: Dangerous parameter blocked. Reason: {reason}")
 
     def test_unauthorized_parameter_blocked(self):

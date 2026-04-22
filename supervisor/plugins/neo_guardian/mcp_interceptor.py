@@ -35,10 +35,9 @@ class MCPInterceptor:
         if not manifest:
             return GovernanceDecision.REJECT, f"Tool '{tool_name}' not in Governance Manifest."
 
-        # 2. CLAUDE LEAK SENSOR: Bloqueio do 'dangerouslyDisableSandbox'
-        # Detectamos explicitamente a intenção de bypass vazada da Anthropic
-        if arguments.get("dangerouslyDisableSandbox") is True:
-             return GovernanceDecision.REJECT, "CRITICAL: Agent attempted to disable sandbox. Triggering Oracle incident."
+        # 2. Explicit governance-bypass attempt detection
+        if arguments.get("dangerouslyBypassGovernance") is True:
+             return GovernanceDecision.REJECT, "CRITICAL: Agent attempted to bypass governance. Triggering Oracle incident."
 
         # 3. Parameter Validation (Strictness)
         # Verificamos se o agente está injetando parâmetros não autorizados

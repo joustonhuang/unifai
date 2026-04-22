@@ -2,13 +2,13 @@ version: "0.1"
 
 models:
   system_services:
-    runtime: "localai"
+    runtime: "external"
     model_id: ""
     role: "system_services"
     mcp_enabled: false
 
   local_reasoning:
-    runtime: "localai"
+    runtime: "external"
     model_id: ""
     role: "local_reasoning"
     mcp_enabled: true

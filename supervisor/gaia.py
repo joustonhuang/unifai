@@ -39,7 +39,7 @@ LOG_DIR = SUPERVISOR_DIR / "logs"
 DB_PATH = DATA_DIR / "supervisor.db"
 LOG_PATH = LOG_DIR / "supervisor.log"
 WORLD_CHARTER_PATH = ROOT / "little7-installer" / "config" / "world_charter.yaml"
-WORKER_DUMMY_PATH = ROOT / "little7-installer" / "docker" / "worker_dummy.py"
+WORKER_DUMMY_PATH = ROOT / "supervisor" / "workers" / "worker_dummy.py"
 
 
 @dataclass(frozen=True)

@@ -85,7 +85,6 @@ ALLOW_CMDS = {
     "echo": ["echo"],
     "date": ["date"],
     "uptime": ["uptime"],
-    "docker_ps": ["docker", "ps"],
     # add more later, intentionally conservative
 }
 

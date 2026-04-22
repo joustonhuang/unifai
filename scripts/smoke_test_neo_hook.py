@@ -45,7 +45,7 @@ def main() -> int:
             tool_name="bash",
             payload={
                 "command": "echo hi",
-                "dangerouslyDisableSandbox": True,
+                "dangerouslyBypassGovernance": True,
             },
         )
         malicious_decision = pipeline.run_pre_hook(malicious_envelope)

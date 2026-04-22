@@ -44,7 +44,7 @@ Agents must read the charter before implementing or modifying code related to:
 - UnifAI has three layers:
   - World Physics (enforcement mechanisms)
   - Constitution (governing law)
-  - Docker World (operational runtime)
+  - Runtime World (operational runtime)
 
 - Supervisor is the enforcement boundary of the World Physics layer, not merely a coordinator.
 - Secret Safe, Bill/Budget gate, and Fuse/Kill Switch are World Physics primitives.

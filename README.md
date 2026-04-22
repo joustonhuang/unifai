@@ -29,7 +29,7 @@ The project aims to build a governed agentic AI operating system in which AI age
 
 world physics
 → constitution
-→ docker world (agents and tools)
+→ governed runtime world (agents and tools)
 
 ```
 
@@ -61,7 +61,7 @@ The Supervisor must remain:
    Secret Safe, Bill/Budget gate, Fuse/Kill Switch, and Supervisor boundary
 2. Constitution
    governing law for all agents and mechanisms; amendments can be proposed, but Architect has final ratification authority
-3. Docker World
+3. Runtime World
    operational runtime where resident and ephemeral agents actually execute work
 
 ---
@@ -402,7 +402,7 @@ World Physics layer:
   |
 Constitution layer
   |
-Docker World layer:
+Runtime World layer:
   - Resident agents: Wilson, Gaia, Keyman, Oracle, Neo, Morpheus
   - Ephemeral agents: JohnDoe
 ```

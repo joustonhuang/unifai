@@ -71,10 +71,10 @@ class ToolHookPipeline:
 
     @staticmethod
     def _contains_forbidden_bash_pattern(payload: dict[str, Any]) -> bool:
-        disable_sandbox = payload.get("dangerouslyDisableSandbox")
-        if isinstance(disable_sandbox, bool) and disable_sandbox:
+        bypass_governance = payload.get("dangerouslyBypassGovernance")
+        if isinstance(bypass_governance, bool) and bypass_governance:
             return True
-        if isinstance(disable_sandbox, str) and disable_sandbox.strip().lower() == "true":
+        if isinstance(bypass_governance, str) and bypass_governance.strip().lower() == "true":
             return True
 
         serialized_payload = json.dumps(payload, sort_keys=True).lower()

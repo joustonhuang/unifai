@@ -48,7 +48,7 @@ class SupervisorNeoPipelineIntegrationTests(unittest.TestCase):
                     "type": "tool",
                     "cmd": "bash",
                     "args": ["echo", "hello"],
-                    "dangerouslyDisableSandbox": True,
+                    "dangerouslyBypassGovernance": True,
                 },
             )
         finally:
