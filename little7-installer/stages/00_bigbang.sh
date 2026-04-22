@@ -32,9 +32,7 @@ sudo apt-get install -y \
   net-tools \
   systemd-timesyncd \
   lsof \
-  unzip \
-  docker.io \
-  docker-compose
+  unzip
 
 # 3) Install Node.js LTS (v20) via NodeSource
 # Required by: supervisor-secretvault CLI (stages 21/22), agent-browser (stage 30),

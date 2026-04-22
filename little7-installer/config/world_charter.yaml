@@ -29,12 +29,29 @@ architecture_layers:
     amendment_process:
       proposals_allowed: true
       final_ratifier: "Architect"
-  docker_world:
+  runtime_world:
     description: "Operational environment where resident and ephemeral agents run."
 
 authority_model:
   law: "Capability belongs to agents, but authority belongs to physics and constitution."
   constraint: "No agent may gain authority merely by being more capable."
+
+security_model:
+  no_sandbox_assumption: true
+  statement: "UnifAI does not depend on sandbox, container, or VM isolation for safety. Isolation belongs to infrastructure; safety inside UnifAI is governance and Supervisor enforcement."
+  enforcement:
+    - "Supervisor"
+    - "Keyman"
+    - "Neo"
+    - "Ledger system"
+
+runtime_baseline:
+  supported_os:
+    - "Debian"
+    - "Ubuntu"
+  supported_runtime:
+    - "OpenClaw"
+  statement: "OpenClaw is the sole supported runtime in the current baseline. Other peer runtimes / Agentic AI OS options are not part of the current supported baseline and must not appear in active execution paths."
 
 principles:
   - id: "P001"
@@ -195,7 +212,7 @@ system_components:
 agents:
   resident:
     - id: "wilson"
-      layer: "docker_world"
+      layer: "runtime_world"
       type: "resident_agent"
       class: "intake_and_human_interface"
       description: "Accepts Architect input, writes Uncleared Ledger, and presents human-readable state without mutating raw logs."
@@ -218,7 +235,7 @@ agents:
         - "Must not execute tasks"
 
     - id: "keyman"
-      layer: "docker_world"
+      layer: "runtime_world"
       type: "resident_agent"
       class: "secret_gatekeeper"
       description: "Secret gatekeeper with intentionally narrow authority."
@@ -238,7 +255,7 @@ agents:
         - "Must not alter world laws"
 
     - id: "oracle"
-      layer: "docker_world"
+      layer: "runtime_world"
       type: "resident_agent"
       class: "structuring_intelligence"
       description: "Advanced reasoning layer that transforms Uncleared and Cleared context into structured work and Agile priorities."
@@ -260,7 +277,7 @@ agents:
         - "Must not alter world laws"
 
     - id: "neo"
-      layer: "docker_world"
+      layer: "runtime_world"
       type: "resident_agent"
       class: "audit_and_anomaly_detector"
       description: "System-wide audit and anomaly detection agent that observes logs, ledgers, and execution traces."
@@ -290,7 +307,7 @@ agents:
 
   ephemeral:
     - id: "johndoe"
-      layer: "docker_world"
+      layer: "runtime_world"
       type: "ephemeral_agent"
       class: "task_scoped_worker"
       deployed_by: "Gaia"

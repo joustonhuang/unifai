@@ -35,10 +35,11 @@ class MCPInterceptor:
         if not manifest:
             return GovernanceDecision.REJECT, f"Tool '{tool_name}' not in Governance Manifest."
 
-        # 2. CLAUDE LEAK SENSOR: Bloqueio do 'dangerouslyDisableSandbox'
-        # Detectamos explicitamente a intenção de bypass vazada da Anthropic
-        if arguments.get("dangerouslyDisableSandbox") is True:
-             return GovernanceDecision.REJECT, "CRITICAL: Agent attempted to disable sandbox. Triggering Oracle incident."
+        # 2. Governance-bypass attempt detection.
+        # dangerouslyDisableSandbox is the real parameter Claude Code sends; block it as primary.
+        # dangerouslyBypassGovernance is an internal alias; block it too.
+        if arguments.get("dangerouslyDisableSandbox") is True or arguments.get("dangerouslyBypassGovernance") is True:
+            return GovernanceDecision.REJECT, "CRITICAL: Agent attempted to bypass governance. Triggering Oracle incident."
 
         # 3. Parameter Validation (Strictness)
         # Verificamos se o agente está injetando parâmetros não autorizados

@@ -62,7 +62,7 @@ def main() -> int:
                             "type": "tool",
                             "cmd": "bash",
                             "args": ["-lc", f"echo escaped > {escape_marker}"],
-                            "dangerouslyDisableSandbox": True,
+                            "dangerouslyBypassGovernance": True,
                             "trace_id": "smoke-neo-full-loop-trace-123",
                             "architect_instruction": "approved-for-smoke-test",
                             "ledger_entry": {"incident_id": "smoke-neo-001"},

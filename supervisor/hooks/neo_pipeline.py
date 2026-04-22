@@ -71,11 +71,14 @@ class ToolHookPipeline:
 
     @staticmethod
     def _contains_forbidden_bash_pattern(payload: dict[str, Any]) -> bool:
-        disable_sandbox = payload.get("dangerouslyDisableSandbox")
-        if isinstance(disable_sandbox, bool) and disable_sandbox:
-            return True
-        if isinstance(disable_sandbox, str) and disable_sandbox.strip().lower() == "true":
-            return True
+        # dangerouslyDisableSandbox is the real parameter Claude Code sends in MCP tool calls.
+        # dangerouslyBypassGovernance is an internal alias — both must be blocked.
+        for key in ("dangerouslyDisableSandbox", "dangerouslyBypassGovernance"):
+            val = payload.get(key)
+            if isinstance(val, bool) and val:
+                return True
+            if isinstance(val, str) and val.strip().lower() == "true":
+                return True
 
         serialized_payload = json.dumps(payload, sort_keys=True).lower()
         return any(pattern in serialized_payload for pattern in FORBIDDEN_BASH_PATTERNS)

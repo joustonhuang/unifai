@@ -41,10 +41,48 @@ Agents must read the charter before implementing or modifying code related to:
 
 ## Architectural Constraints
 
+### Rule: No Sandbox Assumption
+
+UnifAI MUST NOT:
+
+- depend on sandbox, container, or VM isolation for safety
+- describe sandbox as a security boundary
+- imply containment equals protection
+
+Isolation is outside the system at the infrastructure layer only.
+
+Within UnifAI:
+- safety = governance
+- enforcement = Supervisor
+
+### AI Review Enforcement
+
+All automated reviewers and coding agents, including Codex and Claude, must flag any change that:
+
+- describes sandbox as protection
+- uses VM or container isolation as security justification for UnifAI itself
+- attributes system safety to containment instead of governance, audit, capability control, or Supervisor enforcement
+
+### Runtime Baseline Enforcement
+
+Current supported baseline:
+
+- OS: Debian / Ubuntu
+- Runtime: OpenClaw
+
+NanoClaw is a peer runtime / Agentic AI OS, not an OpenClaw extension. It is not supported in the current baseline.
+Do not introduce:
+
+- NanoClaw into install logic, bootstrap logic, runtime execution paths, or agent/tool invocation
+- runtime-switching paths
+- parallel backend execution paths
+
+Future support may be discussed in docs, but must remain inactive and outside executable paths.
+
 - UnifAI has three layers:
   - World Physics (enforcement mechanisms)
   - Constitution (governing law)
-  - Docker World (operational runtime)
+  - Runtime World (operational runtime)
 
 - Supervisor is the enforcement boundary of the World Physics layer, not merely a coordinator.
 - Secret Safe, Bill/Budget gate, and Fuse/Kill Switch are World Physics primitives.

@@ -29,11 +29,36 @@ The project aims to build a governed agentic AI operating system in which AI age
 
 world physics
 → constitution
-→ docker world (agents and tools)
+→ governed runtime world (agents and tools)
 
 ```
 
 The goal is to prevent uncontrolled agent behavior and build systems that remain **auditable, predictable, and controllable**.
+
+## Security Model Clarification
+
+UnifAI does not rely on sandboxing for security.
+
+Sandboxing does not prevent:
+
+- misuse of tools
+- data exfiltration
+- incorrect decisions
+
+Therefore, UnifAI enforces:
+
+- capability control through Keyman
+- audit and anomaly detection through Neo
+- final enforcement through Supervisor
+
+## Current Supported Baseline
+
+- OS: Debian / Ubuntu
+- Runtime: OpenClaw
+
+### Note
+
+NanoClaw is a peer runtime / Agentic AI OS, not an OpenClaw extension. It is not currently supported in the active baseline and is excluded from active execution.
 
 ---
 
@@ -61,7 +86,7 @@ The Supervisor must remain:
    Secret Safe, Bill/Budget gate, Fuse/Kill Switch, and Supervisor boundary
 2. Constitution
    governing law for all agents and mechanisms; amendments can be proposed, but Architect has final ratification authority
-3. Docker World
+3. Runtime World
    operational runtime where resident and ephemeral agents actually execute work
 
 ---
@@ -402,7 +427,7 @@ World Physics layer:
   |
 Constitution layer
   |
-Docker World layer:
+Runtime World layer:
   - Resident agents: Wilson, Gaia, Keyman, Oracle, Neo, Morpheus
   - Ephemeral agents: JohnDoe
 ```

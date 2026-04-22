@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Minimal dummy worker for docker runtime validation.
+# Minimal host-native worker used for Gaia runtime validation.
 # This proves:
-#   - the container can start
-#   - /opt/little7 is mounted correctly
-#   - logs are emitted continuously for journald collection
+#   - Gaia can spawn a worker process
+#   - runtime environment variables are wired correctly
+#   - logs are emitted continuously for supervision tests
 
 import os
 import time

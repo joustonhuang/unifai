@@ -6,7 +6,7 @@ In the UnifAI architecture, the lifecycle of an autonomous agent is strictly gov
 
 This document outlines the blueprint for the **Cloud Access Model**, utilizing heavily fortified asynchronous Python patterns (`asyncio`) to physically restrict the agent's capabilities. By enforcing boundaries at the OS, network, and event-loop levels, we guarantee determinism and absolute scope control over execution contexts, effectively mirroring established fail-fast patterns like `StreamingToolExecutor` and `classifierDecision` within a Python runtime.
 
-**Design Principle**: All constraints are enforced through native Python `asyncio` primitives (`yield`, `TaskGroup`, `Event`). No artificial sandbox wrappers; only surgical structural cancellation at the OS and Event Loop boundary.
+**Design Principle**: All constraints are enforced through native Python `asyncio` primitives (`yield`, `TaskGroup`, `Event`). No artificial wrapper layer; only surgical structural cancellation at the OS and Event Loop boundary.
 
 ## 2. Configuration-Driven World Physics: WorldPhysicsConfig
 
@@ -192,7 +192,7 @@ async def classifier_decision_race(
 
 ## 5. Structural Execution & Fuel Monitoring: The Fuse System
 
-Once authorized, an agent's execution runs as native Python coroutines within a strictly bounded `asyncio.TaskGroup`. There is no intermediate "sandbox" wrapper; the Group itself provides structural guarantees.
+Once authorized, an agent's execution runs as native Python coroutines within a strictly bounded `asyncio.TaskGroup`. There is no intermediate wrapper layer; the Group itself provides structural guarantees.
 
 In parallel, UnifAI's resource monitor ("The Gauge") actively watches the burn rate. If `config.fuel_gauge_enabled == True` and the active token count exceeds `config.max_burn_tokens`, or if an anomaly is detected, the monitor signals an `asyncio.Event` (The Fuse). This trigger immediately cascades a cancellation down the entire `TaskGroup` tree via Python's built-in exception chaining. No orphaned sockets, memory leaks, or running child processes survive budget overflow.
 
@@ -210,7 +210,7 @@ async def execute_mode_runtime(
 ) -> list:
     """
     Executes a list of tool invocations under strict resource governance.
-    Native tool execution (no sandbox wrapper). Structural cancellation via TaskGroup.
+    Native tool execution (no intermediate wrapper). Structural cancellation via TaskGroup.
     
     Args:
         tools_to_run: List of (tool_name, args_dict) tuples
@@ -228,7 +228,7 @@ async def execute_mode_runtime(
         async with asyncio.TaskGroup() as tg:
             
             # Submit target tools directly. Each tool is a native coroutine.
-            # No intermediate sandbox wrapper; cancellation happens structurally.
+            # No intermediate wrapper layer; cancellation happens structurally.
             tool_tasks = [
                 tg.create_task(
                     execute_native_tool(tool, args), 

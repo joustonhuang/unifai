@@ -1,67 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "== Uninstall: Local LLM Runtime (LocalAI) =="
+echo "== Uninstall helper =="
 
-CONTAINER_NAME="${CONTAINER_NAME:-local-ai}"
-IMAGE_NAME="${IMAGE_NAME:-localai/localai:latest}"
-REMOVE_IMAGE=false
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ACTIVE_MODELS_FILE="${REPO_ROOT}/little7-installer/config/active_models.yml"
 
-usage() {
-  cat <<EOF
-Usage: $0 [-p|--purge]
+cat <<'EOF2'
+Bundled local runtime assets have been removed from this repository.
 
-Options:
-  -p, --purge     Remove Docker image as well
-  -h, --help      Show this help message
-EOF
-}
+There is no repository-managed runtime to uninstall anymore.
+If you previously installed external model runtimes or services, remove them
+using their own host-native service manager or package workflow.
+EOF2
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -p|--purge)
-      REMOVE_IMAGE=true
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "[ERROR] Unknown option: $1"
-      usage
-      exit 1
-      ;;
-  esac
-done
+# Offer to clean up the generated model config file.
+if [[ -f "${ACTIVE_MODELS_FILE}" ]]; then
+  echo ""
+  echo "Found active model config: ${ACTIVE_MODELS_FILE}"
 
-log() {
-  echo "[INFO] $*"
-}
-
-warn() {
-  echo "[WARN] $*" >&2
-}
-
-if sudo docker ps -a --format '{{.Names}}' | grep -Fxq "${CONTAINER_NAME}"; then
-  log "Stopping container: ${CONTAINER_NAME}"
-  sudo docker stop "${CONTAINER_NAME}" >/dev/null || true
-
-  log "Removing container: ${CONTAINER_NAME}"
-  sudo docker rm "${CONTAINER_NAME}" >/dev/null || true
-else
-  warn "Container not found: ${CONTAINER_NAME}"
-fi
-
-if [[ "${REMOVE_IMAGE}" == "true" ]]; then
-  if sudo docker images --format '{{.Repository}}:{{.Tag}}' | grep -Fxq "${IMAGE_NAME}"; then
-    log "Removing image: ${IMAGE_NAME}"
-    sudo docker image rm "${IMAGE_NAME}" >/dev/null || true
+  if [[ "${PURGE_MODELS:-0}" == "1" ]]; then
+    rm -f "${ACTIVE_MODELS_FILE}"
+    echo "[OK] Removed ${ACTIVE_MODELS_FILE}"
+  elif [[ -t 0 ]]; then
+    read -r -p "Remove it? [y/N] " answer
+    case "${answer}" in
+      y|Y|yes|YES)
+        rm -f "${ACTIVE_MODELS_FILE}"
+        echo "[OK] Removed ${ACTIVE_MODELS_FILE}"
+        ;;
+      *)
+        echo "[SKIP] Keeping ${ACTIVE_MODELS_FILE}"
+        ;;
+    esac
   else
-    warn "Image not found: ${IMAGE_NAME}"
+    echo "[INFO] Set PURGE_MODELS=1 to remove it non-interactively."
   fi
 else
-  log "Keeping image: ${IMAGE_NAME}"
+  echo ""
+  echo "[INFO] No active model config found at ${ACTIVE_MODELS_FILE} — nothing to clean up."
 fi
-
-log "LocalAI uninstall completed."

@@ -2,6 +2,8 @@
 
 This document freezes the Alpha baseline after PR #13 so future debugging, audit, and dogfood runs can trace the installed boundary set.
 
+Historical/deprecated note: this document preserves Alpha-era terms as historical record, even where later doctrine changed.
+
 ## 1. PR13 Infrastructure (The Foundation)
 
 - Stage 20: Deterministic Bootstrap (Pinning SecretVault hashes).
