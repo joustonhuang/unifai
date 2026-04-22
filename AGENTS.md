@@ -41,6 +41,28 @@ Agents must read the charter before implementing or modifying code related to:
 
 ## Architectural Constraints
 
+### Rule: No Sandbox Assumption
+
+UnifAI MUST NOT:
+
+- depend on sandbox, container, or VM isolation for safety
+- describe sandbox as a security boundary
+- imply containment equals protection
+
+Isolation is outside the system at the infrastructure layer only.
+
+Within UnifAI:
+- safety = governance
+- enforcement = Supervisor
+
+### AI Review Enforcement
+
+All automated reviewers and coding agents, including Codex and Claude, must flag any change that:
+
+- describes sandbox as protection
+- uses VM or container isolation as security justification for UnifAI itself
+- attributes system safety to containment instead of governance, audit, capability control, or Supervisor enforcement
+
 - UnifAI has three layers:
   - World Physics (enforcement mechanisms)
   - Constitution (governing law)

@@ -35,6 +35,22 @@ world physics
 
 The goal is to prevent uncontrolled agent behavior and build systems that remain **auditable, predictable, and controllable**.
 
+## Security Model Clarification
+
+UnifAI does not rely on sandboxing for security.
+
+Sandboxing does not prevent:
+
+- misuse of tools
+- data exfiltration
+- incorrect decisions
+
+Therefore, UnifAI enforces:
+
+- capability control through Keyman
+- audit and anomaly detection through Neo
+- final enforcement through Supervisor
+
 ---
 
 # UnifAI Constitution (v0.3)

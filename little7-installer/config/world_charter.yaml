@@ -36,6 +36,15 @@ authority_model:
   law: "Capability belongs to agents, but authority belongs to physics and constitution."
   constraint: "No agent may gain authority merely by being more capable."
 
+security_model:
+  no_sandbox_assumption: true
+  statement: "UnifAI does not depend on sandbox, container, or VM isolation for safety. Isolation belongs to infrastructure; safety inside UnifAI is governance and Supervisor enforcement."
+  enforcement:
+    - "Supervisor"
+    - "Keyman"
+    - "Neo"
+    - "Ledger system"
+
 principles:
   - id: "P001"
     name: "Human Sovereignty"
