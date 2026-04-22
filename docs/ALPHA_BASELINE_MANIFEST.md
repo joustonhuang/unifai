@@ -18,7 +18,7 @@ This document freezes the Alpha baseline after PR #13 so future debugging, audit
      (memory consolidation + context reset) → worker_dreamed log. The validation role
      was removed; governance enforcement moved entirely to world_physics layer.
 - Delivery Path: Structured incident signaling via Telegram.
-- MCP Interceptor Security Hardening: Active detection and blockage of governance-bypass parameters (dangerouslyBypassGovernance) inspired by prior agent-tool leak analysis.
+- MCP Interceptor Security Hardening: Active detection and blockage of sandbox bypass parameters (dangerouslyDisableSandbox) inspired by Claude Code leak analysis.
 
 ## 3. Committed Traceability
 
