@@ -14,7 +14,7 @@ on:
 
 env:
   # Pinned expected commit of supervisor-secretvault submodule (from lock file)
-  SECRETVAULT_EXPECTED_COMMIT: 6415c1ae2f1748fc4081544c3fb204b56edf7cd8
+  SECRETVAULT_EXPECTED_COMMIT: a5c0e6ff483c1bb7b814adbc03e748ed07c9dd3a
   SECRETVAULT_LOCK_FILE: little7-installer/config/supervisor-secretvault.lock
   SECRETVAULT_MODULE_PATH: supervisor/supervisor-secretvault
 
