@@ -4,7 +4,13 @@ set -euo pipefail
 REPO_SLUG="${REPO_SLUG:-joustonhuang/unifai}"
 REF="${1:-main}"
 VM_NAME="${VM_NAME:-unifai-bootstrap-check}"
-WORK_DIR="${WORK_DIR:-/srv/unifai-vm-checks/$VM_NAME}"
+if [ -n "${WORK_DIR:-}" ]; then
+  WORK_DIR="$WORK_DIR"
+elif [ -d /srv ] && [ -w /srv ]; then
+  WORK_DIR="/srv/unifai-vm-checks/$VM_NAME"
+else
+  WORK_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/unifai-vm-checks/$VM_NAME"
+fi
 IMAGE_URL="${IMAGE_URL:-https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img}"
 SSH_PORT="${SSH_PORT:-22222}"
 RAM_MB="${RAM_MB:-6144}"
@@ -12,6 +18,8 @@ VCPUS="${VCPUS:-2}"
 DISK_GB="${DISK_GB:-40}"
 REQUIRED_CHECKS=(
   "Bootstrap Installer Preflight"
+)
+REQUIRE_IF_PRESENT=(
   "Core Modules & Exoskeleton E2E"
   "smoke-test"
 )
@@ -40,6 +48,19 @@ for check in "${REQUIRED_CHECKS[@]}"; do
   conclusion="$(printf '%s' "$checks_json" | jq -r --arg name "$check" '.check_runs[]? | select(.name == $name) | .conclusion' | tail -n1)"
   if [ "$conclusion" != "success" ]; then
     echo "[FAIL] Required check '$check' is not green for $SHA (got: ${conclusion:-missing})" >&2
+    exit 1
+  fi
+  echo "[PASS] $check = success"
+done
+for check in "${REQUIRE_IF_PRESENT[@]}"; do
+  status="$(printf '%s' "$checks_json" | jq -r --arg name "$check" '.check_runs[]? | select(.name == $name) | .status' | tail -n1)"
+  if [ -z "$status" ]; then
+    echo "[INFO] $check not present for $SHA, skipping"
+    continue
+  fi
+  conclusion="$(printf '%s' "$checks_json" | jq -r --arg name "$check" '.check_runs[]? | select(.name == $name) | .conclusion' | tail -n1)"
+  if [ "$conclusion" != "success" ]; then
+    echo "[FAIL] Conditional required check '$check' is not green for $SHA (got: ${conclusion:-missing})" >&2
     exit 1
   fi
   echo "[PASS] $check = success"

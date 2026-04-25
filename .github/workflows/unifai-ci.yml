@@ -108,15 +108,9 @@ jobs:
 
           echo "📋 Expected tree SHA256: $EXPECTED_TREE_SHA"
 
-          # Calculate actual tree hash (deterministic)
+          # Calculate actual tracked-artifact hash from the pinned git tree
           ACTUAL_TREE_SHA=$(cd "${{ env.SECRETVAULT_MODULE_PATH }}" && \
-            tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
-              --exclude-vcs --exclude='./.git' --exclude='.git' \
-              --exclude='node_modules' \
-              --exclude='./.pytest_cache' --exclude='.pytest_cache' \
-              --exclude='./__pycache__' --exclude='__pycache__' --exclude='*.pyc' \
-              --exclude='./.venv' --exclude='.venv' \
-              -cf - . | sha256sum | awk '{print $1}')
+            git archive --format=tar HEAD | sha256sum | awk '{print $1}')
 
           echo "🔍 Actual tree SHA256:    $ACTUAL_TREE_SHA"
 
