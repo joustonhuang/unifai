@@ -14,7 +14,7 @@ on:
 
 env:
   # Pinned expected commit of supervisor-secretvault submodule (from lock file)
-  SECRETVAULT_EXPECTED_COMMIT: 6415c1ae2f1748fc4081544c3fb204b56edf7cd8
+  SECRETVAULT_EXPECTED_COMMIT: a5c0e6ff483c1bb7b814adbc03e748ed07c9dd3a
   SECRETVAULT_LOCK_FILE: little7-installer/config/supervisor-secretvault.lock
   SECRETVAULT_MODULE_PATH: supervisor/supervisor-secretvault
 
@@ -108,11 +108,9 @@ jobs:
 
           echo "📋 Expected tree SHA256: $EXPECTED_TREE_SHA"
 
-          # Calculate actual tree hash (deterministic)
+          # Calculate actual tracked-artifact hash from the pinned git tree
           ACTUAL_TREE_SHA=$(cd "${{ env.SECRETVAULT_MODULE_PATH }}" && \
-            tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
-              --exclude='.git' --exclude='node_modules' --exclude='.pytest_cache' \
-              -cf - . | sha256sum | awk '{print $1}')
+            git archive --format=tar HEAD | sha256sum | awk '{print $1}')
 
           echo "🔍 Actual tree SHA256:    $ACTUAL_TREE_SHA"
 

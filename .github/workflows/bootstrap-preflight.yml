@@ -1,0 +1,55 @@
+name: Bootstrap Installer Preflight
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - main
+      - master
+      - 'feat/**'
+      - 'claude/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bootstrap-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap-preflight:
+    name: Bootstrap Installer Preflight
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Enforce No Sandbox Doctrine
+        run: python scripts/check_no_sandbox_doctrine.py
+
+      - name: Enforce Runtime Baseline
+        run: python scripts/check_runtime_baseline.py
+
+      - name: Run bootstrap installer preflight
+        run: |
+          chmod +x scripts/bootstrap_installer_preflight.sh
+          ./scripts/bootstrap_installer_preflight.sh
+
+      - name: Upload bootstrap preflight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-preflight-report
+          path: ci-artifacts/bootstrap-preflight/
+          retention-days: 30

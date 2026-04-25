@@ -61,12 +61,7 @@ _verify_sv_artifact() {
   fi
 
   local actual
-  actual="$(tar --sort=name \
-               --mtime='UTC 1970-01-01' \
-               --owner=0 --group=0 --numeric-owner \
-               --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' \
-               --exclude='.pytest_cache' --exclude='.venv' \
-               -cf - -C "$sv_dir" . 2>/dev/null \
+  actual="$(git -C "$sv_dir" archive --format=tar HEAD 2>/dev/null \
     | sha256sum | awk '{print $1}')"
 
   if [ "$actual" = "$expected" ]; then
