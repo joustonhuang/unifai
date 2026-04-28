@@ -11,7 +11,7 @@ elif [ -d /srv ] && [ -w /srv ]; then
 else
   WORK_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/unifai-vm-checks/$VM_NAME"
 fi
-IMAGE_URL="${IMAGE_URL:-https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img}"
+IMAGE_URL="${IMAGE_URL:-https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img}"
 SSH_PORT="${SSH_PORT:-22222}"
 RAM_MB="${RAM_MB:-6144}"
 VCPUS="${VCPUS:-2}"
