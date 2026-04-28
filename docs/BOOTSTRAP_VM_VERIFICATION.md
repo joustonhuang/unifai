@@ -29,12 +29,14 @@ Purpose:
 
 ## Hard gate
 
-The VM verification script refuses to start unless the target commit has these GitHub checks green:
+The VM verification script refuses to start unless the target commit has this GitHub check green:
 - `Bootstrap Installer Preflight`
+
+It also requires these checks to be green if they exist for the target commit:
 - `Core Modules & Exoskeleton E2E`
 - `smoke-test`
 
-This prevents expensive VM runs on commits that are already known-bad.
+This prevents expensive VM runs on commits that are already known-bad while still allowing refs that do not emit every optional check.
 
 ## Required local tools for VM verification
 
@@ -59,6 +61,8 @@ Typical Debian/Ubuntu packages:
 
 ## Example
 
+Default target image is now Ubuntu 22.04 LTS (Jammy):
+
 ```bash
 bash scripts/vm/verify_bootstrap_in_vm.sh main
 ```
@@ -69,10 +73,18 @@ Or for a specific commit:
 bash scripts/vm/verify_bootstrap_in_vm.sh <commit-sha>
 ```
 
+Override the cloud image explicitly if needed:
+
+```bash
+IMAGE_URL=https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
+  bash scripts/vm/verify_bootstrap_in_vm.sh main
+```
+
 ## Output
 
 The verifier writes an evidence bundle under:
-- `/srv/unifai-vm-checks/unifai-bootstrap-check/`
+- `/srv/unifai-vm-checks/unifai-bootstrap-check/` when `/srv` is writable
+- otherwise `${XDG_CACHE_HOME:-$HOME/.cache}/unifai-vm-checks/unifai-bootstrap-check/`
 
 Expected artifacts include:
 - VM serial log
