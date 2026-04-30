@@ -16,6 +16,7 @@ SSH_PORT="${SSH_PORT:-22222}"
 RAM_MB="${RAM_MB:-6144}"
 VCPUS="${VCPUS:-2}"
 DISK_GB="${DISK_GB:-40}"
+QEMU_ACCEL="${QEMU_ACCEL:-auto}"
 REQUIRED_CHECKS=(
   "Bootstrap Installer Preflight"
 )
@@ -73,13 +74,39 @@ SSH_KEY="$WORK_DIR/id_ed25519"
 CLOUD_INIT_USER_DATA="$WORK_DIR/user-data"
 CLOUD_INIT_META_DATA="$WORK_DIR/meta-data"
 SERIAL_LOG="$WORK_DIR/serial.log"
+QEMU_LOG="$WORK_DIR/qemu.log"
 REPORT="$WORK_DIR/report.txt"
+
+resolve_qemu_accel() {
+  case "$QEMU_ACCEL" in
+    auto)
+      if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+        echo kvm
+      else
+        echo tcg
+      fi
+      ;;
+    kvm|tcg)
+      echo "$QEMU_ACCEL"
+      ;;
+    *)
+      echo "[FAIL] Unsupported QEMU_ACCEL: $QEMU_ACCEL (expected auto|kvm|tcg)" >&2
+      exit 1
+      ;;
+  esac
+}
+
+ACCEL_MODE="$(resolve_qemu_accel)"
+echo "QEMU accel mode: $ACCEL_MODE"
+if [ "$ACCEL_MODE" = "tcg" ]; then
+  echo "[INFO] /dev/kvm is not accessible; falling back to software emulation (slower)."
+fi
 
 if [ ! -f "$BASE_IMG" ]; then
   curl -L "$IMAGE_URL" -o "$BASE_IMG"
 fi
 
-rm -f "$VM_IMG" "$SEED_ISO" "$SERIAL_LOG" "$REPORT"
+rm -f "$VM_IMG" "$SEED_ISO" "$SERIAL_LOG" "$QEMU_LOG" "$REPORT"
 qemu-img create -f qcow2 -b "$BASE_IMG" -F qcow2 "$VM_IMG" "${DISK_GB}G" >/dev/null
 
 if [ ! -f "$SSH_KEY" ]; then
@@ -123,23 +150,36 @@ cleanup() {
 }
 trap cleanup EXIT
 
+QEMU_ARGS=(
+  -m "$RAM_MB"
+  -smp "$VCPUS"
+  -name "$VM_NAME"
+  -nographic
+  -serial "file:$SERIAL_LOG"
+  -drive "file=$VM_IMG,if=virtio"
+  -drive "file=$SEED_ISO,if=virtio,media=cdrom"
+  -netdev "user,id=net0,hostfwd=tcp::${SSH_PORT}-:22"
+  -device virtio-net-pci,netdev=net0
+)
+
+if [ "$ACCEL_MODE" = "kvm" ]; then
+  QEMU_ARGS=(-enable-kvm -cpu host "${QEMU_ARGS[@]}")
+else
+  QEMU_ARGS=(-accel tcg,thread=multi -cpu max "${QEMU_ARGS[@]}")
+fi
+
 qemu-system-x86_64 \
-  -enable-kvm \
-  -m "$RAM_MB" \
-  -smp "$VCPUS" \
-  -cpu host \
-  -name "$VM_NAME" \
-  -nographic \
-  -serial file:"$SERIAL_LOG" \
-  -drive file="$VM_IMG",if=virtio \
-  -drive file="$SEED_ISO",if=virtio,media=cdrom \
-  -netdev user,id=net0,hostfwd=tcp::${SSH_PORT}-:22 \
-  -device virtio-net-pci,netdev=net0 >/dev/null 2>&1 &
+  "${QEMU_ARGS[@]}" \
+  >"$QEMU_LOG" 2>&1 &
 QEMU_PID=$!
 
 echo "Started VM PID $QEMU_PID, waiting for SSH..."
 SSH_READY=0
 for _ in $(seq 1 90); do
+  if ! kill -0 "$QEMU_PID" 2>/dev/null; then
+    echo "[FAIL] QEMU exited before SSH became ready; see $QEMU_LOG and $SERIAL_LOG" >&2
+    exit 1
+  fi
   if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'echo ssh-ready' >/dev/null 2>&1; then
     echo "[PASS] SSH is ready"
     SSH_READY=1
@@ -149,9 +189,18 @@ for _ in $(seq 1 90); do
 done
 
 if [ "$SSH_READY" -ne 1 ]; then
-  echo "[FAIL] SSH never became ready; see $SERIAL_LOG" >&2
+  echo "[FAIL] SSH never became ready; see $QEMU_LOG and $SERIAL_LOG" >&2
   exit 1
 fi
+
+echo "Waiting for cloud-init to finish before starting installer..."
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 '
+  if command -v cloud-init >/dev/null 2>&1; then
+    sudo cloud-init status --wait
+  else
+    echo "[INFO] cloud-init not present; skipping wait"
+  fi
+'
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 "git clone https://github.com/$REPO_SLUG.git ~/unifai && cd ~/unifai && git checkout $SHA && sudo bash installer.sh" | tee "$WORK_DIR/installer-output.log"
 
