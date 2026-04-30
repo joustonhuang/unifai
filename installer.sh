@@ -59,6 +59,21 @@ check_os() {
     log_success "OS Check: $(lsb_release -ds)"
 }
 
+ensure_nodejs() {
+    if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+        log_success "Node.js already present: $(node --version) / npm $(npm --version)"
+        return 0
+    fi
+
+    log_info "Installing Node.js v${NODE_VERSION} prerequisite..."
+    curl -fsSL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash -
+    apt-get install -y nodejs
+
+    command -v node >/dev/null 2>&1 || log_error "Node.js install failed"
+    command -v npm >/dev/null 2>&1 || log_error "npm install failed"
+    log_success "Node.js prerequisite installed: $(node --version) / npm $(npm --version)"
+}
+
 ##############################################################################
 # PHASE 0: System Dependencies
 ##############################################################################
@@ -78,6 +93,8 @@ phase_0_system_deps() {
         software-properties-common \
         systemd \
         openssh-server
+
+    ensure_nodejs
 
     log_success "Phase 0: System dependencies installed"
 }
@@ -257,12 +274,7 @@ EOF
 phase_5_openclaw() {
     log_info "=== PHASE 5: OpenClaw Native Installation ==="
 
-    # Install Node.js if not present
-    if ! command -v node &> /dev/null; then
-        log_info "Installing Node.js v${NODE_VERSION}..."
-        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
-        apt-get install -y nodejs
-    fi
+    ensure_nodejs
 
     mkdir -p "${INSTALL_PREFIX}/openclaw"
     cd "${INSTALL_PREFIX}/openclaw"
