@@ -24,6 +24,7 @@ Script:
 Purpose:
 - boot a fresh VM
 - clone the target commit from GitHub
+- wait for first-boot cloud-init package activity to settle
 - run `sudo bash installer.sh`
 - capture service status and basic endpoint evidence
 
@@ -50,6 +51,12 @@ The local VM verifier expects:
 - `ssh`
 - `ssh-keygen`
 - `timeout`
+
+Acceleration behavior:
+- default is `QEMU_ACCEL=auto`
+- uses KVM when `/dev/kvm` is accessible
+- falls back to software emulation (`tcg`) when KVM is unavailable on the host
+- writes QEMU stderr/stdout to `qemu.log` so early boot failures are inspectable
 
 Typical Debian/Ubuntu packages:
 - `qemu-system-x86`
