@@ -25,7 +25,7 @@ Purpose:
 - boot a fresh VM
 - clone the target commit from GitHub
 - run `sudo bash installer.sh`
-- capture service status and basic endpoint evidence
+- capture service status, OpenClaw runtime evidence, and secret-handling smoke evidence
 
 ## Hard gate
 
@@ -91,6 +91,8 @@ Expected artifacts include:
 - installer stdout/stderr capture
 - service status report
 - basic endpoint probe output
+- OpenClaw socket / HTTP probe output
+- secret leakage smoke-test result from inside the VM
 
 ## Intent
 
@@ -98,3 +100,4 @@ This is not final installer architecture.
 It is the validation scaffold for the current bootstrap PoC:
 - CI catches obvious regressions early
 - a real VM tells us whether the bootstrap actually boots the stack
+- the verifier now also checks that OpenClaw reaches a live runtime state and that the in-VM secret leakage smoke test still passes
