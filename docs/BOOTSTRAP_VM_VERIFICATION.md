@@ -101,3 +101,4 @@ It is the validation scaffold for the current bootstrap PoC:
 - CI catches obvious regressions early
 - a real VM tells us whether the bootstrap actually boots the stack
 - the verifier now also checks that OpenClaw reaches a live runtime state and that the in-VM secret leakage smoke test still passes
+- CI now also carries a red-path smoke check proving the verifier fails closed when a verification failure is forced

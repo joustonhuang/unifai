@@ -157,10 +157,12 @@ fi
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 "git clone https://github.com/$REPO_SLUG.git ~/unifai && cd ~/unifai && git checkout $SHA && sudo bash installer.sh" | tee "$WORK_DIR/installer-output.log"
 
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'bash -s' <<'EOF'
-set -e
+REMOTE_VERIFY_STATUS=0
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'bash -s' <<'EOF' || REMOTE_VERIFY_STATUS=$?
+set -euo pipefail
 OPENCLAW_PORT="${OPENCLAW_PORT:-3000}"
 SUPERVISOR_PORT="${SUPERVISOR_PORT:-5000}"
+VM_REPORT="${VM_REPORT:-$HOME/vm-bootstrap-report.txt}"
 FAILURES=0
 
 mark_fail() {
@@ -244,20 +246,30 @@ fi
   echo
   echo "== secret leakage smoke =="
   cd ~/unifai
-  if python3 scripts/smoke_test_secret_leakage.py; then
+  if [ "${UNIFAI_VM_VERIFY_FORCE_SECRET_SMOKE_FAIL:-0}" = "1" ]; then
+    mark_fail "Secret leakage smoke forced to fail for verifier red-path validation"
+  elif python3 scripts/smoke_test_secret_leakage.py; then
     echo "[PASS] Secret leakage smoke succeeded inside VM"
   else
     mark_fail "Secret leakage smoke failed inside VM"
   fi
-  echo
-  if [ "$FAILURES" -ne 0 ]; then
-    echo "[FAIL] VM verification found ${FAILURES} failing checks"
-    exit 1
-  fi
-  echo "[PASS] VM verification checks passed"
-} | tee ~/vm-bootstrap-report.txt
+} > "$VM_REPORT" 2>&1
+
+cat "$VM_REPORT"
+
+if [ "$FAILURES" -ne 0 ]; then
+  echo "[FAIL] VM verification found ${FAILURES} failing checks"
+  exit 1
+fi
+
+echo "[PASS] VM verification checks passed"
 EOF
 
-scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null || true
+
+if [ "$REMOTE_VERIFY_STATUS" -ne 0 ]; then
+  echo "[FAIL] VM verification failed; evidence bundle: $WORK_DIR" >&2
+  exit "$REMOTE_VERIFY_STATUS"
+fi
 
 echo "VM verification complete. Evidence bundle: $WORK_DIR"
