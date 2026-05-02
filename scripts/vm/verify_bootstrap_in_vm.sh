@@ -16,6 +16,8 @@ SSH_PORT="${SSH_PORT:-22222}"
 RAM_MB="${RAM_MB:-6144}"
 VCPUS="${VCPUS:-2}"
 DISK_GB="${DISK_GB:-40}"
+SUPERVISOR_PORT="${SUPERVISOR_PORT:-5000}"
+OPENCLAW_PORT="${OPENCLAW_PORT:-3000}"
 REQUIRED_CHECKS=(
   "Bootstrap Installer Preflight"
 )
@@ -155,8 +157,57 @@ fi
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 "git clone https://github.com/$REPO_SLUG.git ~/unifai && cd ~/unifai && git checkout $SHA && sudo bash installer.sh" | tee "$WORK_DIR/installer-output.log"
 
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'bash -s' <<'EOF'
-set -e
+REMOTE_VERIFY_STATUS=0
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'bash -s' <<'EOF' || REMOTE_VERIFY_STATUS=$?
+set -euo pipefail
+OPENCLAW_PORT="${OPENCLAW_PORT:-3000}"
+SUPERVISOR_PORT="${SUPERVISOR_PORT:-5000}"
+VM_REPORT="${VM_REPORT:-$HOME/vm-bootstrap-report.txt}"
+FAILURES=0
+
+mark_fail() {
+  echo "[FAIL] $1"
+  FAILURES=$((FAILURES + 1))
+}
+
+wait_for_service_active() {
+  local service="$1"
+  local retries="${2:-12}"
+  local sleep_seconds="${3:-5}"
+  for _ in $(seq 1 "$retries"); do
+    if sudo systemctl is-active --quiet "$service"; then
+      return 0
+    fi
+    sleep "$sleep_seconds"
+  done
+  return 1
+}
+
+wait_for_tcp_listener() {
+  local port="$1"
+  local retries="${2:-12}"
+  local sleep_seconds="${3:-5}"
+  for _ in $(seq 1 "$retries"); do
+    if ss -lnt | awk '{print $4}' | grep -Eq "(^|:)${port}$"; then
+      return 0
+    fi
+    sleep "$sleep_seconds"
+  done
+  return 1
+}
+
+if wait_for_service_active unifai-openclaw 18 5; then
+  echo "[PASS] unifai-openclaw reached active state"
+else
+  mark_fail "unifai-openclaw never reached active state after installer run"
+fi
+
+if wait_for_tcp_listener "$OPENCLAW_PORT" 18 5; then
+  echo "[PASS] OpenClaw port ${OPENCLAW_PORT} is listening"
+else
+  mark_fail "OpenClaw port ${OPENCLAW_PORT} never opened"
+fi
+
 {
   echo "== systemd service status =="
   sudo systemctl status unifai-secretvault --no-pager || true
@@ -169,15 +220,56 @@ set -e
     if sudo systemctl is-active --quiet "$svc"; then
       echo "[PASS] $svc active"
     else
-      echo "[FAIL] $svc inactive"
+      mark_fail "$svc inactive"
     fi
   done
   echo
   echo "== endpoint probe =="
-  curl -fsS http://127.0.0.1:5000/health || echo "Supervisor health probe unavailable"
-} | tee ~/vm-bootstrap-report.txt
+  if curl -fsS "http://127.0.0.1:${SUPERVISOR_PORT}/health"; then
+    echo
+    echo "[PASS] Supervisor health probe responded"
+  else
+    mark_fail "Supervisor health probe unavailable on port ${SUPERVISOR_PORT}"
+  fi
+  if curl -fsS -o /tmp/openclaw-home.html "http://127.0.0.1:${OPENCLAW_PORT}/"; then
+    echo "[PASS] OpenClaw HTTP probe responded on port ${OPENCLAW_PORT}"
+    head -n 20 /tmp/openclaw-home.html || true
+  else
+    mark_fail "OpenClaw HTTP probe unavailable on port ${OPENCLAW_PORT}"
+  fi
+  echo
+  echo "== socket evidence =="
+  ss -lntp | grep -E ":(${SUPERVISOR_PORT}|${OPENCLAW_PORT})\\b" || true
+  echo
+  echo "== openclaw logs (last 5 minutes) =="
+  sudo journalctl -u unifai-openclaw --since "5 minutes ago" --no-pager || true
+  echo
+  echo "== secret leakage smoke =="
+  cd ~/unifai
+  if [ "${UNIFAI_VM_VERIFY_FORCE_SECRET_SMOKE_FAIL:-0}" = "1" ]; then
+    mark_fail "Secret leakage smoke forced to fail for verifier red-path validation"
+  elif python3 scripts/smoke_test_secret_leakage.py; then
+    echo "[PASS] Secret leakage smoke succeeded inside VM"
+  else
+    mark_fail "Secret leakage smoke failed inside VM"
+  fi
+} > "$VM_REPORT" 2>&1
+
+cat "$VM_REPORT"
+
+if [ "$FAILURES" -ne 0 ]; then
+  echo "[FAIL] VM verification found ${FAILURES} failing checks"
+  exit 1
+fi
+
+echo "[PASS] VM verification checks passed"
 EOF
 
-scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null || true
+
+if [ "$REMOTE_VERIFY_STATUS" -ne 0 ]; then
+  echo "[FAIL] VM verification failed; evidence bundle: $WORK_DIR" >&2
+  exit "$REMOTE_VERIFY_STATUS"
+fi
 
 echo "VM verification complete. Evidence bundle: $WORK_DIR"
