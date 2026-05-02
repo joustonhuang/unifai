@@ -209,7 +209,8 @@ Oracle uses advanced reasoning continuously in order to:
 
 Selected JohnDoe agents may request advanced reasoning through Oracle.
 
-Escalation proceeds through a governed path and may involve Keyman, Bill, and Supervisor before external reasoning is reached.
+Escalation proceeds through a governed path in this order: Bill first, then Keyman, then Supervisor, before external reasoning is reached.
+Bill must gate budget, token, and compute availability before Keyman validates secret scope so exhausted resources stop the escalation before any secret grant is approved.
 Oracle receives the governed result and returns to orchestration.
 
 Important constraints:
