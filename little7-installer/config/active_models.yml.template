@@ -1,14 +1,26 @@
 version: "0.1"
 
 models:
-  system_services:
+  memory_search:
     runtime: "external"
-    model_id: ""
-    role: "system_services"
-    mcp_enabled: false
-
-  local_reasoning:
-    runtime: "external"
-    model_id: ""
+    model_id: "gemma-4-e4b"
     role: "local_reasoning"
+    mcp_enabled: true
+
+  johndoe_default:
+    runtime: "external"
+    model_id: "gemma-4-e4b"
+    role: "local_reasoning"
+    mcp_enabled: true
+
+  oracle_reasoning:
+    runtime: "external"
+    model_id: "google/gemini-2.5-flash-preview-04-17"
+    role: "system_services"
+    mcp_enabled: true
+
+  johndoe_complex:
+    runtime: "external"
+    model_id: "google/gemini-2.5-flash-preview-04-17"
+    role: "system_services"
     mcp_enabled: true
