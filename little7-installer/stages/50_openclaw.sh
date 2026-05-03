@@ -62,15 +62,22 @@ if [ ! -f "${OPENCLAW_CONFIG}" ]; then
 // Active provider is detected at startup by openclaw-start (openai-oauth first, codex-oauth fallback).
 {
   models: {
-    providers: {
-      openai: {
-        // apiKey is intentionally absent — injected via OPENAI_API_KEY env var
-        // baseURL is intentionally absent — injected via OPENAI_BASE_URL env var (Bill Proxy)
+    providers: [
+      {
+        name: "lmstudio",
+        type: "openai_compatible",
+        base_url: "${LMSTUDIO_BASE_URL}",
+        api_key: "${LMSTUDIO_API_KEY}",
+        models: ["gemma-4-e4b"],
       },
-      // Future providers (keys injected at runtime when seeded):
-      // anthropic: {},   // Claude — seed via: node cli.js seed --alias codex-oauth
-      // google: {},      // Gemini — future
-    },
+      {
+        name: "vertex",
+        type: "openai_compatible",
+        base_url: "${VERTEX_BASE_URL}",
+        api_key: "${VERTEX_API_KEY}",
+        models: ["google/gemini-2.5-flash-preview-04-17"],
+      },
+    ],
     default: "codex-mini-latest",   // OpenAI Codex — Alpha Phase default
   },
   channels: {
@@ -177,6 +184,28 @@ if [ ! -f "$GRANT_PATH" ]; then
 fi
 
 BILL_PROXY_PORT="${BILL_PROXY_PORT:-7701}"
+
+# ── LM Studio (low-tier, gemma-4-e4b) ────────────────────────────
+export LMSTUDIO_BASE_URL="${LMSTUDIO_BASE_URL:-http://localhost:1234/v1}"
+export LMSTUDIO_API_KEY="${LMSTUDIO_API_KEY:-lm-studio}"
+echo "[openclaw] LM Studio provider: ${LMSTUDIO_BASE_URL}"
+
+# ── Vertex AI / Gemini 2.5 Flash (high-tier) ─────────────────────
+if [ -z "${GCP_PROJECT:-}" ] || [ -z "${GCP_LOCATION:-}" ]; then
+  echo "[openclaw] WARNING: GCP_PROJECT or GCP_LOCATION not set — Vertex AI disabled"
+else
+  export VERTEX_BASE_URL="https://${GCP_LOCATION}-aiplatform.googleapis.com/v1beta1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/endpoints/openapi"
+  if ! command -v gcloud >/dev/null 2>&1; then
+    echo "[openclaw] WARNING: gcloud not found — Vertex AI disabled"
+  elif [ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] && [ -f "${GOOGLE_APPLICATION_CREDENTIALS}" ]; then
+    gcloud auth activate-service-account \
+      --key-file="${GOOGLE_APPLICATION_CREDENTIALS}" --quiet 2>/dev/null
+    export VERTEX_API_KEY="$(gcloud auth print-access-token 2>/dev/null)"
+    echo "[openclaw] Vertex AI configured (${GCP_PROJECT} / ${GCP_LOCATION})"
+  else
+    echo "[openclaw] WARNING: GOOGLE_APPLICATION_CREDENTIALS missing — Vertex AI disabled"
+  fi
+fi
 
 echo "[openclaw-start] Injecting $ACTIVE_PROVIDER credentials. Starting OpenClaw..."
 

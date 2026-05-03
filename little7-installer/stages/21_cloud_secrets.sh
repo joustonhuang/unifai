@@ -145,6 +145,36 @@ fi
 FINGERPRINT="$(echo "$SEED_RESULT" | \
   python3 -c "import sys,json; print(json.load(sys.stdin)['aliasFingerprint'])")"
 
+# ---------------------------------------------------------------------------
+# 6. Optional Vertex AI OAuth seeding
+# ---------------------------------------------------------------------------
+if command -v gcloud >/dev/null 2>&1 && [ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ] && [ -f "${GOOGLE_APPLICATION_CREDENTIALS}" ]; then
+  gcloud auth activate-service-account \
+    --key-file="${GOOGLE_APPLICATION_CREDENTIALS}" --quiet
+  VERTEX_INITIAL_TOKEN="$(gcloud auth print-access-token 2>/dev/null)"
+  if [ -n "${VERTEX_INITIAL_TOKEN}" ]; then
+    VERTEX_SEED_RESULT="$(SECRETVAULT_MASTER_KEY="$MASTER_KEY" node "$SV_CLI" seed \
+      --alias vertex-oauth \
+      --value "$VERTEX_INITIAL_TOKEN" \
+      --label "vertex-ai-oauth-token" 2>&1)"
+    if echo "$VERTEX_SEED_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('ok') else 1)" 2>/dev/null; then
+      KEYPATH_SEED_RESULT="$(SECRETVAULT_MASTER_KEY="$MASTER_KEY" node "$SV_CLI" seed \
+        --alias vertex-sa-key-path \
+        --value "$GOOGLE_APPLICATION_CREDENTIALS" \
+        --label "vertex-ai-service-account-key-path" 2>&1)"
+      if echo "$KEYPATH_SEED_RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('ok') else 1)" 2>/dev/null; then
+        echo "[stage-21] vertex-oauth seeded in SecretVault"
+      else
+        warn "vertex-sa-key-path seeding failed: $KEYPATH_SEED_RESULT"
+      fi
+    else
+      warn "vertex-oauth seeding failed: $VERTEX_SEED_RESULT"
+    fi
+  fi
+else
+  echo "[stage-21] GOOGLE_APPLICATION_CREDENTIALS not set — skipping vertex-oauth"
+fi
+
 echo ""
 ok "Secret seeded successfully."
 echo "     alias:              $PROVIDER"
