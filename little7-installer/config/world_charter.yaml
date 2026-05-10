@@ -525,6 +525,7 @@ event_flow:
   governed_escalation:
     notes:
       - "All escalation must be logged end-to-end with shared trace_id."
+      - "Bill must gate budget, token, and compute availability before Keyman validates secret scope."
     steps:
       - step: 1
         actor: "JohnDoe"
@@ -533,11 +534,11 @@ event_flow:
         actor: "Oracle"
         action: "Prepare escalation"
       - step: 3
-        actor: "Keyman"
-        action: "Validate secret scope if needed"
-      - step: 4
         actor: "Bill"
         action: "Evaluate budget and token allowance"
+      - step: 4
+        actor: "Keyman"
+        action: "Validate secret scope if needed"
       - step: 5
         actor: "Supervisor"
         action: "Enforce boundary and perform external call"

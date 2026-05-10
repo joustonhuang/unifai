@@ -60,6 +60,14 @@ try:
 except ImportError:
     from security.secret_injector import ephemeral_env
 
+try:
+    from supervisor.plugins.keyman_guardian.keyman_auth_cli import KeymanGuardian
+except ImportError:
+    try:
+        from plugins.keyman_guardian.keyman_auth_cli import KeymanGuardian
+    except ImportError:
+        KeymanGuardian = None
+
 BUILD_ID = "dev-20260305-1427"
 DB = os.path.expanduser("~/supervisor/data/supervisor.db")
 LOG = os.path.expanduser("~/supervisor/logs/supervisor.log")
@@ -358,6 +366,7 @@ class SupervisorRuntime:
         neo_pipeline=None,
         bill_gate=None,
         provider_adapter=None,
+        keyman_authorizer=None,
     ):
         self.neo = neo_guardian
         self.session_vault = session_vault if session_vault is not None else SessionVault()
@@ -369,6 +378,7 @@ class SupervisorRuntime:
         self.bill_gate = bill_gate if bill_gate is not None else BillGate(BudgetConfig(max_tokens=100000, max_usd=5.0))
         self.provider_adapter = provider_adapter if provider_adapter is not None else MockProvider()
         self.governance_engine = GovernancePolicyEngine()
+        self.keyman_authorizer = keyman_authorizer if keyman_authorizer is not None else (KeymanGuardian() if KeymanGuardian else None)
 
     def trip_agent(self, task_id: int | str, reason: str, grace_seconds: int = 2) -> dict:
         """Expose process kill path for Neo-triggered immediate containment."""
@@ -430,6 +440,87 @@ class SupervisorRuntime:
             return max(0, len(stdout + stderr) // 4)
 
         return 0
+
+    def _resolve_secret_requester(self, mounted_spec: dict) -> str:
+        raw_requester = (
+            mounted_spec.get("agent")
+            or mounted_spec.get("requester")
+            or mounted_spec.get("actor")
+            or "oracle"
+        )
+        normalized = str(raw_requester).strip().lower()
+        return normalized or "oracle"
+
+    def _build_keyman_request(self, task_id: int | str, mounted_spec: dict) -> dict | None:
+        explicit_request = mounted_spec.get("keyman_request")
+        if explicit_request is not None:
+            if not isinstance(explicit_request, dict):
+                raise RuntimeError("keyman_request must be a dictionary")
+            request = dict(explicit_request)
+        else:
+            provider_secrets = mounted_spec.get("provider_secrets", {})
+            if provider_secrets is None:
+                provider_secrets = {}
+            if not isinstance(provider_secrets, dict):
+                raise RuntimeError("provider_secrets must be a dictionary")
+            if not provider_secrets:
+                return None
+
+            secret_scope = mounted_spec.get("secret_scope") or mounted_spec.get("secret_alias")
+            if not secret_scope:
+                raise RuntimeError(
+                    "provider_secrets require secret_scope so Bill can gate before Keyman validates scope"
+                )
+
+            request = {
+                "requester": self._resolve_secret_requester(mounted_spec),
+                "secret_alias": secret_scope,
+                "scope": mounted_spec.get("scope") or secret_scope,
+                "ttl_seconds": mounted_spec.get("ttl_seconds", 300),
+                "trace_id": mounted_spec.get("trace_id") or f"task-{task_id}",
+                "request_id": mounted_spec.get("trace_id") or f"task-{task_id}",
+            }
+
+        if not request.get("requester"):
+            request["requester"] = self._resolve_secret_requester(mounted_spec)
+        if not request.get("trace_id"):
+            request["trace_id"] = mounted_spec.get("trace_id") or f"task-{task_id}"
+        if not request.get("request_id"):
+            request["request_id"] = request["trace_id"]
+        if not request.get("scope"):
+            request["scope"] = request.get("secret_alias") or request.get("alias")
+        return request
+
+    def _validate_secret_scope(self, task_id: int | str, mounted_spec: dict) -> None:
+        request = self._build_keyman_request(task_id, mounted_spec)
+        if request is None:
+            return
+
+        missing_conditions = self.governance_engine.get_missing_keyman_conditions(request)
+        if missing_conditions:
+            raise RuntimeError(
+                "KEYMAN_SCOPE_VALIDATION_FAILED: "
+                f"missing preconditions {missing_conditions}"
+            )
+
+        if self.keyman_authorizer is not None:
+            decision = self.keyman_authorizer.evaluate_capability_request(request)
+            if not decision.get("approved") or decision.get("decision") != "issue_grant":
+                raise RuntimeError(
+                    "KEYMAN_SCOPE_VALIDATION_FAILED: "
+                    f"{decision.get('reason', 'scope denied')}"
+                )
+            log(
+                "keyman_scope action=approved "
+                f"task_id={task_id} requester={request.get('requester')} "
+                f"scope={request.get('secret_alias') or request.get('scope')}"
+            )
+        else:
+            log(
+                "keyman_scope action=validated_preconditions_only "
+                f"task_id={task_id} requester={request.get('requester')} "
+                f"scope={request.get('secret_alias') or request.get('scope')}"
+            )
 
     def _emit_tool_ledger(
         self,
@@ -667,6 +758,8 @@ class SupervisorRuntime:
                         provider_secrets = {}
                     if not isinstance(provider_secrets, dict):
                         raise RuntimeError("provider_secrets must be a dictionary")
+
+                    self._validate_secret_scope(task_id, mounted_spec)
 
                     provider = self.provider_adapter if isinstance(self.provider_adapter, ProviderAdapter) else MockProvider()
                     output_parts = []

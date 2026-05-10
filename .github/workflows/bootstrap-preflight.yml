@@ -46,6 +46,11 @@ jobs:
           chmod +x scripts/bootstrap_installer_preflight.sh
           ./scripts/bootstrap_installer_preflight.sh
 
+      - name: Run VM verifier red-path smoke test
+        run: |
+          chmod +x scripts/smoke_test_vm_verifier_red_path.sh
+          ./scripts/smoke_test_vm_verifier_red_path.sh
+
       - name: Upload bootstrap preflight report
         if: always()
         uses: actions/upload-artifact@v4

@@ -26,7 +26,7 @@ Purpose:
 - clone the target commit from GitHub
 - wait for first-boot cloud-init package activity to settle
 - run `sudo bash installer.sh`
-- capture service status and basic endpoint evidence
+- capture service status, OpenClaw runtime evidence, and secret-handling smoke evidence
 
 ## Hard gate
 
@@ -57,6 +57,10 @@ Acceleration behavior:
 - uses KVM when `/dev/kvm` is accessible
 - falls back to software emulation (`tcg`) when KVM is unavailable on the host
 - writes QEMU stderr/stdout to `qemu.log` so early boot failures are inspectable
+
+Cloud-init settle behavior:
+- waits for first-boot cloud-init completion before running the installer
+- bounded by `CLOUD_INIT_TIMEOUT_SECONDS` (default `600`) so hangs fail closed instead of stalling forever
 
 Typical Debian/Ubuntu packages:
 - `qemu-system-x86`
@@ -98,6 +102,8 @@ Expected artifacts include:
 - installer stdout/stderr capture
 - service status report
 - basic endpoint probe output
+- OpenClaw socket / HTTP probe output
+- secret leakage smoke-test result from inside the VM
 
 ## Intent
 
@@ -105,3 +111,5 @@ This is not final installer architecture.
 It is the validation scaffold for the current bootstrap PoC:
 - CI catches obvious regressions early
 - a real VM tells us whether the bootstrap actually boots the stack
+- the verifier now also checks that OpenClaw reaches a live runtime state and that the in-VM secret leakage smoke test still passes
+- CI now also carries a red-path smoke check proving the verifier fails closed when a verification failure is forced

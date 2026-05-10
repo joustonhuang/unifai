@@ -148,8 +148,10 @@ If a governed rollback returns work from Cleared or Agile back to the Uncleared 
 ## Governed Escalation Flow
 
 ```
-JohnDoe → Oracle → Keyman (secret scope) → Bill (budget) → Supervisor → External LLM → Supervisor → Oracle
+JohnDoe → Oracle → Bill (budget) → Keyman (secret scope) → Supervisor → External LLM → Supervisor → Oracle
 ```
+
+Bill must gate budget, token, and compute availability before Keyman validates secret scope. If Bill denies, the escalation stops before any secret grant can be approved.
 
 All escalation steps must share a trace_id and be fully logged.
 
