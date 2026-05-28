@@ -24,6 +24,7 @@ Script:
 Purpose:
 - boot a fresh VM
 - clone the target commit from GitHub
+- wait for first-boot cloud-init package activity to settle
 - run `sudo bash installer.sh`
 - capture service status, OpenClaw runtime evidence, and secret-handling smoke evidence
 
@@ -50,6 +51,16 @@ The local VM verifier expects:
 - `ssh`
 - `ssh-keygen`
 - `timeout`
+
+Acceleration behavior:
+- default is `QEMU_ACCEL=auto`
+- uses KVM when `/dev/kvm` is accessible
+- falls back to software emulation (`tcg`) when KVM is unavailable on the host
+- writes QEMU stderr/stdout to `qemu.log` so early boot failures are inspectable
+
+Cloud-init settle behavior:
+- waits for first-boot cloud-init completion before running the installer
+- bounded by `CLOUD_INIT_TIMEOUT_SECONDS` (default `600`) so hangs fail closed instead of stalling forever
 
 Typical Debian/Ubuntu packages:
 - `qemu-system-x86`
