@@ -66,6 +66,10 @@ done
 
 require_grep 'curl -fsSL https://openclaw.ai/install.sh \| bash' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
 pass "Stage 50 uses official OpenClaw installer"
+require_grep 'openclaw\.json' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
+pass "Stage 50 writes the canonical OpenClaw config path"
+require_grep 'mode:\s*"local"' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
+pass "Stage 50 enables gateway.mode=local"
 
 cat <<'EOF'
 
