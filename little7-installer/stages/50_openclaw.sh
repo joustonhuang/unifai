@@ -51,27 +51,40 @@ fi
 # -----------------------------------------------------------------------
 echo "[2/4] Creating OpenClaw config skeleton..."
 mkdir -p "${OPENCLAW_CONFIG_DIR}"
+chmod 700 "${OPENCLAW_CONFIG_DIR}"
 
 # Config file: API key is NOT written here.
-# It is injected at runtime via ANTHROPIC_API_KEY env var from SecretVault.
-OPENCLAW_CONFIG="${OPENCLAW_CONFIG_DIR}/openclaw.json5"
+# It is injected at runtime via OPENAI_API_KEY / ANTHROPIC_API_KEY env vars from SecretVault.
+# OpenClaw expects JSON5 content at ~/.openclaw/openclaw.json (not .json5).
+OPENCLAW_CONFIG="${OPENCLAW_CONFIG_DIR}/openclaw.json"
 if [ ! -f "${OPENCLAW_CONFIG}" ]; then
   cat > "${OPENCLAW_CONFIG}" <<'EOF'
 // UnifAI-governed OpenClaw configuration
 // API keys are NOT stored here — they are injected at runtime via World Physics SecretVault.
 // Active provider is detected at startup by openclaw-start (openai-oauth first, codex-oauth fallback).
 {
+  gateway: {
+    mode: "local",
+  },
+  agents: {
+    defaults: {
+      workspace: "~/.openclaw/workspace",
+    },
+  },
   models: {
     providers: {
       openai: {
         // apiKey is intentionally absent — injected via OPENAI_API_KEY env var
         // baseURL is intentionally absent — injected via OPENAI_BASE_URL env var (Bill Proxy)
       },
+      anthropic: {
+        // apiKey is intentionally absent — injected via ANTHROPIC_API_KEY env var
+        // baseURL is intentionally absent — injected via ANTHROPIC_BASE_URL env var (Bill Proxy)
+      },
       // Future providers (keys injected at runtime when seeded):
-      // anthropic: {},   // Claude — seed via: node cli.js seed --alias codex-oauth
-      // google: {},      // Gemini — future
+      // google: {},
     },
-    default: "codex-mini-latest",   // OpenAI Codex — Alpha Phase default
+    default: "openai-codex/gpt-5.4", // OpenAI Codex — Alpha Phase default
   },
   channels: {
     telegram: {
@@ -81,7 +94,8 @@ if [ ! -f "${OPENCLAW_CONFIG}" ]; then
   },
 }
 EOF
-  echo "[OK] OpenClaw config skeleton written (no API key)"
+  chmod 600 "${OPENCLAW_CONFIG}"
+  echo "[OK] OpenClaw config skeleton written to ${OPENCLAW_CONFIG} (no API key)"
 else
   echo "OpenClaw config already exists — skipping (not overwriting)"
 fi
