@@ -12,9 +12,15 @@ Purpose:
 - validate installer syntax and stage syntax
 - validate the existing `little7-installer/install.sh verify` contract
 - verify that the PoC bootstrap installer still declares the expected service boundary
+- syntax-check the VM verifier itself as a first-class contract
+- run cheap fail-closed smoke checks for VM verifier red paths, including forced verification failure and GitHub API fallback SHA-resolution failure
 
 This layer is cheap and repeatable.
 It is not proof that a fresh VM really boots the stack.
+
+Implementation note:
+- `scripts/bootstrap_installer_preflight.sh` is the single local entrypoint for these cheap checks.
+- The GitHub Actions workflow should invoke that preflight once and avoid re-running the same smoke tests separately.
 
 ## Layer 2: Local fresh-VM verification
 
@@ -41,7 +47,6 @@ This prevents expensive VM runs on commits that are already known-bad while stil
 ## Required local tools for VM verification
 
 The local VM verifier expects:
-- `gh`
 - `jq`
 - `curl`
 - `qemu-system-x86_64`
@@ -50,6 +55,14 @@ The local VM verifier expects:
 - `ssh`
 - `ssh-keygen`
 - `timeout`
+
+`gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
+
+For curl fallback authentication, the verifier accepts either:
+- `GH_TOKEN`
+- `GITHUB_TOKEN`
+
+If neither is set, the verifier still fails closed when commit SHA resolution cannot be proven.
 
 Typical Debian/Ubuntu packages:
 - `qemu-system-x86`
@@ -88,11 +101,15 @@ The verifier writes an evidence bundle under:
 
 Expected artifacts include:
 - VM serial log
+- QEMU launcher log (`qemu.log`)
 - installer stdout/stderr capture
 - service status report
 - basic endpoint probe output
 - OpenClaw socket / HTTP probe output
 - secret leakage smoke-test result from inside the VM
+
+When `/dev/kvm` is writable, the verifier uses KVM acceleration.
+Otherwise it falls back to TCG emulation and logs that downgrade explicitly so host capability drift is visible in the evidence bundle.
 
 ## Intent
 
@@ -101,4 +118,4 @@ It is the validation scaffold for the current bootstrap PoC:
 - CI catches obvious regressions early
 - a real VM tells us whether the bootstrap actually boots the stack
 - the verifier now also checks that OpenClaw reaches a live runtime state and that the in-VM secret leakage smoke test still passes
-- CI now also carries a red-path smoke check proving the verifier fails closed when a verification failure is forced
+- CI now also carries fail-closed smoke checks proving the verifier rejects both a forced verification failure and an unresolved GitHub commit SHA in fallback mode

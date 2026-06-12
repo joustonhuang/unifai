@@ -54,6 +54,7 @@ little7-installer/config/active_models.yml
 # =========================
 tmp/
 .cache/
+ci-artifacts/
 
 # =========================
 # Editor / IDE

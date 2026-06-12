@@ -18,6 +18,7 @@ VCPUS="${VCPUS:-2}"
 DISK_GB="${DISK_GB:-40}"
 SUPERVISOR_PORT="${SUPERVISOR_PORT:-5000}"
 OPENCLAW_PORT="${OPENCLAW_PORT:-3000}"
+QEMU_LOG="$WORK_DIR/qemu.log"
 REQUIRED_CHECKS=(
   "Bootstrap Installer Preflight"
 )
@@ -33,19 +34,49 @@ need_bin() {
   }
 }
 
-for bin in gh jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do
+for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do
   need_bin "$bin"
 done
+
+if [ "${UNIFAI_VM_VERIFY_FORCE_NO_GH:-0}" = "1" ]; then
+  echo "[INFO] gh disabled by UNIFAI_VM_VERIFY_FORCE_NO_GH; using curl-based GitHub API fallback"
+elif ! command -v gh >/dev/null 2>&1; then
+  echo "[INFO] gh not found; using curl-based GitHub API fallback"
+fi
+
+github_api() {
+  local path="$1"
+  if [ "${UNIFAI_VM_VERIFY_FORCE_NO_GH:-0}" != "1" ] && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+    gh api "$path"
+    return
+  fi
+
+  local auth_header=()
+  local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  if [ -n "$token" ]; then
+    auth_header=(-H "Authorization: Bearer $token")
+  fi
+
+  curl -fsSL \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    "${auth_header[@]}" \
+    "https://api.github.com/$path"
+}
 
 mkdir -p "$WORK_DIR"
 cd "$WORK_DIR"
 
-SHA="$(gh api "repos/$REPO_SLUG/commits/$REF" --jq '.sha')"
+SHA="$(github_api "repos/$REPO_SLUG/commits/$REF" | jq -r '.sha')"
+if [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
+  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF" >&2
+  exit 1
+fi
 echo "Target ref: $REF"
 echo "Resolved SHA: $SHA"
 
 echo "Checking required GitHub checks before VM boot..."
-checks_json="$(gh api "repos/$REPO_SLUG/commits/$SHA/check-runs")"
+checks_json="$(github_api "repos/$REPO_SLUG/commits/$SHA/check-runs")"
 for check in "${REQUIRED_CHECKS[@]}"; do
   conclusion="$(printf '%s' "$checks_json" | jq -r --arg name "$check" '.check_runs[]? | select(.name == $name) | .conclusion' | tail -n1)"
   if [ "$conclusion" != "success" ]; then
@@ -117,6 +148,15 @@ EOF
 
 cloud-localds "$SEED_ISO" "$CLOUD_INIT_USER_DATA" "$CLOUD_INIT_META_DATA"
 
+QEMU_ACCEL_ARGS=()
+if [ -w /dev/kvm ]; then
+  QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)
+  echo "[INFO] Using KVM acceleration"
+else
+  QEMU_ACCEL_ARGS=(-cpu max)
+  echo "[INFO] /dev/kvm is not writable; falling back to TCG emulation"
+fi
+
 cleanup() {
   if [ -n "${QEMU_PID:-}" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
     kill "$QEMU_PID" || true
@@ -126,17 +166,16 @@ cleanup() {
 trap cleanup EXIT
 
 qemu-system-x86_64 \
-  -enable-kvm \
   -m "$RAM_MB" \
   -smp "$VCPUS" \
-  -cpu host \
+  "${QEMU_ACCEL_ARGS[@]}" \
   -name "$VM_NAME" \
   -nographic \
   -serial file:"$SERIAL_LOG" \
   -drive file="$VM_IMG",if=virtio \
   -drive file="$SEED_ISO",if=virtio,media=cdrom \
   -netdev user,id=net0,hostfwd=tcp::${SSH_PORT}-:22 \
-  -device virtio-net-pci,netdev=net0 >/dev/null 2>&1 &
+  -device virtio-net-pci,netdev=net0 >"$QEMU_LOG" 2>&1 &
 QEMU_PID=$!
 
 echo "Started VM PID $QEMU_PID, waiting for SSH..."
