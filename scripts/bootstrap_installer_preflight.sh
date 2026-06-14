@@ -43,6 +43,7 @@ require_file "$STAGE_INSTALLER"
 require_file "$REPO_ROOT/little7-installer/config/supervisor-secretvault.lock"
 require_file "$REPO_ROOT/scripts/check_stage50_openclaw_config.py"
 require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
+require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
@@ -67,6 +68,9 @@ pass "Stage 50 OpenClaw config checker passes py_compile"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
 pass "Bootstrap workflow contract checker passes py_compile"
+
+bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
+pass "VM host readiness helper passes bash -n"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 pass "VM verifier contract checker passes py_compile"
@@ -111,5 +115,6 @@ cat <<'EOF'
 == Preflight summary ==
 This preflight only proves installer structure and cheap sanity checks.
 It does NOT prove a fresh VM can boot the stack end-to-end.
+For local VM prep, run: bash scripts/check_vm_host_readiness.sh
 Run the local VM verifier after GitHub checks are green.
 EOF

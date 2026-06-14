@@ -56,6 +56,14 @@ The local VM verifier expects:
 - `ssh-keygen`
 - `timeout`
 
+Quick host preflight:
+
+```bash
+bash scripts/check_vm_host_readiness.sh
+```
+
+That helper reports missing binaries, `/dev/kvm` readiness, and whether GitHub auth is likely to block the first live VM proof.
+
 `gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
 
 For curl fallback authentication, the verifier accepts either:
@@ -80,11 +88,13 @@ Default target image is now Ubuntu 22.04 LTS (Jammy):
 bash scripts/vm/verify_bootstrap_in_vm.sh main
 ```
 
-Or for a specific commit:
+Or for a specific GitHub-visible commit:
 
 ```bash
 bash scripts/vm/verify_bootstrap_in_vm.sh <commit-sha>
 ```
+
+The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
 
 Override the cloud image explicitly if needed:
 

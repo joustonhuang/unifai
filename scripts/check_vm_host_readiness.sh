@@ -65,6 +65,25 @@ fi
 
 printf '\nSummary: %d pass, %d warn, %d fail\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT"
 
+if [ "$WARN_COUNT" -ne 0 ]; then
+  printf 'Suggested next actions:\n'
+  if [ -e /dev/kvm ] && [ ! -w /dev/kvm ]; then
+    printf -- '- /dev/kvm is present but not writable; expect TCG mode unless host permissions are fixed.\n'
+  elif [ ! -e /dev/kvm ]; then
+    printf -- '- /dev/kvm is absent; use TCG mode or prepare a KVM-capable host for faster VM proof.\n'
+  fi
+
+  if command -v gh >/dev/null 2>&1 && ! gh auth status >/dev/null 2>&1; then
+    printf -- '- Authenticate gh on this host before the first GitHub-visible VM proof, or rely on a token-only fallback.\n'
+  elif ! command -v gh >/dev/null 2>&1; then
+    printf -- '- Install/authenticate gh if you want API-backed verifier checks without token-only fallback.\n'
+  fi
+
+  if [ -z "${GH_TOKEN:-}" ] && [ -z "${GITHUB_TOKEN:-}" ]; then
+    printf -- '- Export GH_TOKEN or GITHUB_TOKEN if you want curl fallback to avoid unauthenticated GitHub API limits.\n'
+  fi
+fi
+
 if [ "$FAIL_COUNT" -ne 0 ]; then
   exit 1
 fi

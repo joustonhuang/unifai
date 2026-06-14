@@ -67,9 +67,17 @@ github_api() {
 mkdir -p "$WORK_DIR"
 cd "$WORK_DIR"
 
-SHA="$(github_api "repos/$REPO_SLUG/commits/$REF" | jq -r '.sha')"
+if ! sha_json="$(github_api "repos/$REPO_SLUG/commits/$REF" 2>&1)"; then
+  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF" >&2
+  echo "[INFO] The VM verifier only accepts refs GitHub can resolve for $REPO_SLUG." >&2
+  echo "[INFO] If '$REF' is a local-only commit, push it first or use a GitHub-visible branch/ref." >&2
+  echo "[INFO] GitHub API error: $sha_json" >&2
+  exit 1
+fi
+SHA="$(printf '%s' "$sha_json" | jq -r '.sha')"
 if [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
   echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF" >&2
+  echo "[INFO] GitHub returned no commit SHA for '$REF'; use a GitHub-visible branch/ref." >&2
   exit 1
 fi
 echo "Target ref: $REF"
