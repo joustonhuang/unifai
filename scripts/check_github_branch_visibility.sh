@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bash scripts/check_github_branch_visibility.sh [branch]
+
+Checks whether the current branch (or the named branch) is aligned with a
+GitHub-backed remote-tracking branch so local work is actually GitHub-visible.
+
+Environment:
+  GITHUB_REMOTE   Remote name to force; otherwise auto-detected from upstream/origin
+EOF
+}
+
+detect_github_remote() {
+  local branch="$1"
+  local candidate=""
+  local url=""
+
+  if candidate="$(git rev-parse --abbrev-ref "$branch@{upstream}" 2>/dev/null)"; then
+    candidate="${candidate%%/*}"
+    if [ -n "$candidate" ] && url="$(git remote get-url "$candidate" 2>/dev/null)"; then
+      case "$url" in
+        *github.com*|git@github.com:*)
+          printf '%s\n' "$candidate"
+          return 0
+          ;;
+      esac
+    fi
+  fi
+
+  for candidate in origin github; do
+    if url="$(git remote get-url "$candidate" 2>/dev/null)"; then
+      case "$url" in
+        *github.com*|git@github.com:*)
+          printf '%s\n' "$candidate"
+          return 0
+          ;;
+      esac
+    fi
+  done
+
+  while IFS=$'\t' read -r candidate url; do
+    case "$url" in
+      *github.com*|git@github.com:*)
+        printf '%s\n' "$candidate"
+        return 0
+        ;;
+    esac
+  done < <(git remote -v | awk '$3 == "(fetch)" {print $1 "\t" $2}')
+
+  return 1
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  usage
+  exit 0
+fi
+
+branch="${1:-$(git rev-parse --abbrev-ref HEAD)}"
+
+if [ "$branch" = "HEAD" ]; then
+  echo "[FAIL] Detached HEAD; switch to a branch before checking GitHub visibility." >&2
+  exit 1
+fi
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "[FAIL] Not inside a git repository." >&2
+  exit 1
+fi
+
+if [ -n "${GITHUB_REMOTE:-}" ]; then
+  if ! git remote get-url "$GITHUB_REMOTE" >/dev/null 2>&1; then
+    echo "[FAIL] Remote '$GITHUB_REMOTE' is not configured." >&2
+    echo "[INFO] Add it with: git remote add $GITHUB_REMOTE https://github.com/<owner>/<repo>.git" >&2
+    exit 1
+  fi
+else
+  if ! GITHUB_REMOTE="$(detect_github_remote "$branch")"; then
+    echo "[FAIL] Could not auto-detect a GitHub-backed remote." >&2
+    echo "[INFO] Set GITHUB_REMOTE=<remote> or add a GitHub remote such as origin." >&2
+    exit 1
+  fi
+fi
+
+remote_url="$(git remote get-url "$GITHUB_REMOTE")"
+case "$remote_url" in
+  *github.com*|git@github.com:*) ;;
+  *)
+    echo "[FAIL] Remote '$GITHUB_REMOTE' is not GitHub-backed: $remote_url" >&2
+    exit 1
+    ;;
+esac
+
+if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+  echo "[FAIL] Local branch '$branch' does not exist." >&2
+  exit 1
+fi
+
+remote_ref="refs/remotes/$GITHUB_REMOTE/$branch"
+if ! git show-ref --verify --quiet "$remote_ref"; then
+  echo "[FAIL] Remote branch '$GITHUB_REMOTE/$branch' does not exist yet." >&2
+  echo "[INFO] Push the branch first if this work is meant to be public signal." >&2
+  exit 1
+fi
+
+upstream_ref=""
+if upstream_ref="$(git rev-parse --abbrev-ref "$branch@{upstream}" 2>/dev/null)"; then
+  :
+else
+  upstream_ref=""
+fi
+
+local_sha="$(git rev-parse "$branch")"
+remote_sha="$(git rev-parse "$GITHUB_REMOTE/$branch")"
+
+counts="$(git rev-list --left-right --count "$branch...$GITHUB_REMOTE/$branch")"
+read -r ahead behind <<< "$counts"
+
+printf 'Branch: %s\n' "$branch"
+printf 'GitHub remote: %s (%s)\n' "$GITHUB_REMOTE" "$remote_url"
+printf 'GitHub branch: %s/%s\n' "$GITHUB_REMOTE" "$branch"
+if [ -n "$upstream_ref" ]; then
+  printf 'Tracked upstream: %s\n' "$upstream_ref"
+else
+  printf 'Tracked upstream: %s\n' '(none)'
+fi
+printf 'Local HEAD: %s\n' "$local_sha"
+printf 'GitHub HEAD: %s\n' "$remote_sha"
+
+if [ "$upstream_ref" != "$GITHUB_REMOTE/$branch" ]; then
+  echo "[FAIL] Branch is not tracking the GitHub-visible upstream '$GITHUB_REMOTE/$branch'." >&2
+  echo "[INFO] Fix with: git branch --set-upstream-to=$GITHUB_REMOTE/$branch $branch" >&2
+  exit 1
+fi
+
+if [ "$local_sha" = "$remote_sha" ]; then
+  echo "[PASS] Local branch matches the GitHub-visible branch head."
+  exit 0
+fi
+
+if [ "$ahead" -ne 0 ] || [ "$behind" -ne 0 ]; then
+  echo "[FAIL] Local branch and GitHub branch differ (ahead $ahead, behind $behind)." >&2
+  echo "[INFO] Review with: git log --oneline --left-right --cherry-pick $branch...$GITHUB_REMOTE/$branch" >&2
+  exit 1
+fi
+
+echo "[FAIL] Branch SHAs differ unexpectedly." >&2
+exit 1

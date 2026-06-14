@@ -453,6 +453,12 @@ Run the Gaia smoke test:
 ./scripts/smoke_test_gaia.sh
 ```
 
+If the work is meant to be visible outside your local sandbox, verify the branch is actually aligned with a GitHub-backed remote branch (the helper auto-detects a GitHub remote such as `origin` or `github`):
+
+```bash
+bash scripts/check_github_branch_visibility.sh
+```
+
 ---
 
 # Project Status
