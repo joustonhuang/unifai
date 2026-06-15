@@ -51,6 +51,7 @@ require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 
 if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   git -C "$REPO_ROOT" submodule update --init --recursive supervisor/supervisor-secretvault
@@ -108,11 +109,17 @@ pass "VM verifier red-path smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
+pass "VM verifier preflight wrapper smoke script passes bash -n"
+
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 pass "VM verifier red-path smoke test failed closed as expected"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke test failed closed as expected"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
+pass "VM verifier preflight wrapper smoke test passed"
 
 require_grep 'check_root\s*\(' "$INSTALLER"
 require_grep 'check_os\s*\(' "$INSTALLER"
