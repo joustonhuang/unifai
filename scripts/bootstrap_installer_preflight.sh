@@ -45,6 +45,7 @@ require_file "$REPO_ROOT/scripts/check_stage50_openclaw_config.py"
 require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
+require_file "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
@@ -75,6 +76,9 @@ pass "GitHub check gate inspector passes py_compile"
 
 bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 pass "VM host readiness helper passes bash -n"
+
+bash -n "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
+pass "VM verifier local preflight helper passes bash -n"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 pass "VM verifier contract checker passes py_compile"

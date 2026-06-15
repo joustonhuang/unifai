@@ -74,6 +74,12 @@ python3 scripts/check_github_check_gate.py <github-visible-ref>
 
 Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status and any public annotations before you touch verifier logic.
 
+If you want the common local sequence as one command, use:
+
+```bash
+bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
+```
+
 `gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
 
 For curl fallback authentication, the verifier accepts either:
@@ -107,9 +113,7 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <commit-sha>
 Recommended operator flow:
 
 ```bash
-bash scripts/bootstrap_installer_preflight.sh
-bash scripts/check_github_branch_visibility.sh
-python3 scripts/check_github_check_gate.py <github-visible-ref>
+bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
 bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 ```
 

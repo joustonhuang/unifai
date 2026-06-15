@@ -459,6 +459,12 @@ If the work is meant to be visible outside your local sandbox, verify the branch
 bash scripts/check_github_branch_visibility.sh
 ```
 
+Before a fresh-VM bootstrap proof, you can run the bundled local verifier preflight:
+
+```bash
+bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
+```
+
 ---
 
 # Project Status
