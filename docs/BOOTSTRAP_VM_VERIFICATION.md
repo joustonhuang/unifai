@@ -21,6 +21,7 @@ It is not proof that a fresh VM really boots the stack.
 Implementation note:
 - `scripts/bootstrap_installer_preflight.sh` is the single local entrypoint for these cheap checks.
 - The GitHub Actions workflow should invoke that preflight once and avoid re-running the same smoke tests separately.
+- The local preflight now also syntax-checks `scripts/check_github_check_gate.py`, so the check-gate diagnosis path stays under the same contract as the verifier.
 
 ## Layer 2: Local fresh-VM verification
 
@@ -64,6 +65,15 @@ bash scripts/check_vm_host_readiness.sh
 
 That helper reports missing binaries, `/dev/kvm` readiness, and whether GitHub auth is likely to block the first live VM proof.
 
+Quick branch / gate preflight before spending time on a VM run:
+
+```bash
+bash scripts/check_github_branch_visibility.sh
+python3 scripts/check_github_check_gate.py <github-visible-ref>
+```
+
+Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status and any public annotations before you touch verifier logic.
+
 `gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
 
 For curl fallback authentication, the verifier accepts either:
@@ -92,6 +102,15 @@ Or for a specific GitHub-visible commit:
 
 ```bash
 bash scripts/vm/verify_bootstrap_in_vm.sh <commit-sha>
+```
+
+Recommended operator flow:
+
+```bash
+bash scripts/bootstrap_installer_preflight.sh
+bash scripts/check_github_branch_visibility.sh
+python3 scripts/check_github_check_gate.py <github-visible-ref>
+bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 ```
 
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
