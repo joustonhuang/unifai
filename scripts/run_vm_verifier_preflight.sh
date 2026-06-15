@@ -3,11 +3,11 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: bash scripts/run_vm_verifier_preflight.sh [github-visible-ref]
+Usage: bash scripts/run_vm_verifier_preflight.sh [github-visible-ref-or-sha]
 
 Runs the cheap local checks before a fresh-VM verifier attempt:
 1. bootstrap installer preflight
-2. GitHub branch visibility check
+2. GitHub branch visibility check (when the ref is a local branch name)
 3. GitHub required-check gate inspection
 
 If no ref is provided, uses the current branch name.
@@ -37,8 +37,13 @@ echo "== Step 1/3: bootstrap installer preflight =="
 bash scripts/bootstrap_installer_preflight.sh
 
 echo
-echo "== Step 2/3: GitHub branch visibility =="
-bash scripts/check_github_branch_visibility.sh
+if git show-ref --verify --quiet "refs/heads/$ref"; then
+  echo "== Step 2/3: GitHub branch visibility =="
+  bash scripts/check_github_branch_visibility.sh "$ref"
+else
+  echo "== Step 2/3: GitHub branch visibility =="
+  echo "[INFO] '$ref' is not a local branch name; skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA."
+fi
 
 echo
 echo "== Step 3/3: GitHub check gate =="
