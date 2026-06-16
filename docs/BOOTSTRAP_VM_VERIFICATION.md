@@ -13,7 +13,7 @@ Purpose:
 - validate the existing `little7-installer/install.sh verify` contract
 - verify that the PoC bootstrap installer still declares the expected service boundary
 - syntax-check the VM verifier itself as a first-class contract
-- run cheap fail-closed smoke checks for VM verifier red paths, including forced verification failure and GitHub API fallback SHA-resolution failure
+- run cheap fail-closed smoke checks for the GitHub branch-visibility gate plus VM verifier red paths, including forced verification failure and GitHub API fallback SHA-resolution failure
 
 This layer is cheap and repeatable.
 It is not proof that a fresh VM really boots the stack.
@@ -21,7 +21,7 @@ It is not proof that a fresh VM really boots the stack.
 Implementation note:
 - `scripts/bootstrap_installer_preflight.sh` is the single local entrypoint for these cheap checks.
 - The GitHub Actions workflow should invoke that preflight once and avoid re-running the same smoke tests separately.
-- The local preflight now also syntax-checks `scripts/check_github_check_gate.py`, so the check-gate diagnosis path stays under the same contract as the verifier.
+- The local preflight now also syntax-checks `scripts/check_github_check_gate.py` and smoke-tests `scripts/check_github_branch_visibility.sh`, so the check-gate and branch-visibility diagnosis paths stay under the same contract as the verifier.
 
 ## Layer 2: Local fresh-VM verification
 
