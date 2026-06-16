@@ -51,6 +51,7 @@ require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
@@ -80,6 +81,9 @@ pass "Bootstrap workflow contract checker passes py_compile"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_github_check_gate.py"
 pass "GitHub check gate inspector passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
+pass "GitHub check gate smoke script passes py_compile"
 
 bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 pass "VM host readiness helper passes bash -n"
@@ -128,6 +132,9 @@ pass "VM verifier preflight wrapper smoke script passes bash -n"
 
 bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 pass "GitHub branch visibility smoke test passed"
+
+python3 "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
+pass "GitHub check gate smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 pass "VM verifier red-path smoke test failed closed as expected"
