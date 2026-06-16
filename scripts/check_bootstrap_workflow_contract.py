@@ -53,6 +53,23 @@ if step_names.count("Run bootstrap installer preflight") != 1:
     fail("Workflow must invoke bootstrap installer preflight exactly once")
 ok("Workflow invokes bootstrap installer preflight exactly once")
 
+expected_actions = {
+    "Checkout repository": "actions/checkout@v5",
+    "Set up Python": "actions/setup-python@v6",
+    "Upload bootstrap preflight report": "actions/upload-artifact@v5",
+}
+for step in steps:
+    if not isinstance(step, dict):
+        continue
+    name = step.get("name")
+    expected = expected_actions.get(name)
+    if not expected:
+        continue
+    uses = step.get("uses")
+    if uses != expected:
+        fail(f"Workflow step '{name}' must use {expected}, found {uses!r}")
+ok("Workflow pins Node24-safe GitHub Action majors for checkout/setup-python/upload-artifact")
+
 for forbidden in [
     "Run VM verifier red-path smoke test",
     "Run VM verifier GitHub fallback smoke test",
