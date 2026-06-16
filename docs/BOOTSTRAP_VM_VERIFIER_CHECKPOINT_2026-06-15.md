@@ -3,7 +3,7 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Local branch state at checkpoint: ahead by 8 commits
+- Local branch state at checkpoint: ahead by 10 commits
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -14,9 +14,12 @@
 6. `588eb85` — `scripts: relax verifier preflight ref handling`
 7. `e85623d` — `tests: guard verifier preflight wrapper contract`
 8. `ab2a7b2` — `tests: smoke test verifier preflight wrapper`
+9. `d18e5ff` — `docs: checkpoint vm verifier branch state`
+10. `d0551e5` — `ci: pin bootstrap preflight actions to node24-safe majors`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
+- The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
 - The verifier path now has three distinct local guard layers before VM boot:
   1. branch visibility check
   2. GitHub required-check gate inspection
