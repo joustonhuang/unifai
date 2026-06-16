@@ -3,7 +3,7 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Local branch state at checkpoint: ahead by 10 commits
+- Local branch state at checkpoint: ahead by 12 commits
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -16,10 +16,13 @@
 8. `ab2a7b2` — `tests: smoke test verifier preflight wrapper`
 9. `d18e5ff` — `docs: checkpoint vm verifier branch state`
 10. `d0551e5` — `ci: pin bootstrap preflight actions to node24-safe majors`
+11. `b5c3210` — `docs: refresh vm verifier checkpoint state`
+12. `e724750` — `tests: smoke test github branch visibility gate`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
+- Bootstrap installer preflight now also smoke-tests the GitHub branch-visibility helper in a temporary repo, so the “is this branch actually GitHub-visible?” gate no longer relies on syntax-only coverage.
 - The verifier path now has three distinct local guard layers before VM boot:
   1. branch visibility check
   2. GitHub required-check gate inspection
@@ -29,6 +32,7 @@
   - a contract checker (`scripts/check_vm_verifier_preflight_contract.py`)
   - a dry-run smoke test (`scripts/smoke_test_vm_verifier_preflight_wrapper.sh`)
 - The verifier itself still has fail-closed smoke coverage for:
+  - GitHub branch visibility divergence
   - forced red-path failure
   - GitHub fallback SHA-resolution failure
 
