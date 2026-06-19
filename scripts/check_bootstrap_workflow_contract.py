@@ -49,9 +49,30 @@ if not isinstance(steps, list):
     fail("bootstrap-preflight job missing steps list")
 
 step_names = [step.get("name", "") for step in steps if isinstance(step, dict)]
-if step_names.count("Run bootstrap installer preflight") != 1:
-    fail("Workflow must invoke bootstrap installer preflight exactly once")
-ok("Workflow invokes bootstrap installer preflight exactly once")
+for required_step in [
+    "Enforce No Sandbox Doctrine",
+    "Enforce Runtime Baseline",
+    "Run bootstrap installer preflight",
+]:
+    if step_names.count(required_step) != 1:
+        fail(f"Workflow must invoke '{required_step}' exactly once")
+ok("Workflow invokes doctrine, runtime baseline, and bootstrap preflight exactly once")
+
+expected_runs = {
+    "Enforce No Sandbox Doctrine": "python scripts/check_no_sandbox_doctrine.py",
+    "Enforce Runtime Baseline": "python scripts/check_runtime_baseline.py",
+}
+for step in steps:
+    if not isinstance(step, dict):
+        continue
+    name = step.get("name")
+    expected = expected_runs.get(name)
+    if not expected:
+        continue
+    run = step.get("run")
+    if run is None or expected not in run:
+        fail(f"Workflow step '{name}' must run {expected!r}")
+ok("Workflow preserves no-sandbox and runtime-baseline enforcement steps")
 
 expected_actions = {
     "Checkout repository": "actions/checkout@v5",
