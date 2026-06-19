@@ -80,6 +80,8 @@ If you want the common local sequence as one command, use:
 bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
 ```
 
+That wrapper now fails fast if you pass a local-only commit SHA that is not reachable from any GitHub-visible branch, so you get the visibility boundary error before the later GitHub check-gate step.
+
 `gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
 
 For curl fallback authentication, the verifier accepts either:
