@@ -10,6 +10,7 @@ DEFAULT_REPO = os.environ.get("REPO_SLUG", "joustonhuang/unifai")
 DEFAULT_REQUIRED = ["Bootstrap Installer Preflight"]
 OPTIONAL_IF_PRESENT = ["Core Modules & Exoskeleton E2E", "smoke-test"]
 API_BASE = "https://api.github.com"
+MAX_ANNOTATIONS_PER_LEVEL = 5
 
 
 def usage() -> int:
@@ -43,6 +44,22 @@ def github_get(path: str):
         raise SystemExit(1) from exc
 
 
+def github_get_paged(path: str, list_key: str | None = None, per_page: int = 100):
+    items = []
+    page = 1
+    while True:
+        sep = '&' if '?' in path else '?'
+        data = github_get(f"{path}{sep}per_page={per_page}&page={page}")
+        page_items = data.get(list_key, []) if list_key else data
+        if not isinstance(page_items, list):
+            print(f"[FAIL] Expected paged GitHub response list for {path}", file=sys.stderr)
+            raise SystemExit(1)
+        items.extend(page_items)
+        if len(page_items) < per_page:
+            return items
+        page += 1
+
+
 def resolve_sha(repo: str, ref: str) -> str:
     data = github_get(f"repos/{repo}/commits/{urllib.parse.quote(ref, safe='')}")
     sha = data.get("sha")
@@ -66,7 +83,39 @@ def print_check(prefix: str, check_run: dict):
 
 
 def fetch_annotations(repo: str, check_run_id: int):
-    return github_get(f"repos/{repo}/check-runs/{check_run_id}/annotations")
+    return github_get_paged(f"repos/{repo}/check-runs/{check_run_id}/annotations")
+
+
+def summarize_annotations(annotations: list[dict]) -> None:
+    if not annotations:
+        print("  annotations: none exposed")
+        return
+
+    grouped: dict[str, list[dict]] = {}
+    for ann in annotations:
+        level = ann.get("annotation_level") or "notice"
+        grouped.setdefault(level, []).append(ann)
+
+    priority = ["failure", "warning", "notice"]
+    root = next((anns[0] for level in priority for anns in [grouped.get(level, [])] if anns), None)
+    if root:
+        print(
+            "  likely root signal: "
+            f"{root.get('annotation_level')}: {root.get('path')} line {root.get('start_line')}"
+            f" — {root.get('message')}"
+        )
+
+    print("  annotations:")
+    for level in priority + sorted(k for k in grouped if k not in priority):
+        anns = grouped.get(level, [])
+        for ann in anns[:MAX_ANNOTATIONS_PER_LEVEL]:
+            print(
+                f"    - {ann.get('annotation_level')}: {ann.get('path')}"
+                f" line {ann.get('start_line')} — {ann.get('message')}"
+            )
+        omitted = len(anns) - MAX_ANNOTATIONS_PER_LEVEL
+        if omitted > 0:
+            print(f"    - {level}: … {omitted} more annotation(s) omitted")
 
 
 def main() -> int:
@@ -82,8 +131,7 @@ def main() -> int:
     print(f"Ref: {ref}")
     print(f"SHA: {sha}")
 
-    data = github_get(f"repos/{repo}/commits/{sha}/check-runs")
-    check_runs = data.get("check_runs", [])
+    check_runs = github_get_paged(f"repos/{repo}/commits/{sha}/check-runs", list_key="check_runs")
     if not check_runs:
         print("[FAIL] No check runs found for this commit.")
         return 1
@@ -99,15 +147,7 @@ def main() -> int:
         if check_run.get("conclusion") != "success":
             failures += 1
             annotations = fetch_annotations(repo, check_run["id"])
-            if annotations:
-                print("  annotations:")
-                for ann in annotations:
-                    print(
-                        f"    - {ann.get('annotation_level')}: {ann.get('path')}"
-                        f" line {ann.get('start_line')} — {ann.get('message')}"
-                    )
-            else:
-                print("  annotations: none exposed")
+            summarize_annotations(annotations)
 
     for name in OPTIONAL_IF_PRESENT:
         check_run = collect_check_run(check_runs, name)

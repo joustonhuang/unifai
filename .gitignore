@@ -53,6 +53,7 @@ little7-installer/config/active_models.yml
 # Local testing artifacts
 # =========================
 tmp/
+out/
 .cache/
 ci-artifacts/
 

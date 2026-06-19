@@ -32,11 +32,24 @@ def run_case(fake_github_get, argv: list[str]) -> tuple[int, str, str]:
 def success_get(path: str):
     if path == "repos/joustonhuang/unifai/commits/visible-ref":
         return {"sha": "abc123"}
-    if path == "repos/joustonhuang/unifai/commits/abc123/check-runs":
+    if path == "repos/joustonhuang/unifai/commits/abc123/check-runs?per_page=100&page=1":
         return {
             "check_runs": [
                 {
-                    "id": 11,
+                    "id": i,
+                    "name": f"filler-{i}",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "html_url": f"https://example.invalid/filler-{i}",
+                }
+                for i in range(1, 101)
+            ]
+        }
+    if path == "repos/joustonhuang/unifai/commits/abc123/check-runs?per_page=100&page=2":
+        return {
+            "check_runs": [
+                {
+                    "id": 211,
                     "name": "Bootstrap Installer Preflight",
                     "status": "completed",
                     "conclusion": "success",
@@ -50,7 +63,7 @@ def success_get(path: str):
 def failure_get(path: str):
     if path == "repos/joustonhuang/unifai/commits/bad-ref":
         return {"sha": "def456"}
-    if path == "repos/joustonhuang/unifai/commits/def456/check-runs":
+    if path == "repos/joustonhuang/unifai/commits/def456/check-runs?per_page=100&page=1":
         return {
             "check_runs": [
                 {
@@ -62,7 +75,17 @@ def failure_get(path: str):
                 }
             ]
         }
-    if path == "repos/joustonhuang/unifai/check-runs/22/annotations":
+    if path == "repos/joustonhuang/unifai/check-runs/22/annotations?per_page=100&page=1":
+        return [
+            {
+                "annotation_level": "warning",
+                "path": ".github",
+                "start_line": i,
+                "message": "Node.js 20 actions are deprecated.",
+            }
+            for i in range(1, 101)
+        ]
+    if path == "repos/joustonhuang/unifai/check-runs/22/annotations?per_page=100&page=2":
         return [
             {
                 "annotation_level": "failure",
@@ -98,8 +121,14 @@ if code != 1:
 if "Bootstrap Installer Preflight: status=completed conclusion=failure" not in stdout:
     print("[FAIL] Expected failure-case check status line missing.")
     raise SystemExit(1)
-if "annotations:" not in stdout or "Process completed with exit code 1." not in stdout:
+if "likely root signal: failure: .github/workflows/bootstrap-preflight.yml line 71 — Process completed with exit code 1." not in stdout:
+    print("[FAIL] Expected root-signal summary missing from failure case.")
+    raise SystemExit(1)
+if "annotations:" not in stdout or "Node.js 20 actions are deprecated." not in stdout or "Process completed with exit code 1." not in stdout:
     print("[FAIL] Expected failure annotations missing from failure case.")
+    raise SystemExit(1)
+if "... 95 more annotation(s) omitted" not in stdout and "… 95 more annotation(s) omitted" not in stdout:
+    print("[FAIL] Expected annotation omission summary missing from failure case.")
     raise SystemExit(1)
 
 print("[PASS] GitHub check gate inspector behaves as expected.")
