@@ -20,6 +20,9 @@ def ok(message: str) -> None:
 text = PREFLIGHT.read_text(encoding="utf-8")
 
 required = [
+    ('ensure_ref_is_github_visible "$ref" "$current_branch"', "Wrapper fails fast when an explicit local SHA is not GitHub-visible"),
+    ('git branch -r --contains "$ref"', "Wrapper checks whether an explicit local commit is reachable from a GitHub remote branch"),
+    ("Push the branch tip first, or use a GitHub-visible branch/ref before running VM verifier preflight.", "Wrapper explains how to recover from a local-only explicit SHA"),
     ("bash scripts/bootstrap_installer_preflight.sh", "Wrapper runs bootstrap installer preflight first"),
     ('git show-ref --verify --quiet "refs/heads/$ref"', "Wrapper distinguishes local branch names from explicit refs/SHAs"),
     ('bash scripts/check_github_branch_visibility.sh "$ref"', "Wrapper checks GitHub branch visibility for local branches"),

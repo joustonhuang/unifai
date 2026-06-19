@@ -17,6 +17,74 @@ Environment:
 EOF
 }
 
+detect_github_remote() {
+  local branch="$1"
+  local candidate=""
+  local url=""
+
+  if candidate="$(git rev-parse --abbrev-ref "$branch@{upstream}" 2>/dev/null)"; then
+    candidate="${candidate%%/*}"
+    if [ -n "$candidate" ] && url="$(git remote get-url "$candidate" 2>/dev/null)"; then
+      case "$url" in
+        *github.com*|git@github.com:*)
+          printf '%s\n' "$candidate"
+          return 0
+          ;;
+      esac
+    fi
+  fi
+
+  for candidate in origin github; do
+    if url="$(git remote get-url "$candidate" 2>/dev/null)"; then
+      case "$url" in
+        *github.com*|git@github.com:*)
+          printf '%s\n' "$candidate"
+          return 0
+          ;;
+      esac
+    fi
+  done
+
+  while IFS=$'\t' read -r candidate url; do
+    case "$url" in
+      *github.com*|git@github.com:*)
+        printf '%s\n' "$candidate"
+        return 0
+        ;;
+    esac
+  done < <(git remote -v | awk '$3 == "(fetch)" {print $1 "\t" $2}')
+
+  return 1
+}
+
+ensure_ref_is_github_visible() {
+  local ref="$1"
+  local branch="$2"
+  local remote=""
+
+  if git show-ref --verify --quiet "refs/heads/$ref"; then
+    return 0
+  fi
+
+  if ! git rev-parse --verify --quiet "$ref^{commit}" >/dev/null; then
+    return 0
+  fi
+
+  if ! remote="$(detect_github_remote "$branch")"; then
+    echo "[FAIL] Could not auto-detect a GitHub-backed remote for explicit ref visibility checking." >&2
+    echo "[INFO] Set a GitHub upstream or add a GitHub remote such as origin before using local commit SHAs here." >&2
+    exit 1
+  fi
+
+  if git branch -r --contains "$ref" | grep -Eq "^[[:space:]]*$remote/"; then
+    return 0
+  fi
+
+  echo "[FAIL] '$ref' exists locally but is not reachable from any GitHub-visible branch on remote '$remote'." >&2
+  echo "[INFO] Push the branch tip first, or use a GitHub-visible branch/ref before running VM verifier preflight." >&2
+  exit 1
+}
+
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   usage
   exit 0
@@ -42,6 +110,13 @@ if [ "$ref" = "HEAD" ]; then
   echo "[FAIL] Detached HEAD; pass an explicit GitHub-visible ref." >&2
   exit 1
 fi
+
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$current_branch" = "HEAD" ]; then
+  current_branch="$ref"
+fi
+
+ensure_ref_is_github_visible "$ref" "$current_branch"
 
 echo "== VM verifier local preflight =="
 echo "Repo: $REPO_ROOT"
