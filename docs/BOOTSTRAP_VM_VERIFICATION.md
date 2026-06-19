@@ -72,7 +72,7 @@ bash scripts/check_github_branch_visibility.sh
 python3 scripts/check_github_check_gate.py <github-visible-ref>
 ```
 
-Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status and any public annotations before you touch verifier logic.
+Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status, paginates through public check runs and annotations, highlights the likely root failure signal first, and caps noisy annotation dumps with an omission summary before you touch verifier logic.
 
 If you want the common local sequence as one command, use:
 
@@ -118,6 +118,11 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 ```
 
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
+
+Current known boundary on this branch family:
+- GitHub-visible branch head remains `5baa4b0`
+- the local hardening stack is currently ahead of that public ref
+- first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 
 Override the cloud image explicitly if needed:
 

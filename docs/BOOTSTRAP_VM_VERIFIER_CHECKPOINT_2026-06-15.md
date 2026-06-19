@@ -3,8 +3,8 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Current local head at checkpoint refresh: `d013011`
-- Local branch state at checkpoint: ahead by 15 commits over the GitHub-visible branch head
+- Latest non-doc logic head in the local stack: `1cb116d`
+- Local branch state at checkpoint: ahead by 17 commits over the GitHub-visible branch head, with this checkpoint refresh on top
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -22,6 +22,8 @@
 13. `87b553a` — `docs: refresh verifier checkpoint after guardrail updates`
 14. `70709d3` — `tests: lock bootstrap preflight contract`
 15. `d013011` — `tests: smoke test github check gate`
+16. `1cb116d` — `tests: harden github check gate diagnostics`
+17. `822fd07` — `docs: refresh vm verifier publish boundary`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
@@ -29,6 +31,7 @@
 - Bootstrap installer preflight now also smoke-tests the GitHub branch-visibility helper in a temporary repo, so the “is this branch actually GitHub-visible?” gate no longer relies on syntax-only coverage.
 - Bootstrap installer preflight now has its own explicit contract checker and an offline smoke test for the GitHub check-gate inspector, so the preflight scaffold and required-check diagnosis path are both self-tested instead of syntax-only guarded.
 - The GitHub check-gate inspector is now more resilient on busy commits: it paginates through check runs and annotations, still prioritizes the likely root failure signal, and caps noisy annotation dumps with an omission summary.
+- The check-gate hardening bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.
 - Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current warnings are narrower (`/dev/kvm` not writable, `gh` installed but unauthenticated, no `GH_TOKEN`/`GITHUB_TOKEN` exported).
 - The verifier path now has three distinct local guard layers before VM boot:
   1. branch visibility check
@@ -52,7 +55,7 @@
 - Once the branch is visible, the first likely execution friction is host-side, not code-side: without KVM write access the verifier will run in slower TCG mode, and without `gh` auth or a GitHub token the API gate may fail closed or rate-limit.
 
 ## Recommended next move when external boundary opens
-1. Make the current branch head GitHub-visible.
+1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `1cb116d`).
 2. Run:
    ```bash
    bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
