@@ -150,6 +150,7 @@ Expected artifacts include:
 
 When `/dev/kvm` is writable, the verifier uses KVM acceleration.
 Otherwise it falls back to TCG emulation and logs that downgrade explicitly so host capability drift is visible in the evidence bundle.
+For deterministic smoke tests, set `UNIFAI_VM_VERIFY_FORCE_TCG=1` to force the portable TCG launch path even on KVM-capable hosts.
 
 ## Intent
 

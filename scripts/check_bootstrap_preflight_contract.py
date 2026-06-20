@@ -27,6 +27,7 @@ required = [
     ('require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"', 'Preflight requires the VM verifier preflight wrapper contract checker'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"', 'Preflight requires the GitHub branch-visibility smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"', 'Preflight requires the GitHub check-gate smoke test'),
+    ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"', 'Preflight requires the VM verifier TCG launch smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight requires the VM verifier preflight-wrapper smoke test'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"', 'Preflight syntax-checks the workflow contract checker'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight syntax-checks the GitHub check-gate contract checker'),
@@ -34,6 +35,7 @@ required = [
     ('bash -n "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"', 'Preflight syntax-checks the VM verifier preflight wrapper'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"', 'Preflight syntax-checks the VM verifier preflight wrapper contract checker'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"', 'Preflight syntax-checks the GitHub check-gate smoke test'),
+    ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"', 'Preflight syntax-checks the VM verifier TCG launch smoke test'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight syntax-checks the VM verifier preflight-wrapper smoke test'),
     ('python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"', 'Preflight runs the workflow contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight runs the GitHub check-gate contract checker'),
@@ -42,6 +44,7 @@ required = [
     ('python3 "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"', 'Preflight runs the GitHub check-gate smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"', 'Preflight runs the verifier red-path smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"', 'Preflight runs the verifier GitHub fallback smoke test'),
+    ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"', 'Preflight runs the verifier TCG launch smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight runs the verifier preflight-wrapper smoke test'),
 ]
 

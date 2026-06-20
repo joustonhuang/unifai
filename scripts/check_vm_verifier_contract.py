@@ -22,6 +22,7 @@ text = VERIFIER.read_text(encoding="utf-8")
 required = [
     ('QEMU_LOG="$WORK_DIR/qemu.log"', 'Verifier captures QEMU output into qemu.log'),
     ('UNIFAI_VM_VERIFY_FORCE_NO_GH', 'Verifier supports explicit no-gh smoke testing'),
+    ('UNIFAI_VM_VERIFY_FORCE_TCG', 'Verifier supports explicit TCG smoke testing'),
     ('gh disabled by UNIFAI_VM_VERIFY_FORCE_NO_GH; using curl-based GitHub API fallback', 'Verifier announces forced gh fallback mode'),
     ('gh not found; using curl-based GitHub API fallback', 'Verifier announces implicit gh fallback mode'),
     ('local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"', 'Verifier accepts GH_TOKEN or GITHUB_TOKEN for curl fallback'),
@@ -29,6 +30,7 @@ required = [
     ('[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF', 'Verifier fails closed when SHA resolution fails'),
     ("[INFO] If '$REF' is a local-only commit, push it first or use a GitHub-visible branch/ref.", 'Verifier explains local-only commit refs are not valid VM verifier inputs'),
     ("SHA=\"$(printf '%s' \"$sha_json\" | jq -r '.sha')\"", 'Verifier resolves commit SHA from captured GitHub API JSON'),
+    ('[INFO] UNIFAI_VM_VERIFY_FORCE_TCG=1; forcing TCG emulation', 'Verifier announces forced TCG mode for smoke testing'),
     ('if [ -w /dev/kvm ]; then', 'Verifier checks whether /dev/kvm is writable'),
     ('[INFO] Using KVM acceleration', 'Verifier reports KVM acceleration when available'),
     ('[INFO] /dev/kvm is not writable; falling back to TCG emulation', 'Verifier reports TCG fallback when KVM is unavailable'),

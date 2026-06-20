@@ -157,7 +157,10 @@ EOF
 cloud-localds "$SEED_ISO" "$CLOUD_INIT_USER_DATA" "$CLOUD_INIT_META_DATA"
 
 QEMU_ACCEL_ARGS=()
-if [ -w /dev/kvm ]; then
+if [ "${UNIFAI_VM_VERIFY_FORCE_TCG:-0}" = "1" ]; then
+  QEMU_ACCEL_ARGS=(-cpu max)
+  echo "[INFO] UNIFAI_VM_VERIFY_FORCE_TCG=1; forcing TCG emulation"
+elif [ -w /dev/kvm ]; then
   QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)
   echo "[INFO] Using KVM acceleration"
 else

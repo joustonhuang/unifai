@@ -55,6 +55,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 
 if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
@@ -134,6 +135,9 @@ pass "VM verifier red-path smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
+pass "VM verifier TCG launch smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke script passes bash -n"
 
@@ -148,6 +152,9 @@ pass "VM verifier red-path smoke test failed closed as expected"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke test failed closed as expected"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
+pass "VM verifier TCG launch smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke test passed"
