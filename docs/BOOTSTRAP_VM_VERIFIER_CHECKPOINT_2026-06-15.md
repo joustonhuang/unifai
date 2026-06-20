@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `2debfb0`
+- Latest local head in the stack: `54e3760`
 - Latest non-doc logic head in the local stack: `1be4456`
-- Local branch state at checkpoint: ahead by 25 commits over the GitHub-visible branch head
+- Local branch state at checkpoint: ahead by 26 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -33,6 +33,7 @@
 23. `1be4456` — `tests: cover vm host readiness helper`
 24. `f9f0b25` — `docs: refresh vm verifier checkpoint state`
 25. `2debfb0` — `docs: sync vm verifier boundary guidance`
+26. `54e3760` — `docs: refresh vm verifier publish state`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
@@ -58,7 +59,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `2debfb0`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is preserved as clean commits through `54e3760`, rather than as an uncommitted sandbox delta.
 
 ## Known real blocker
 - First real VM proof still cannot start from this branch until these local commits become GitHub-visible.
