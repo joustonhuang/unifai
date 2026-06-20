@@ -3,8 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest non-doc logic head in the local stack: `1cb116d`
-- Local branch state at checkpoint: ahead by 17 commits over the GitHub-visible branch head, with this checkpoint refresh on top
+- Latest local head in the stack: `1be4456`
+- Latest non-doc logic head in the local stack: `1be4456`
+- Local branch state at checkpoint: ahead by 23 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -23,7 +24,13 @@
 14. `70709d3` — `tests: lock bootstrap preflight contract`
 15. `d013011` — `tests: smoke test github check gate`
 16. `1cb116d` — `tests: harden github check gate diagnostics`
-17. `822fd07` — `docs: refresh vm verifier publish boundary`
+17. `9f238a4` — `docs: refresh vm verifier publish boundary`
+18. `b29f575` — `scripts: fail fast on local-only verifier refs`
+19. `3f1688c` — `docs: note local-only ref preflight guard`
+20. `82b6f43` — `tests: lock verifier preflight wrapper into bootstrap contract`
+21. `7e54422` — `tests: lock workflow guard steps into contract`
+22. `d91ab00` — `tests: harden verifier tcg fallback path`
+23. `1be4456` — `tests: cover vm host readiness helper`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
@@ -46,16 +53,20 @@
   - GitHub required-check success/failure inspection with annotations
   - forced red-path failure
   - GitHub fallback SHA-resolution failure
+- Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
+  - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
+  - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
+- The current local hardening stack is preserved as clean commits through `1be4456`, rather than as an uncommitted sandbox delta.
 
 ## Known real blocker
 - First real VM proof still cannot start from this branch until these local commits become GitHub-visible.
 - The last GitHub-visible ref tested was `5baa4b0`, and its required check `Bootstrap Installer Preflight` was red, so verifier execution stopped before VM boot.
 - A fresh gate check on 2026-06-17 still shows `5baa4b0` red: `Bootstrap Installer Preflight` failed at https://github.com/joustonhuang/unifai/actions/runs/27492489483/job/81260207531. The public workflow still pins Node20-era actions (`actions/checkout@v4`, `actions/setup-python@v5`, `actions/upload-artifact@v4`), and the failing annotation summary surfaces those deprecation warnings alongside a generic `Process completed with exit code 1` marker.
 - `main` has moved independently since that public branch head, but that does not change the current blocker: the verifier boundary is still GitHub visibility plus a green required-check gate on the exact visible ref you plan to boot.
-- Once the branch is visible, the first likely execution friction is host-side, not code-side: without KVM write access the verifier will run in slower TCG mode, and without `gh` auth or a GitHub token the API gate may fail closed or rate-limit.
+- Once the branch is visible, the first likely execution friction is host-side, not code-side: `/dev/kvm` is present but not writable on this host so the verifier will run in slower TCG mode, and `gh` is installed but unauthenticated with no `GH_TOKEN`/`GITHUB_TOKEN` exported, so the API gate may fail closed or rate-limit.
 
 ## Recommended next move when external boundary opens
-1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `1cb116d`).
+1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `1be4456`).
 2. Run:
    ```bash
    bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
