@@ -58,6 +58,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 
 if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
@@ -146,6 +147,9 @@ pass "VM verifier TCG launch smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
 pass "VM verifier failure-excerpt smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"
+pass "VM verifier remote-failure excerpt smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke script passes bash -n"
 
@@ -169,6 +173,9 @@ pass "VM verifier TCG launch smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
 pass "VM verifier failure-excerpt smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"
+pass "VM verifier remote-failure excerpt smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke test passed"
