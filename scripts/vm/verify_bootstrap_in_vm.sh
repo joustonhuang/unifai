@@ -116,6 +116,18 @@ CLOUD_INIT_META_DATA="$WORK_DIR/meta-data"
 SERIAL_LOG="$WORK_DIR/serial.log"
 REPORT="$WORK_DIR/report.txt"
 
+print_artifact_excerpt() {
+  local label="$1"
+  local path="$2"
+  local lines="${3:-40}"
+  if [ ! -f "$path" ]; then
+    echo "[INFO] ${label} missing: $path" >&2
+    return
+  fi
+  echo "[INFO] ${label} tail (${path})" >&2
+  tail -n "$lines" "$path" >&2 || true
+}
+
 if [ ! -f "$BASE_IMG" ]; then
   curl -L "$IMAGE_URL" -o "$BASE_IMG"
 fi
@@ -202,6 +214,8 @@ done
 
 if [ "$SSH_READY" -ne 1 ]; then
   echo "[FAIL] SSH never became ready; see $SERIAL_LOG" >&2
+  print_artifact_excerpt "serial log" "$SERIAL_LOG"
+  print_artifact_excerpt "qemu log" "$QEMU_LOG"
   exit 1
 fi
 
@@ -319,6 +333,10 @@ scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P
 
 if [ "$REMOTE_VERIFY_STATUS" -ne 0 ]; then
   echo "[FAIL] VM verification failed; evidence bundle: $WORK_DIR" >&2
+  print_artifact_excerpt "installer output" "$WORK_DIR/installer-output.log"
+  print_artifact_excerpt "vm report" "$REPORT"
+  print_artifact_excerpt "serial log" "$SERIAL_LOG"
+  print_artifact_excerpt "qemu log" "$QEMU_LOG"
   exit "$REMOTE_VERIFY_STATUS"
 fi
 

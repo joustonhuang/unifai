@@ -21,6 +21,7 @@ text = VERIFIER.read_text(encoding="utf-8")
 
 required = [
     ('QEMU_LOG="$WORK_DIR/qemu.log"', 'Verifier captures QEMU output into qemu.log'),
+    ('print_artifact_excerpt() {', 'Verifier defines a reusable artifact excerpt helper'),
     ('UNIFAI_VM_VERIFY_FORCE_NO_GH', 'Verifier supports explicit no-gh smoke testing'),
     ('UNIFAI_VM_VERIFY_FORCE_TCG', 'Verifier supports explicit TCG smoke testing'),
     ('gh disabled by UNIFAI_VM_VERIFY_FORCE_NO_GH; using curl-based GitHub API fallback', 'Verifier announces forced gh fallback mode'),
@@ -37,6 +38,10 @@ required = [
     ('QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)', 'Verifier uses host CPU only under KVM'),
     ('QEMU_ACCEL_ARGS=(-cpu max)', 'Verifier uses a portable CPU model in TCG mode'),
     ('>"$QEMU_LOG" 2>&1 &', 'Verifier redirects QEMU stdout/stderr into qemu.log'),
+    ('print_artifact_excerpt "serial log" "$SERIAL_LOG"', 'Verifier surfaces serial log excerpts on failure'),
+    ('print_artifact_excerpt "qemu log" "$QEMU_LOG"', 'Verifier surfaces qemu log excerpts on failure'),
+    ('print_artifact_excerpt "installer output" "$WORK_DIR/installer-output.log"', 'Verifier surfaces installer output excerpts on failure'),
+    ('print_artifact_excerpt "vm report" "$REPORT"', 'Verifier surfaces VM report excerpts on failure'),
 ]
 
 for needle, message in required:
