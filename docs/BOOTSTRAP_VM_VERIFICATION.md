@@ -123,7 +123,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `5baa4b0`
-- the local hardening stack is currently ahead of that public ref through `aa8cd7b` (`docs: refresh vm verifier checkpoint state`), 33 commits ahead in total
+- the local hardening stack is currently ahead of that public ref through `6eab4dc` (`tests: cover installer failure excerpts in vm verifier`), 35 commits ahead in total
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed but unauthenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
 
@@ -161,3 +161,4 @@ It is the validation scaffold for the current bootstrap PoC:
 - a real VM tells us whether the bootstrap actually boots the stack
 - the verifier now also checks that OpenClaw reaches a live runtime state and that the in-VM secret leakage smoke test still passes
 - CI now also carries fail-closed smoke checks proving the verifier rejects both a forced verification failure and an unresolved GitHub commit SHA in fallback mode
+- local smoke coverage now also proves installer-phase VM failures surface installer/serial/qemu evidence instead of disappearing behind `set -o pipefail`

@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `aa8cd7b`
-- Latest non-doc logic head in the local stack: `03d08af`
-- Local branch state at checkpoint: ahead by 33 commits over the GitHub-visible branch head
+- Latest local head in the stack: `6eab4dc`
+- Latest non-doc logic head in the local stack: `6eab4dc`
+- Local branch state at checkpoint: ahead by 35 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -40,6 +40,8 @@
 30. `03d08af` — `tests: cover missing vm report on verifier failure`
 31. `5b132f5` — `docs: refresh vm verifier checkpoint state`
 32. `aa8cd7b` — `docs: refresh vm verifier checkpoint state`
+33. `8222e65` — `docs: refresh vm verifier checkpoint state`
+34. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
@@ -68,7 +70,8 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `aa8cd7b`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is preserved as clean commits through `6eab4dc`, rather than as an uncommitted sandbox delta.
+- The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 
 ## Known real blocker
 - First real VM proof still cannot start from this branch until these local commits become GitHub-visible.
