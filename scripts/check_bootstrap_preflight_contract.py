@@ -32,6 +32,7 @@ required = [
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"', 'Preflight requires the VM verifier failure-excerpt smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"', 'Preflight requires the VM verifier remote-failure excerpt smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_missing_report.sh"', 'Preflight requires the VM verifier remote-failure missing-report smoke test'),
+    ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_installer_failure_excerpts.sh"', 'Preflight requires the VM verifier installer-failure excerpt smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight requires the VM verifier preflight-wrapper smoke test'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"', 'Preflight syntax-checks the workflow contract checker'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight syntax-checks the GitHub check-gate contract checker'),
@@ -44,6 +45,7 @@ required = [
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"', 'Preflight syntax-checks the VM verifier failure-excerpt smoke test'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"', 'Preflight syntax-checks the VM verifier remote-failure excerpt smoke test'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_missing_report.sh"', 'Preflight syntax-checks the VM verifier remote-failure missing-report smoke test'),
+    ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_installer_failure_excerpts.sh"', 'Preflight syntax-checks the VM verifier installer-failure excerpt smoke test'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight syntax-checks the VM verifier preflight-wrapper smoke test'),
     ('python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"', 'Preflight runs the workflow contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight runs the GitHub check-gate contract checker'),
@@ -57,6 +59,7 @@ required = [
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"', 'Preflight runs the verifier failure-excerpt smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"', 'Preflight runs the verifier remote-failure excerpt smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_missing_report.sh"', 'Preflight runs the verifier remote-failure missing-report smoke test'),
+    ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_installer_failure_excerpts.sh"', 'Preflight runs the verifier installer-failure excerpt smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"', 'Preflight runs the verifier preflight-wrapper smoke test'),
 ]
 
