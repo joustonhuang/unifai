@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `7382c09`
+- Latest local head in the stack: `e0576fb`
 - Latest non-doc logic head in the local stack: `9f7046a`
-- Local branch state at checkpoint: ahead by 39 commits over the GitHub-visible branch head
+- Local branch state at checkpoint: ahead by 40 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -34,19 +34,20 @@
 24. `f9f0b25` — `docs: refresh vm verifier checkpoint state`
 25. `2debfb0` — `docs: sync vm verifier boundary guidance`
 26. `54e3760` — `docs: refresh vm verifier publish state`
-27. `2b31af0` — `tests: harden vm verifier failure diagnostics`
-28. `376062b` — `tests: cover vm verifier remote failure excerpts`
-29. `f24a91a` — `docs: refresh vm verifier checkpoint state`
-30. `03d08af` — `tests: cover missing vm report on verifier failure`
-31. `5b132f5` — `docs: refresh vm verifier checkpoint state`
-32. `aa8cd7b` — `docs: refresh vm verifier checkpoint state`
-33. `8222e65` — `docs: refresh vm verifier checkpoint state`
-34. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
-35. `b82b772` — `docs: refresh vm verifier checkpoint state`
-36. `9f7046a` — `tests: cover installer failure smoke in preflight`
-37. `ae85aee` — `docs: refresh vm verifier checkpoint state`
-38. `7382c09` — `docs: refresh vm verifier checkpoint state`
-
+27. `9457332` — `docs: refresh vm verifier publish boundary`
+28. `2b31af0` — `tests: harden vm verifier failure diagnostics`
+29. `376062b` — `tests: cover vm verifier remote failure excerpts`
+30. `f24a91a` — `docs: refresh vm verifier checkpoint state`
+31. `03d08af` — `tests: cover missing vm report on verifier failure`
+32. `5b132f5` — `docs: refresh vm verifier checkpoint state`
+33. `aa8cd7b` — `docs: refresh vm verifier checkpoint state`
+34. `8222e65` — `docs: refresh vm verifier checkpoint state`
+35. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
+36. `b82b772` — `docs: refresh vm verifier checkpoint state`
+37. `9f7046a` — `tests: cover installer failure smoke in preflight`
+38. `ae85aee` — `docs: refresh vm verifier checkpoint state`
+39. `7382c09` — `docs: refresh vm verifier checkpoint state`
+40. `e0576fb` — `docs: refresh vm verifier checkpoint state`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -74,7 +75,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `9f7046a`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is preserved as clean commits through `e0576fb`, rather than as an uncommitted sandbox delta.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 
