@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `9f7046a`
+- Latest local head in the stack: `ae85aee`
 - Latest non-doc logic head in the local stack: `9f7046a`
-- Local branch state at checkpoint: ahead by 37 commits over the GitHub-visible branch head
+- Local branch state at checkpoint: ahead by 38 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -44,6 +44,7 @@
 34. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
 35. `b82b772` — `docs: refresh vm verifier checkpoint state`
 36. `9f7046a` — `tests: cover installer failure smoke in preflight`
+37. `ae85aee` — `docs: refresh vm verifier checkpoint state`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
