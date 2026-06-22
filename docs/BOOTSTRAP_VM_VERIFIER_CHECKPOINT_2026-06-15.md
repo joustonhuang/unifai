@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `6eab4dc`
-- Latest non-doc logic head in the local stack: `6eab4dc`
-- Local branch state at checkpoint: ahead by 35 commits over the GitHub-visible branch head
+- Latest local head in the stack: `9f7046a`
+- Latest non-doc logic head in the local stack: `9f7046a`
+- Local branch state at checkpoint: ahead by 37 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -42,6 +42,8 @@
 32. `aa8cd7b` — `docs: refresh vm verifier checkpoint state`
 33. `8222e65` — `docs: refresh vm verifier checkpoint state`
 34. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
+35. `b82b772` — `docs: refresh vm verifier checkpoint state`
+36. `9f7046a` — `tests: cover installer failure smoke in preflight`
 
 ## What is now true locally
 - Bootstrap installer preflight remains green.
@@ -70,8 +72,9 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `6eab4dc`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is preserved as clean commits through `9f7046a`, rather than as an uncommitted sandbox delta.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
+- Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 
 ## Known real blocker
 - First real VM proof still cannot start from this branch until these local commits become GitHub-visible.
@@ -81,7 +84,7 @@
 - Once the branch is visible, the first likely execution friction is host-side, not code-side: `/dev/kvm` is present but not writable on this host so the verifier will run in slower TCG mode, and `gh` is installed but unauthenticated with no `GH_TOKEN`/`GITHUB_TOKEN` exported, so the API gate may fail closed or rate-limit.
 
 ## Recommended next move when external boundary opens
-1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `03d08af`).
+1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `9f7046a`).
 2. Run:
    ```bash
    bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
