@@ -219,7 +219,16 @@ if [ "$SSH_READY" -ne 1 ]; then
   exit 1
 fi
 
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 "git clone https://github.com/$REPO_SLUG.git ~/unifai && cd ~/unifai && git checkout $SHA && sudo bash installer.sh" | tee "$WORK_DIR/installer-output.log"
+INSTALL_STATUS=0
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 "git clone https://github.com/$REPO_SLUG.git ~/unifai && cd ~/unifai && git checkout $SHA && sudo bash installer.sh" | tee "$WORK_DIR/installer-output.log" || INSTALL_STATUS=$?
+
+if [ "$INSTALL_STATUS" -ne 0 ]; then
+  echo "[FAIL] Installer run failed inside VM; evidence bundle: $WORK_DIR" >&2
+  print_artifact_excerpt "installer output" "$WORK_DIR/installer-output.log"
+  print_artifact_excerpt "serial log" "$SERIAL_LOG"
+  print_artifact_excerpt "qemu log" "$QEMU_LOG"
+  exit "$INSTALL_STATUS"
+fi
 
 REMOTE_VERIFY_STATUS=0
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -p "$SSH_PORT" unifai@127.0.0.1 'bash -s' <<'EOF' || REMOTE_VERIFY_STATUS=$?
