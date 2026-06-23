@@ -22,6 +22,29 @@ def usage() -> int:
     return 2
 
 
+def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None:
+    print(f"[FAIL] GitHub API {exc.code} for {url}", file=sys.stderr)
+    if body:
+        print(body, file=sys.stderr)
+
+    lower_body = body.lower()
+    if exc.code in {401, 403, 429} and (
+        "rate limit" in lower_body
+        or "secondary rate limit" in lower_body
+        or "bad credentials" in lower_body
+        or exc.code in {401, 429}
+    ):
+        print(
+            "[INFO] If this host should query private or rate-limited GitHub state, authenticate gh or export GH_TOKEN/GITHUB_TOKEN before rerunning.",
+            file=sys.stderr,
+        )
+    if exc.code == 403 and "rate limit" in lower_body:
+        print(
+            "[INFO] Unauthenticated GitHub API access can fail closed here even when the branch/ref itself is valid.",
+            file=sys.stderr,
+        )
+
+
 def github_get(path: str):
     url = f"{API_BASE}/{path.lstrip('/')}"
     headers = {
@@ -38,9 +61,7 @@ def github_get(path: str):
             return json.load(resp)
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", "replace")
-        print(f"[FAIL] GitHub API {exc.code} for {url}", file=sys.stderr)
-        if body:
-            print(body, file=sys.stderr)
+        explain_http_error(exc, url, body)
         raise SystemExit(1) from exc
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import urllib.error
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -129,6 +130,29 @@ if "annotations:" not in stdout or "Node.js 20 actions are deprecated." not in s
     raise SystemExit(1)
 if "... 95 more annotation(s) omitted" not in stdout and "… 95 more annotation(s) omitted" not in stdout:
     print("[FAIL] Expected annotation omission summary missing from failure case.")
+    raise SystemExit(1)
+
+rate_limit_error = urllib.error.HTTPError(
+    "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+    403,
+    "Forbidden",
+    hdrs=None,
+    fp=None,
+)
+stderr = io.StringIO()
+with contextlib.redirect_stderr(stderr):
+    module.explain_http_error(
+        rate_limit_error,
+        "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+        '{"message":"API rate limit exceeded for 203.0.113.7.","documentation_url":"https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"}',
+    )
+rate_limit_output = stderr.getvalue()
+print(rate_limit_output, end="")
+if "export GH_TOKEN/GITHUB_TOKEN" not in rate_limit_output:
+    print("[FAIL] Expected token guidance missing from rate-limit error explanation.")
+    raise SystemExit(1)
+if "Unauthenticated GitHub API access can fail closed here" not in rate_limit_output:
+    print("[FAIL] Expected unauthenticated rate-limit guidance missing.")
     raise SystemExit(1)
 
 print("[PASS] GitHub check gate inspector behaves as expected.")

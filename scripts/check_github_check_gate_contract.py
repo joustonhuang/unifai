@@ -22,11 +22,14 @@ text = SCRIPT.read_text(encoding="utf-8")
 required = [
     ('MAX_ANNOTATIONS_PER_LEVEL = 5', 'GitHub check-gate inspector caps per-level annotation output'),
     ('def github_get_paged(path: str, list_key: str | None = None, per_page: int = 100):', 'GitHub check-gate inspector defines paged GitHub fetching'),
+    ('def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None:', 'GitHub check-gate inspector defines targeted HTTP error explanation'),
+    ('export GH_TOKEN/GITHUB_TOKEN before rerunning.', 'GitHub check-gate inspector suggests token auth on API auth/rate-limit failures'),
     ('def summarize_annotations(annotations: list[dict]) -> None:', 'GitHub check-gate inspector defines annotation summarization'),
     ('grouped.setdefault(level, []).append(ann)', 'GitHub check-gate inspector groups annotations by level'),
     ('priority = ["failure", "warning", "notice"]', 'GitHub check-gate inspector prioritizes failures ahead of warnings/notices'),
     ('"  likely root signal: "', 'GitHub check-gate inspector prints a root-signal summary'),
     ('omitted = len(anns) - MAX_ANNOTATIONS_PER_LEVEL', 'GitHub check-gate inspector summarizes omitted annotations'),
+    ('explain_http_error(exc, url, body)', 'GitHub check-gate inspector routes HTTP failures through the explainer'),
     ('summarize_annotations(annotations)', 'GitHub check-gate inspector uses annotation summarization for failing checks'),
 ]
 
