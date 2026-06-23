@@ -69,6 +69,7 @@ if [ "$WARN_COUNT" -ne 0 ]; then
   printf 'Suggested next actions:\n'
   if [ -e /dev/kvm ] && [ ! -w /dev/kvm ]; then
     printf -- '- /dev/kvm is present but not writable; expect TCG mode unless host permissions are fixed.\n'
+    printf -- '- Likely fix path: ensure the operator user can access /dev/kvm (for example via the kvm group), then rerun the readiness check.\n'
   elif [ ! -e /dev/kvm ]; then
     printf -- '- /dev/kvm is absent; use TCG mode or prepare a KVM-capable host for faster VM proof.\n'
   fi

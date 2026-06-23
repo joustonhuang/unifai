@@ -56,4 +56,9 @@ if ! grep -q 'Suggested next actions:' <<<"$OUTPUT"; then
   exit 1
 fi
 
+if [ -e /dev/kvm ] && ! grep -q 'Likely fix path: ensure the operator user can access /dev/kvm' <<<"$OUTPUT"; then
+  echo "[FAIL] Expected actionable /dev/kvm recovery guidance missing."
+  exit 1
+fi
+
 echo "[PASS] VM host readiness helper behaves as expected."
