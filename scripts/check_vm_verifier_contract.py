@@ -35,6 +35,7 @@ required = [
     ('if [ -w /dev/kvm ]; then', 'Verifier checks whether /dev/kvm is writable'),
     ('[INFO] Using KVM acceleration', 'Verifier reports KVM acceleration when available'),
     ('[INFO] /dev/kvm is not writable; falling back to TCG emulation', 'Verifier reports TCG fallback when KVM is unavailable'),
+    ('Likely fix path: ensure the operator user can access /dev/kvm (for example via the kvm group), then rerun the verifier for faster KVM-backed proof.', 'Verifier explains likely /dev/kvm recovery when KVM is unavailable'),
     ('QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)', 'Verifier uses host CPU only under KVM'),
     ('QEMU_ACCEL_ARGS=(-cpu max)', 'Verifier uses a portable CPU model in TCG mode'),
     ('>"$QEMU_LOG" 2>&1 &', 'Verifier redirects QEMU stdout/stderr into qemu.log'),

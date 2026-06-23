@@ -178,6 +178,7 @@ elif [ -w /dev/kvm ]; then
 else
   QEMU_ACCEL_ARGS=(-cpu max)
   echo "[INFO] /dev/kvm is not writable; falling back to TCG emulation"
+  echo "[INFO] Likely fix path: ensure the operator user can access /dev/kvm (for example via the kvm group), then rerun the verifier for faster KVM-backed proof."
 fi
 
 cleanup() {
