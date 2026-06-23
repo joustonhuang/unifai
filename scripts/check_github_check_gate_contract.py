@@ -24,6 +24,7 @@ required = [
     ('def github_get_paged(path: str, list_key: str | None = None, per_page: int = 100):', 'GitHub check-gate inspector defines paged GitHub fetching'),
     ('def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None:', 'GitHub check-gate inspector defines targeted HTTP error explanation'),
     ('export GH_TOKEN/GITHUB_TOKEN before rerunning.', 'GitHub check-gate inspector suggests token auth on API auth/rate-limit failures'),
+    ('appears invalid; refresh the token or clear it before rerunning.', 'GitHub check-gate inspector explains bad-token recovery'),
     ('not GitHub-visible yet; push the branch tip first or rerun with a GitHub-visible branch/ref.', 'GitHub check-gate inspector explains 422 unknown-ref recovery'),
     ('def summarize_annotations(annotations: list[dict]) -> None:', 'GitHub check-gate inspector defines annotation summarization'),
     ('grouped.setdefault(level, []).append(ann)', 'GitHub check-gate inspector groups annotations by level'),

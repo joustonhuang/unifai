@@ -38,6 +38,11 @@ def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None
             "[INFO] If this host should query private or rate-limited GitHub state, authenticate gh or export GH_TOKEN/GITHUB_TOKEN before rerunning.",
             file=sys.stderr,
         )
+    if exc.code == 401 and "bad credentials" in lower_body:
+        print(
+            "[INFO] The configured GH_TOKEN/GITHUB_TOKEN appears invalid; refresh the token or clear it before rerunning.",
+            file=sys.stderr,
+        )
     if exc.code == 403 and "rate limit" in lower_body:
         print(
             "[INFO] Unauthenticated GitHub API access can fail closed here even when the branch/ref itself is valid.",

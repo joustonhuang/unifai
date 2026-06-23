@@ -155,6 +155,26 @@ if "Unauthenticated GitHub API access can fail closed here" not in rate_limit_ou
     print("[FAIL] Expected unauthenticated rate-limit guidance missing.")
     raise SystemExit(1)
 
+bad_credentials_error = urllib.error.HTTPError(
+    "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+    401,
+    "Unauthorized",
+    hdrs=None,
+    fp=None,
+)
+stderr = io.StringIO()
+with contextlib.redirect_stderr(stderr):
+    module.explain_http_error(
+        bad_credentials_error,
+        "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+        '{"message":"Bad credentials","documentation_url":"https://docs.github.com/rest","status":"401"}',
+    )
+bad_credentials_output = stderr.getvalue()
+print(bad_credentials_output, end="")
+if "appears invalid" not in bad_credentials_output:
+    print("[FAIL] Expected invalid-token guidance missing from 401 explanation.")
+    raise SystemExit(1)
+
 unknown_ref_error = urllib.error.HTTPError(
     "https://api.github.com/repos/joustonhuang/unifai/commits/not-on-github",
     422,
