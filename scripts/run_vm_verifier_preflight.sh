@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: bash scripts/run_vm_verifier_preflight.sh [github-visible-ref-or-sha]
+Usage: bash scripts/run_vm_verifier_preflight.sh [--dry-run] [github-visible-ref-or-sha]
 
 Runs the cheap local checks before a fresh-VM verifier attempt:
 1. bootstrap installer preflight
@@ -11,6 +11,9 @@ Runs the cheap local checks before a fresh-VM verifier attempt:
 3. GitHub required-check gate inspection
 
 If no ref is provided, uses the current branch name.
+
+Options:
+  --dry-run  Print the planned commands instead of executing them.
 
 Environment:
   UNIFAI_VM_PREFLIGHT_DRY_RUN=1  Print the planned commands instead of executing them.
@@ -85,16 +88,51 @@ ensure_ref_is_github_visible() {
   exit 1
 }
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  usage
-  exit 0
+dry_run="${UNIFAI_VM_PREFLIGHT_DRY_RUN:-0}"
+ref=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "[FAIL] Unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [ -n "$ref" ]; then
+        echo "[FAIL] Unexpected extra argument: $1" >&2
+        usage >&2
+        exit 1
+      fi
+      ref="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ "$#" -gt 0 ]; then
+  echo "[FAIL] Unexpected extra argument: $1" >&2
+  usage >&2
+  exit 1
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 run_step() {
-  if [ "${UNIFAI_VM_PREFLIGHT_DRY_RUN:-0}" = "1" ]; then
+  if [ "$dry_run" = "1" ]; then
     printf '[DRY_RUN]'
     for arg in "$@"; do
       printf ' %q' "$arg"
@@ -105,7 +143,7 @@ run_step() {
   "$@"
 }
 
-ref="${1:-$(git rev-parse --abbrev-ref HEAD)}"
+ref="${ref:-$(git rev-parse --abbrev-ref HEAD)}"
 if [ "$ref" = "HEAD" ]; then
   echo "[FAIL] Detached HEAD; pass an explicit GitHub-visible ref." >&2
   exit 1
@@ -121,7 +159,7 @@ ensure_ref_is_github_visible "$ref" "$current_branch"
 echo "== VM verifier local preflight =="
 echo "Repo: $REPO_ROOT"
 echo "Ref: $ref"
-if [ "${UNIFAI_VM_PREFLIGHT_DRY_RUN:-0}" = "1" ]; then
+if [ "$dry_run" = "1" ]; then
   echo "Mode: dry-run"
 fi
 

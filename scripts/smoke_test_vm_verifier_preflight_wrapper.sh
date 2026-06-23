@@ -10,11 +10,16 @@ BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
 LOCAL_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 VISIBLE_SHA="$(git -C "$REPO_ROOT" rev-parse "github/$BRANCH")"
 
-BRANCH_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "$BRANCH")"
+BRANCH_OUTPUT="$("$REAL_BASH" "$WRAPPER" --dry-run "$BRANCH")"
 printf '%s\n' "$BRANCH_OUTPUT"
 
 if ! grep -q "Mode: dry-run" <<<"$BRANCH_OUTPUT"; then
   echo "[FAIL] Expected dry-run mode banner missing for branch case."
+  exit 1
+fi
+
+if ! grep -q "Ref: $BRANCH" <<<"$BRANCH_OUTPUT"; then
+  echo "[FAIL] Expected branch ref missing in --dry-run flag case."
   exit 1
 fi
 
@@ -43,6 +48,22 @@ fi
 
 if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_SHA" <<<"$VISIBLE_SHA_OUTPUT"; then
   echo "[FAIL] Expected check-gate command missing in GitHub-visible SHA case."
+  exit 1
+fi
+
+set +e
+UNKNOWN_OPTION_OUTPUT="$("$REAL_BASH" "$WRAPPER" --bogus 2>&1)"
+UNKNOWN_OPTION_STATUS=$?
+set -e
+printf '%s\n' "$UNKNOWN_OPTION_OUTPUT"
+
+if [ "$UNKNOWN_OPTION_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected unknown option case to fail."
+  exit 1
+fi
+
+if ! grep -q "Unknown option: --bogus" <<<"$UNKNOWN_OPTION_OUTPUT"; then
+  echo "[FAIL] Expected unknown option failure message missing."
   exit 1
 fi
 

@@ -20,6 +20,10 @@ def ok(message: str) -> None:
 text = PREFLIGHT.read_text(encoding="utf-8")
 
 required = [
+    ('Usage: bash scripts/run_vm_verifier_preflight.sh [--dry-run] [github-visible-ref-or-sha]', "Wrapper usage documents the --dry-run flag"),
+    ('dry_run="${UNIFAI_VM_PREFLIGHT_DRY_RUN:-0}"', "Wrapper derives dry-run mode from env by default"),
+    ('--dry-run)', "Wrapper parses the --dry-run flag"),
+    ('Unknown option: $1', "Wrapper fails clearly on unknown options"),
     ('ensure_ref_is_github_visible "$ref" "$current_branch"', "Wrapper fails fast when an explicit local SHA is not GitHub-visible"),
     ('git branch -r --contains "$ref"', "Wrapper checks whether an explicit local commit is reachable from a GitHub remote branch"),
     ("Push the branch tip first, or use a GitHub-visible branch/ref before running VM verifier preflight.", "Wrapper explains how to recover from a local-only explicit SHA"),
