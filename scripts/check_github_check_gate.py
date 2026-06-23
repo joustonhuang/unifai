@@ -43,6 +43,15 @@ def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None
             "[INFO] Unauthenticated GitHub API access can fail closed here even when the branch/ref itself is valid.",
             file=sys.stderr,
         )
+    if exc.code == 422 and (
+        "no commit found for sha" in lower_body
+        or "no commit found" in lower_body
+        or "unprocessable entity" in lower_body
+    ):
+        print(
+            "[INFO] This usually means the ref/SHA is mistyped or not GitHub-visible yet; push the branch tip first or rerun with a GitHub-visible branch/ref.",
+            file=sys.stderr,
+        )
 
 
 def github_get(path: str):

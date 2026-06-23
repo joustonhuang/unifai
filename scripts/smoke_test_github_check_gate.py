@@ -155,4 +155,24 @@ if "Unauthenticated GitHub API access can fail closed here" not in rate_limit_ou
     print("[FAIL] Expected unauthenticated rate-limit guidance missing.")
     raise SystemExit(1)
 
+unknown_ref_error = urllib.error.HTTPError(
+    "https://api.github.com/repos/joustonhuang/unifai/commits/not-on-github",
+    422,
+    "Unprocessable Entity",
+    hdrs=None,
+    fp=None,
+)
+stderr = io.StringIO()
+with contextlib.redirect_stderr(stderr):
+    module.explain_http_error(
+        unknown_ref_error,
+        "https://api.github.com/repos/joustonhuang/unifai/commits/not-on-github",
+        '{"message":"No commit found for SHA: not-on-github","documentation_url":"https://docs.github.com/rest/commits/commits#get-a-commit","status":"422"}',
+    )
+unknown_ref_output = stderr.getvalue()
+print(unknown_ref_output, end="")
+if "not GitHub-visible yet" not in unknown_ref_output:
+    print("[FAIL] Expected GitHub-visible ref guidance missing from 422 explanation.")
+    raise SystemExit(1)
+
 print("[PASS] GitHub check gate inspector behaves as expected.")
