@@ -60,6 +60,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_kvm_fallback_guidance.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_missing_report_fail_closed.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_missing_report.sh"
@@ -158,6 +159,9 @@ pass "VM verifier TCG launch smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_kvm_fallback_guidance.sh"
 pass "VM verifier kvm-fallback guidance smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_missing_report_fail_closed.sh"
+pass "VM verifier missing-report fail-closed smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
 pass "VM verifier failure-excerpt smoke script passes bash -n"
 
@@ -196,6 +200,9 @@ pass "VM verifier TCG launch smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_kvm_fallback_guidance.sh"
 pass "VM verifier kvm-fallback guidance smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_missing_report_fail_closed.sh"
+pass "VM verifier missing-report fail-closed smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_failure_excerpts.sh"
 pass "VM verifier failure-excerpt smoke test passed"

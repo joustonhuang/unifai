@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== UnifAI Smoke Test: VM verifier TCG launch path stays portable ==="
+echo "=== UnifAI Smoke Test: VM verifier fails closed when report copy-back is missing ==="
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERIFY_SCRIPT="$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 REAL_BASH="$(command -v bash)"
-TMP_DIR="$(mktemp -d -t unifai-vm-tcg-XXXXXX)"
+TMP_DIR="$(mktemp -d -t unifai-vm-missing-report-XXXXXX)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 BIN_DIR="$TMP_DIR/bin"
@@ -28,13 +28,8 @@ case "$*" in
     out=""
     while [ "$#" -gt 0 ]; do
       case "$1" in
-        -o)
-          out="$2"
-          shift 2
-          ;;
-        *)
-          shift
-          ;;
+        -o) out="$2"; shift 2 ;;
+        *) shift ;;
       esac
     done
     : > "$out"
@@ -60,16 +55,10 @@ while args and args[0].startswith('-'):
     elif args[0] == '--arg':
         args = args[3:]
     else:
-        print(f"unsupported jq args: {' '.join(sys.argv[1:])}", file=sys.stderr)
         sys.exit(1)
-
-if not args:
-    print("missing jq filter", file=sys.stderr)
-    sys.exit(1)
 
 expr = args[0]
 payload = json.load(sys.stdin)
-
 if expr == '.sha':
     value = payload.get('sha')
 elif '.check_runs[]?' in expr and '.conclusion' in expr:
@@ -77,26 +66,17 @@ elif '.check_runs[]?' in expr and '.conclusion' in expr:
 elif '.check_runs[]?' in expr and '.status' in expr:
     value = 'completed'
 else:
-    print(f"unsupported jq filter: {expr}", file=sys.stderr)
     sys.exit(1)
 
 if value is None:
     sys.exit(0)
-
-if raw:
-    print(value)
-else:
-    json.dump(value, sys.stdout)
-    print()
+print(value if raw else json.dumps(value))
 EOF
 
 cat > "$BIN_DIR/qemu-img" <<'EOF'
 #!/usr/bin/env bash
 args=("$@")
 count="${#args[@]}"
-if [ "$count" -lt 2 ]; then
-  exit 1
-fi
 touch "${args[$((count-2))]}"
 EOF
 
@@ -110,13 +90,8 @@ cat > "$BIN_DIR/ssh-keygen" <<'EOF'
 out=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    -f)
-      out="$2"
-      shift 2
-      ;;
-    *)
-      shift
-      ;;
+    -f) out="$2"; shift 2 ;;
+    *) shift ;;
   esac
 done
 printf 'dummy-private-key\n' > "$out"
@@ -126,26 +101,37 @@ EOF
 cat > "$BIN_DIR/ssh" <<'EOF'
 #!/usr/bin/env bash
 joined="$*"
-if printf '%s\n' "$joined" | grep -q 'echo ssh-ready'; then
+if grep -Fq 'echo ssh-ready' <<<"$joined"; then
   exit 0
 fi
-if printf '%s\n' "$joined" | grep -q 'bash -s'; then
+if grep -Fq 'installer.sh' <<<"$joined"; then
+  printf 'fake installer output line\n'
+  exit 0
+fi
+if grep -Fq 'bash -s' <<<"$joined"; then
   cat >/dev/null || true
   exit 0
 fi
-cat >/dev/null || true
 exit 0
 EOF
 
 cat > "$BIN_DIR/scp" <<'EOF'
 #!/usr/bin/env bash
-dest="${@: -1}"
-printf '== fake vm report ==\n[PASS] synthetic report copy\n' > "$dest"
+exit 1
 EOF
 
 cat > "$BIN_DIR/qemu-system-x86_64" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' "$@" > "$QEMU_ARGS_LOG"
+serial_path=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -serial) serial_path="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+serial_path="${serial_path#file:}"
+printf 'fake serial for missing report\n' > "$serial_path"
+printf 'fake qemu for missing report\n' >&2
 trap 'exit 0' TERM INT
 sleep 30 &
 wait $!
@@ -163,39 +149,29 @@ STATUS=0
 OUTPUT="$(PATH="$BIN_DIR:/usr/bin:/bin" \
   UNIFAI_VM_VERIFY_FORCE_NO_GH=1 \
   UNIFAI_VM_VERIFY_FORCE_TCG=1 \
-  QEMU_ARGS_LOG="$TMP_DIR/qemu-args.log" \
   WORK_DIR="$WORK_DIR" \
   "$REAL_BASH" "$VERIFY_SCRIPT" main 2>&1)" || STATUS=$?
 printf '%s\n' "$OUTPUT"
 
-if [ "$STATUS" -ne 0 ]; then
-  echo "[FAIL] Verifier unexpectedly failed in forced-TCG smoke path."
+if [ "$STATUS" -eq 0 ]; then
+  echo "[FAIL] Verifier unexpectedly succeeded when report copy-back was missing."
   exit 1
 fi
 
-if ! grep -q 'UNIFAI_VM_VERIFY_FORCE_TCG=1; forcing TCG emulation' <<<"$OUTPUT"; then
-  echo "[FAIL] Expected forced TCG message missing."
-  exit 1
-fi
+for needle in \
+  '[FAIL] VM verification passed remotely but the report could not be copied back; evidence bundle:' \
+  '[INFO] installer output tail (' \
+  'fake installer output line' \
+  '[INFO] vm report missing:' \
+  '[INFO] serial log tail (' \
+  'fake serial for missing report' \
+  '[INFO] qemu log tail (' \
+  'fake qemu for missing report'
+do
+  if ! grep -Fq "$needle" <<<"$OUTPUT"; then
+    echo "[FAIL] Expected missing-report fail-closed output missing: $needle"
+    exit 1
+  fi
+done
 
-if ! [ -f "$WORK_DIR/qemu.log" ]; then
-  echo "[FAIL] Expected qemu.log artifact missing."
-  exit 1
-fi
-
-if ! grep -qx -- '-cpu' "$TMP_DIR/qemu-args.log"; then
-  echo "[FAIL] Expected qemu invocation to include -cpu."
-  exit 1
-fi
-
-if ! grep -qx -- 'max' "$TMP_DIR/qemu-args.log"; then
-  echo "[FAIL] Expected qemu invocation to use portable cpu=max in TCG mode."
-  exit 1
-fi
-
-if grep -qx -- '-enable-kvm' "$TMP_DIR/qemu-args.log"; then
-  echo "[FAIL] qemu invocation should not enable KVM in forced TCG mode."
-  exit 1
-fi
-
-echo "[PASS] Verifier forced-TCG launch path stayed portable."
+echo "[PASS] Verifier fails closed when report copy-back is missing after a green remote run."

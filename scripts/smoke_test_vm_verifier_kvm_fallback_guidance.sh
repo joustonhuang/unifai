@@ -126,11 +126,22 @@ EOF
 
 cat > "$BIN_DIR/ssh" <<'EOF'
 #!/usr/bin/env bash
-if printf '%s\n' "$*" | grep -q 'echo ssh-ready'; then
+joined="$*"
+if printf '%s\n' "$joined" | grep -q 'echo ssh-ready'; then
+  exit 0
+fi
+if printf '%s\n' "$joined" | grep -q 'bash -s'; then
+  cat >/dev/null || true
   exit 0
 fi
 cat >/dev/null || true
 exit 0
+EOF
+
+cat > "$BIN_DIR/scp" <<'EOF'
+#!/usr/bin/env bash
+dest="${@: -1}"
+printf '== fake vm report ==\n[PASS] synthetic report copy\n' > "$dest"
 EOF
 
 cat > "$BIN_DIR/qemu-system-x86_64" <<'EOF'

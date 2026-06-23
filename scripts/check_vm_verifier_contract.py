@@ -43,6 +43,7 @@ required = [
     ('print_artifact_excerpt "qemu log" "$QEMU_LOG"', 'Verifier surfaces qemu log excerpts on failure'),
     ('print_artifact_excerpt "installer output" "$WORK_DIR/installer-output.log"', 'Verifier surfaces installer output excerpts on failure'),
     ('print_artifact_excerpt "vm report" "$REPORT"', 'Verifier surfaces VM report excerpts on failure'),
+    ('[FAIL] VM verification passed remotely but the report could not be copied back; evidence bundle: $WORK_DIR', 'Verifier fails closed when the remote report cannot be copied back after a green run'),
 ]
 
 for needle, message in required:

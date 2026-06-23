@@ -339,7 +339,8 @@ fi
 echo "[PASS] VM verification checks passed"
 EOF
 
-scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null || true
+REPORT_COPY_STATUS=0
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$SSH_KEY" -P "$SSH_PORT" unifai@127.0.0.1:~/vm-bootstrap-report.txt "$REPORT" >/dev/null || REPORT_COPY_STATUS=$?
 
 if [ "$REMOTE_VERIFY_STATUS" -ne 0 ]; then
   echo "[FAIL] VM verification failed; evidence bundle: $WORK_DIR" >&2
@@ -348,6 +349,15 @@ if [ "$REMOTE_VERIFY_STATUS" -ne 0 ]; then
   print_artifact_excerpt "serial log" "$SERIAL_LOG"
   print_artifact_excerpt "qemu log" "$QEMU_LOG"
   exit "$REMOTE_VERIFY_STATUS"
+fi
+
+if [ "$REPORT_COPY_STATUS" -ne 0 ] || [ ! -f "$REPORT" ]; then
+  echo "[FAIL] VM verification passed remotely but the report could not be copied back; evidence bundle: $WORK_DIR" >&2
+  print_artifact_excerpt "installer output" "$WORK_DIR/installer-output.log"
+  print_artifact_excerpt "vm report" "$REPORT"
+  print_artifact_excerpt "serial log" "$SERIAL_LOG"
+  print_artifact_excerpt "qemu log" "$QEMU_LOG"
+  exit 1
 fi
 
 echo "VM verification complete. Evidence bundle: $WORK_DIR"
