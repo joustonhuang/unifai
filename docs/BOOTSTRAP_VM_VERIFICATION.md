@@ -123,7 +123,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `5baa4b0`
-- the local hardening stack is currently ahead of that public ref through `e0576fb` (`docs: refresh vm verifier checkpoint state`), 40 commits ahead in total
+- the local hardening stack is currently ahead of that public ref through `d98f751` (`scripts: fail closed when vm report copy-back is missing`), 51 commits ahead in total
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed but unauthenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
 

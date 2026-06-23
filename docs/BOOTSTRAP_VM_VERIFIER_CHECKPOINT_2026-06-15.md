@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `e0576fb`
-- Latest non-doc logic head in the local stack: `9f7046a`
-- Local branch state at checkpoint: ahead by 40 commits over the GitHub-visible branch head
+- Latest local head in the stack: `d98f751`
+- Latest non-doc logic head in the local stack: `d98f751`
+- Local branch state at checkpoint: ahead by 51 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -48,6 +48,17 @@
 38. `ae85aee` — `docs: refresh vm verifier checkpoint state`
 39. `7382c09` — `docs: refresh vm verifier checkpoint state`
 40. `e0576fb` — `docs: refresh vm verifier checkpoint state`
+41. `e8ffe9a` — `scripts: automate vm verifier checkpoint refresh`
+42. `542fe16` — `tests: guard vm verifier checkpoint refresh helper`
+43. `d087495` — `tests: smoke test vm verifier checkpoint refresh`
+44. `f9bdd27` — `scripts: support explicit vm preflight dry run flag`
+45. `9fb3d3c` — `scripts: explain github check gate auth failures`
+46. `5ca7a79` — `scripts: explain github unknown ref failures`
+47. `8b0f79b` — `scripts: explain github bad credential failures`
+48. `b4fa1ec` — `scripts: suggest kvm access recovery path`
+49. `63f50ad` — `scripts: explain kvm recovery in vm verifier`
+50. `a6f3aff` — `scripts: smoke test verifier kvm fallback guidance`
+51. `d98f751` — `scripts: fail closed when vm report copy-back is missing`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -75,7 +86,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `e0576fb`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is preserved as clean commits through `d98f751`, rather than as an uncommitted sandbox delta.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 
@@ -87,7 +98,7 @@
 - Once the branch is visible, the first likely execution friction is host-side, not code-side: `/dev/kvm` is present but not writable on this host so the verifier will run in slower TCG mode, and `gh` is installed but unauthenticated with no `GH_TOKEN`/`GITHUB_TOKEN` exported, so the API gate may fail closed or rate-limit.
 
 ## Recommended next move when external boundary opens
-1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `9f7046a`).
+1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `d98f751`).
 2. Run:
    ```bash
    bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
