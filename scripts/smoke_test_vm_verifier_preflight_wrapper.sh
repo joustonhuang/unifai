@@ -23,6 +23,11 @@ if ! grep -q "Ref: $BRANCH" <<<"$BRANCH_OUTPUT"; then
   exit 1
 fi
 
+if ! grep -q "\[DRY_RUN\] bash scripts/check_vm_host_readiness.sh" <<<"$BRANCH_OUTPUT"; then
+  echo "[FAIL] Expected host-readiness command missing in branch case."
+  exit 1
+fi
+
 if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH" <<<"$BRANCH_OUTPUT"; then
   echo "[FAIL] Expected branch visibility command missing in branch case."
   exit 1
@@ -43,6 +48,11 @@ fi
 
 if grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh" <<<"$VISIBLE_SHA_OUTPUT"; then
   echo "[FAIL] Branch visibility command should not run in GitHub-visible SHA case."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] bash scripts/check_vm_host_readiness.sh" <<<"$VISIBLE_SHA_OUTPUT"; then
+  echo "[FAIL] Expected host-readiness command missing in GitHub-visible SHA case."
   exit 1
 fi
 

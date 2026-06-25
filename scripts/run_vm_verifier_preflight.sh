@@ -6,9 +6,10 @@ usage() {
 Usage: bash scripts/run_vm_verifier_preflight.sh [--dry-run] [github-visible-ref-or-sha]
 
 Runs the cheap local checks before a fresh-VM verifier attempt:
-1. bootstrap installer preflight
-2. GitHub branch visibility check (when the ref is a local branch name)
-3. GitHub required-check gate inspection
+1. VM host readiness check
+2. bootstrap installer preflight
+3. GitHub branch visibility check (when the ref is a local branch name)
+4. GitHub required-check gate inspection
 
 If no ref is provided, uses the current branch name.
 
@@ -164,20 +165,24 @@ if [ "$dry_run" = "1" ]; then
 fi
 
 echo
-echo "== Step 1/3: bootstrap installer preflight =="
+echo "== Step 1/4: VM host readiness =="
+run_step bash scripts/check_vm_host_readiness.sh
+
+echo
+echo "== Step 2/4: bootstrap installer preflight =="
 run_step bash scripts/bootstrap_installer_preflight.sh
 
 echo
 if git show-ref --verify --quiet "refs/heads/$ref"; then
-  echo "== Step 2/3: GitHub branch visibility =="
+  echo "== Step 3/4: GitHub branch visibility =="
   run_step bash scripts/check_github_branch_visibility.sh "$ref"
 else
-  echo "== Step 2/3: GitHub branch visibility =="
+  echo "== Step 3/4: GitHub branch visibility =="
   echo "[INFO] '$ref' is not a local branch name; skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA."
 fi
 
 echo
-echo "== Step 3/3: GitHub check gate =="
+echo "== Step 4/4: GitHub check gate =="
 run_step python3 scripts/check_github_check_gate.py "$ref"
 
 echo
