@@ -42,6 +42,8 @@ if [ "${UNIFAI_VM_VERIFY_FORCE_NO_GH:-0}" = "1" ]; then
   echo "[INFO] gh disabled by UNIFAI_VM_VERIFY_FORCE_NO_GH; using curl-based GitHub API fallback"
 elif ! command -v gh >/dev/null 2>&1; then
   echo "[INFO] gh not found; using curl-based GitHub API fallback"
+elif ! gh auth status >/dev/null 2>&1; then
+  echo "[INFO] gh is installed but not authenticated; using curl-based GitHub API fallback"
 fi
 
 github_api() {

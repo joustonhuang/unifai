@@ -58,6 +58,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_gh_unauthenticated_fallback.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_kvm_fallback_guidance.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_missing_report_fail_closed.sh"
@@ -153,6 +154,9 @@ pass "VM verifier red-path smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_gh_unauthenticated_fallback.sh"
+pass "VM verifier unauthenticated-gh fallback smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 pass "VM verifier TCG launch smoke script passes bash -n"
 
@@ -194,6 +198,9 @@ pass "VM verifier red-path smoke test failed closed as expected"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
 pass "VM verifier GitHub fallback smoke test failed closed as expected"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_gh_unauthenticated_fallback.sh"
+pass "VM verifier unauthenticated-gh fallback smoke test failed closed as expected"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_tcg_launch.sh"
 pass "VM verifier TCG launch smoke test passed"

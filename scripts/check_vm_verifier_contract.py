@@ -26,6 +26,7 @@ required = [
     ('UNIFAI_VM_VERIFY_FORCE_TCG', 'Verifier supports explicit TCG smoke testing'),
     ('gh disabled by UNIFAI_VM_VERIFY_FORCE_NO_GH; using curl-based GitHub API fallback', 'Verifier announces forced gh fallback mode'),
     ('gh not found; using curl-based GitHub API fallback', 'Verifier announces implicit gh fallback mode'),
+    ('gh is installed but not authenticated; using curl-based GitHub API fallback', 'Verifier announces unauthenticated gh fallback mode'),
     ('local token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"', 'Verifier accepts GH_TOKEN or GITHUB_TOKEN for curl fallback'),
     ('sha_json="$(github_api "repos/$REPO_SLUG/commits/$REF" 2>&1)"', 'Verifier captures GitHub API failures while resolving the commit ref'),
     ('[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF', 'Verifier fails closed when SHA resolution fails'),

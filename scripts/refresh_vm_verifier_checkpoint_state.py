@@ -27,9 +27,35 @@ def main() -> int:
     commits = [line.split("\t", 1) for line in raw_commits if line.strip()]
     latest_non_doc = next((sha for sha, subject in reversed(commits) if not subject.startswith("docs:")), head_short)
 
+    status_lines = git("status", "--short").splitlines()
+    dirty_paths = [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2]
     commit_lines = "\n".join(
         f"{idx}. `{sha}` — `{subject}`" for idx, (sha, subject) in enumerate(commits, start=1)
     )
+    if dirty_paths:
+        shown = ", ".join(f"`{path}`" for path in dirty_paths[:5])
+        if len(dirty_paths) > 5:
+            shown += f", and {len(dirty_paths) - 5} more"
+        preservation_line = (
+            f"- The current local hardening stack is not fully committed: HEAD is `{head_short}` and the working tree still carries "
+            f"{len(dirty_paths)} uncommitted path(s) ({shown})."
+        )
+        publish_boundary_line = (
+            "- The check-gate hardening bundle is no longer only a clean-commit story: the commit stack is preserved, "
+            "but the current sandbox also carries additional uncommitted verifier-hardening delta."
+        )
+        boundary_dirty_line = (
+            f"- the local sandbox currently also carries {len(dirty_paths)} uncommitted verifier-hardening path(s) beyond HEAD ({shown})"
+        )
+    else:
+        preservation_line = (
+            f"- The current local hardening stack is preserved as clean commits through `{head_short}`, rather than as an uncommitted sandbox delta."
+        )
+        publish_boundary_line = (
+            "- The check-gate hardening bundle is now preserved as a clean local commit instead of only a dirty working tree, "
+            "so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens."
+        )
+        boundary_dirty_line = "- the local sandbox currently carries no additional uncommitted verifier-hardening delta"
 
     boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     boundary_text = re.sub(
@@ -38,6 +64,20 @@ def main() -> int:
         boundary_text,
         count=1,
     )
+    if re.search(r"- the local sandbox currently (?:also carries \d+ uncommitted verifier-hardening path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted verifier-hardening delta)", boundary_text):
+        boundary_text = re.sub(
+            r"- the local sandbox currently (?:also carries \d+ uncommitted verifier-hardening path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted verifier-hardening delta)",
+            boundary_dirty_line,
+            boundary_text,
+            count=1,
+        )
+    else:
+        boundary_text = re.sub(
+            r"(- the local hardening stack is currently ahead of that public ref through `[^`]+` \(`[^`]+`\), \d+ commits ahead in total\n)",
+            lambda m: m.group(1) + boundary_dirty_line + "\n",
+            boundary_text,
+            count=1,
+        )
     DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
 
     checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
@@ -53,8 +93,14 @@ def main() -> int:
         flags=re.S,
     )
     checkpoint_text = re.sub(
-        r"- The current local hardening stack is preserved as clean commits through `[^`]+`, rather than as an uncommitted sandbox delta\.",
-        f"- The current local hardening stack is preserved as clean commits through `{head_short}`, rather than as an uncommitted sandbox delta.",
+        r"- The check-gate hardening bundle is (?:now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens|no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted verifier-hardening delta)\.",
+        publish_boundary_line,
+        checkpoint_text,
+        count=1,
+    )
+    checkpoint_text = re.sub(
+        r"- The current local hardening stack is (?:preserved as clean commits through `[^`]+`, rather than as an uncommitted sandbox delta|not fully committed: HEAD is `[^`]+` and the working tree still carries \d+ uncommitted path\(s\) \([^\n]+\))\.",
+        preservation_line,
         checkpoint_text,
         count=1,
     )

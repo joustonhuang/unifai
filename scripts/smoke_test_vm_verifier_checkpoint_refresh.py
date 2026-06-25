@@ -47,6 +47,7 @@ def main() -> int:
             "## Local commit stack after `oldhead`\n"
             "1. `oldsha` — `old subject`\n\n"
             "## What is now true locally\n"
+            "- The check-gate hardening bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.\n"
             "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n\n"
             "## Recommended next move when external boundary opens\n"
             "1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `oldlogic`).\n",
@@ -67,18 +68,29 @@ def main() -> int:
         run(["git", "commit", "-m", "docs: trailing docs refresh"], work)
         head_sha = run(["git", "rev-parse", "--short", "HEAD"], work)
 
+        (work / "scratch.txt").write_text("dirty\n", encoding="utf-8")
+        (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").write_text(
+            (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8") + "dirty edit\n",
+            encoding="utf-8",
+        )
+
         subprocess.check_call(["python3", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
 
         boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
 
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in boundary
+        assert "local sandbox currently also carries" in boundary
+        assert "uncommitted verifier-hardening path(s) beyond HEAD" in boundary
         assert f"Latest local head in the stack: `{head_sha}`" in checkpoint
         assert f"Latest non-doc logic head in the local stack: `{logic_sha}`" in checkpoint
         assert "Local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
         assert f"1. `{logic_sha}` — `tests: add logic commit`" in checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in checkpoint
-        assert f"clean commits through `{head_sha}`" in checkpoint
+        assert "no longer only a clean-commit story" in checkpoint
+        assert f"HEAD is `{head_sha}`" in checkpoint
+        assert "not fully committed" in checkpoint
+        assert "uncommitted path(s)" in checkpoint
         assert f"latest non-doc logic commit in that tip is `{logic_sha}`" in checkpoint
 
     print("[PASS] VM verifier checkpoint refresh smoke test passed")
