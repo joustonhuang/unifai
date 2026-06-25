@@ -80,7 +80,7 @@ If you want the common local sequence as one command, use:
 bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
 ```
 
-That wrapper now fails fast if you pass a local-only commit SHA that is not reachable from any GitHub-visible branch, so you get the visibility boundary error before the later GitHub check-gate step.
+That wrapper now starts with `scripts/check_vm_host_readiness.sh`, so the common path surfaces local KVM / GitHub-auth friction before the deeper preflight and gate checks. It also fails fast if you pass a local-only commit SHA that is not reachable from any GitHub-visible branch, so you get the visibility boundary error before the later GitHub check-gate step.
 
 `gh` is preferred when installed and authenticated, but the verifier can fall back to direct GitHub API calls via `curl` when `gh` is unavailable, when `gh` is installed but unauthenticated, or when `UNIFAI_VM_VERIFY_FORCE_NO_GH=1` is set for smoke testing.
 
@@ -123,8 +123,8 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `5baa4b0`
-- the local hardening stack is currently ahead of that public ref through `962707a` (`scripts: harden verifier gh fallback and checkpoint tracking`), 53 commits ahead in total
-- the local sandbox currently also carries 2 uncommitted verifier-hardening path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the local hardening stack is currently ahead of that public ref through `6f59ca6` (`scripts: surface host readiness in verifier preflight`), 55 commits ahead in total
+- the local sandbox currently also carries 1 uncommitted verifier-hardening path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`)
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed but unauthenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
 
