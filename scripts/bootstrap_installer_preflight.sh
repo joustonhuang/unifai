@@ -242,6 +242,7 @@ cat <<'EOF'
 == Preflight summary ==
 This preflight only proves installer structure and cheap sanity checks.
 It does NOT prove a fresh VM can boot the stack end-to-end.
-For local VM prep, run: bash scripts/check_vm_host_readiness.sh
+For the common local VM prep path, run: bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
+If you only want to inspect host-side friction first, run: bash scripts/check_vm_host_readiness.sh
 Run the local VM verifier after GitHub checks are green.
 EOF
