@@ -82,16 +82,28 @@ def main() -> int:
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in boundary
         assert "local sandbox currently also carries" in boundary
         assert "uncommitted verifier-hardening path(s) beyond HEAD" in boundary
-        assert f"Latest local head in the stack: `{head_sha}`" in checkpoint
+        assert f"Latest tracked local head in the stack: `{head_sha}`" in checkpoint
         assert f"Latest non-doc logic head in the local stack: `{logic_sha}`" in checkpoint
-        assert "Local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
+        assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
         assert f"1. `{logic_sha}` — `tests: add logic commit`" in checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in checkpoint
         assert "no longer only a clean-commit story" in checkpoint
-        assert f"HEAD is `{head_sha}`" in checkpoint
+        assert f"tracked head is `{head_sha}`" in checkpoint
         assert "not fully committed" in checkpoint
         assert "uncommitted path(s)" in checkpoint
         assert f"latest non-doc logic commit in that tip is `{logic_sha}`" in checkpoint
+
+        run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
+        run(["git", "commit", "-m", "docs: refresh vm verifier checkpoint state"], work)
+        subprocess.check_call(["python3", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
+
+        refreshed_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
+        refreshed_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+
+        assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in refreshed_boundary
+        assert f"Latest tracked local head in the stack: `{head_sha}`" in refreshed_checkpoint
+        assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in refreshed_checkpoint
+        assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in refreshed_checkpoint
 
     print("[PASS] VM verifier checkpoint refresh smoke test passed")
     return 0
