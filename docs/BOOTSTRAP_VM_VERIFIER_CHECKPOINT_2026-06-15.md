@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `73518ff`
+- Latest local head in the stack: `368ab8f`
 - Latest non-doc logic head in the local stack: `6f59ca6`
-- Local branch state at checkpoint: ahead by 57 commits over the GitHub-visible branch head
+- Local branch state at checkpoint: ahead by 59 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -65,13 +65,15 @@
 55. `6f59ca6` — `scripts: surface host readiness in verifier preflight`
 56. `31b582a` — `docs: refresh vm verifier checkpoint state`
 57. `73518ff` — `docs: point preflight summary at wrapper first`
+58. `0e632ec` — `docs: refresh vm verifier checkpoint state`
+59. `368ab8f` — `docs: narrow host-only checkpoint fallback guidance`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
 - Bootstrap installer preflight now also smoke-tests the GitHub branch-visibility helper in a temporary repo, so the “is this branch actually GitHub-visible?” gate no longer relies on syntax-only coverage.
 - Bootstrap installer preflight now has its own explicit contract checker and an offline smoke test for the GitHub check-gate inspector, so the preflight scaffold and required-check diagnosis path are both self-tested instead of syntax-only guarded.
 - The GitHub check-gate inspector is now more resilient on busy commits: it paginates through check runs and annotations, still prioritizes the likely root failure signal, and caps noisy annotation dumps with an omission summary.
-- The check-gate hardening bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.
+- The check-gate hardening bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted verifier-hardening delta.
 - Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current warnings are narrower (`/dev/kvm` not writable, `gh` installed but unauthenticated, no `GH_TOKEN`/`GITHUB_TOKEN` exported).
 - The verifier path now has three distinct local guard layers before VM boot:
   1. branch visibility check
@@ -92,7 +94,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is preserved as clean commits through `73518ff`, rather than as an uncommitted sandbox delta.
+- The current local hardening stack is not fully committed: HEAD is `368ab8f` and the working tree still carries 2 uncommitted path(s) (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`).
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 
@@ -117,7 +119,7 @@
    ```bash
    bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
    ```
-5. If verifier startup friction appears immediately, check host readiness first with:
+5. If verifier startup friction still appears after wrapper preflight, re-run the narrow host-only check with:
    ```bash
    bash scripts/check_vm_host_readiness.sh
    ```
