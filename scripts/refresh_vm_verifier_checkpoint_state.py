@@ -110,6 +110,12 @@ def main() -> int:
         checkpoint_text,
         count=1,
     )
+    checkpoint_text = re.sub(
+        r"5\. If verifier startup friction appears immediately, check host readiness first with:\n   ```bash\n   bash scripts/check_vm_host_readiness\.sh\n   ```",
+        "5. If verifier startup friction still appears after wrapper preflight, re-run the narrow host-only check with:\n   ```bash\n   bash scripts/check_vm_host_readiness.sh\n   ```",
+        checkpoint_text,
+        count=1,
+    )
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
     return 0
 
