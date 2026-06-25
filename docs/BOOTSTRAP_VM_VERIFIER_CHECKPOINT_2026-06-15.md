@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
 - GitHub-visible branch head: `5baa4b0`
-- Latest local head in the stack: `368ab8f`
+- Latest tracked local head in the stack: `368ab8f`
 - Latest non-doc logic head in the local stack: `6f59ca6`
-- Local branch state at checkpoint: ahead by 59 commits over the GitHub-visible branch head
+- Tracked local branch state at checkpoint: ahead by 59 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `d8c9143` — `dev: add GitHub branch visibility check`
@@ -94,7 +94,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is not fully committed: HEAD is `368ab8f` and the working tree still carries 2 uncommitted path(s) (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`).
+- The current local hardening stack is not fully committed: tracked head is `368ab8f` and the working tree still carries 4 uncommitted path(s) (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`).
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 
