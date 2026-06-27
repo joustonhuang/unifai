@@ -8,6 +8,10 @@ WRAPPER="$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 REAL_BASH="$(command -v bash)"
 BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
 LOCAL_ONLY_SHA="$(
+  GIT_AUTHOR_NAME="UnifAI Smoke" \
+  GIT_AUTHOR_EMAIL="smoke@unifai.invalid" \
+  GIT_COMMITTER_NAME="UnifAI Smoke" \
+  GIT_COMMITTER_EMAIL="smoke@unifai.invalid" \
   git -C "$REPO_ROOT" commit-tree \
     "$(git -C "$REPO_ROOT" rev-parse HEAD^{tree})" \
     -p "$(git -C "$REPO_ROOT" rev-parse HEAD)" \
