@@ -7,7 +7,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WRAPPER="$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 REAL_BASH="$(command -v bash)"
 BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
-LOCAL_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+LOCAL_ONLY_SHA="$(
+  git -C "$REPO_ROOT" commit-tree \
+    "$(git -C "$REPO_ROOT" rev-parse HEAD^{tree})" \
+    -p "$(git -C "$REPO_ROOT" rev-parse HEAD)" \
+    -m "smoke local-only sha" \
+    2>/dev/null
+)"
 VISIBLE_SHA="$(git -C "$REPO_ROOT" rev-parse "github/$BRANCH")"
 
 BRANCH_OUTPUT="$("$REAL_BASH" "$WRAPPER" --dry-run "$BRANCH")"
@@ -78,22 +84,22 @@ if ! grep -q "Unknown option: --bogus" <<<"$UNKNOWN_OPTION_OUTPUT"; then
 fi
 
 set +e
-LOCAL_SHA_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "$LOCAL_SHA" 2>&1)"
-LOCAL_SHA_STATUS=$?
+LOCAL_ONLY_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "$LOCAL_ONLY_SHA" 2>&1)"
+LOCAL_ONLY_STATUS=$?
 set -e
-printf '%s\n' "$LOCAL_SHA_OUTPUT"
+printf '%s\n' "$LOCAL_ONLY_OUTPUT"
 
-if [ "$LOCAL_SHA_STATUS" -eq 0 ]; then
+if [ "$LOCAL_ONLY_STATUS" -eq 0 ]; then
   echo "[FAIL] Expected local-only SHA case to fail fast."
   exit 1
 fi
 
-if ! grep -q "exists locally but is not reachable from any GitHub-visible branch" <<<"$LOCAL_SHA_OUTPUT"; then
+if ! grep -q "exists locally but is not reachable from any GitHub-visible branch" <<<"$LOCAL_ONLY_OUTPUT"; then
   echo "[FAIL] Expected local-only SHA visibility failure message missing."
   exit 1
 fi
 
-if grep -q "python3 scripts/check_github_check_gate.py $LOCAL_SHA" <<<"$LOCAL_SHA_OUTPUT"; then
+if grep -q "python3 scripts/check_github_check_gate.py $LOCAL_ONLY_SHA" <<<"$LOCAL_ONLY_OUTPUT"; then
   echo "[FAIL] Local-only SHA case should fail before the GitHub check-gate step."
   exit 1
 fi

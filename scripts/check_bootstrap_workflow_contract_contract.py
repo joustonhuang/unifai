@@ -24,8 +24,9 @@ required = [
     ('WORKFLOW = REPO_ROOT / ".github" / "workflows" / "bootstrap-preflight.yml"', 'Bootstrap workflow contract checker targets bootstrap-preflight.yml'),
     ('UNIFAI_CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unifai-ci.yml"', 'Bootstrap workflow contract checker also targets unifai-ci.yml'),
     ('LOCK_FILE = REPO_ROOT / "little7-installer" / "config" / "supervisor-secretvault.lock"', 'Bootstrap workflow contract checker reads the SecretVault lock file'),
-    ('yaml.safe_load(f)', 'Bootstrap workflow contract checker still parses bootstrap-preflight.yml structurally'),
+    ('workflow_text = WORKFLOW.read_text(encoding="utf-8")', 'Bootstrap workflow contract checker reads bootstrap-preflight.yml as plain text'),
     ('unifai_ci_text = UNIFAI_CI_WORKFLOW.read_text(encoding="utf-8")', 'Bootstrap workflow contract checker inspects unifai-ci.yml text directly'),
+    ('workflow_text.count(f"- name: {required_step}") != 1', 'Bootstrap workflow contract checker enforces exact bootstrap-preflight step counts textually'),
     ('("submodule-integrity-audit:", "UnifAI CI workflow preserves the submodule-integrity-audit job")', 'Bootstrap workflow contract checker requires the UnifAI CI submodule audit job'),
     ('("🔐 Step 2: SHA Pin Verification Against Lock Contract", "UnifAI CI workflow preserves the SHA pin verification step")', 'Bootstrap workflow contract checker requires the live SHA pin verification step'),
     ('\'grep "SUPERVISOR_SECRETVAULT_PIN="\'', 'Bootstrap workflow contract checker requires parsing SUPERVISOR_SECRETVAULT_PIN from the lock file'),
@@ -44,8 +45,8 @@ for needle, message in required:
         fail(message)
     ok(message)
 
-if text.count('yaml.safe_load(f)') != 1:
-    fail('Bootstrap workflow contract checker should only parse bootstrap-preflight.yml structurally once')
-ok('Bootstrap workflow contract checker avoids structurally parsing unifai-ci.yml after the PyYAML regression')
+if 'import yaml' in text:
+    fail('Bootstrap workflow contract checker should avoid a PyYAML dependency on GitHub runners')
+ok('Bootstrap workflow contract checker avoids a PyYAML dependency on GitHub runners')
 
 print('[PASS] Bootstrap workflow contract checker contract looks sane')
