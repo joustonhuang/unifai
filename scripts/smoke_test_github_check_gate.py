@@ -16,10 +16,18 @@ assert spec and spec.loader
 spec.loader.exec_module(module)
 
 
-def run_case(fake_github_get, argv: list[str]) -> tuple[int, str, str]:
+class FakeCompletedProcess:
+    def __init__(self, stdout: str):
+        self.stdout = stdout
+
+
+def run_case(fake_github_get, argv: list[str], fake_subprocess_run=None) -> tuple[int, str, str]:
     module.github_get = fake_github_get
     old_argv = module.sys.argv[:]
+    old_subprocess_run = module.subprocess.run
     module.sys.argv = argv
+    if fake_subprocess_run is not None:
+        module.subprocess.run = fake_subprocess_run
     stdout = io.StringIO()
     stderr = io.StringIO()
     try:
@@ -27,6 +35,7 @@ def run_case(fake_github_get, argv: list[str]) -> tuple[int, str, str]:
             code = module.main()
     finally:
         module.sys.argv = old_argv
+        module.subprocess.run = old_subprocess_run
     return code, stdout.getvalue(), stderr.getvalue()
 
 
@@ -91,11 +100,70 @@ def failure_get(path: str):
             {
                 "annotation_level": "failure",
                 "path": ".github/workflows/bootstrap-preflight.yml",
+                "start_line": 40,
+                "message": "Process completed with exit code 1.",
+            }
+        ]
+    raise AssertionError(f"unexpected path: {path}")
+
+
+def directory_failure_get(path: str):
+    if path == "repos/joustonhuang/unifai/commits/directory-ref":
+        return {"sha": "def456"}
+    if path == "repos/joustonhuang/unifai/commits/def456/check-runs?per_page=100&page=1":
+        return {
+            "check_runs": [
+                {
+                    "id": 22,
+                    "name": "Bootstrap Installer Preflight",
+                    "status": "completed",
+                    "conclusion": "failure",
+                    "html_url": "https://example.invalid/failed-preflight",
+                }
+            ]
+        }
+    if path == "repos/joustonhuang/unifai/check-runs/22/annotations?per_page=100&page=1":
+        return [
+            {
+                "annotation_level": "warning",
+                "path": ".github",
+                "start_line": i,
+                "message": "Node.js 20 actions are deprecated.",
+            }
+            for i in range(1, 101)
+        ]
+    if path == "repos/joustonhuang/unifai/check-runs/22/annotations?per_page=100&page=2":
+        return [
+            {
+                "annotation_level": "failure",
+                "path": ".github",
                 "start_line": 71,
                 "message": "Process completed with exit code 1.",
             }
         ]
     raise AssertionError(f"unexpected path: {path}")
+
+
+def fake_subprocess_run(cmd, check, capture_output, text, timeout):
+    if cmd == ["git", "show", "def456:.github/workflows/bootstrap-preflight.yml"]:
+        lines = [f"line {i}" for i in range(1, 57)]
+        lines[37] = '      - name: Run bootstrap installer preflight'
+        lines[38] = '        run: |'
+        lines[39] = '          chmod +x scripts/bootstrap_installer_preflight.sh'
+        lines[40] = '          ./scripts/bootstrap_installer_preflight.sh'
+        lines[41] = ''
+        return FakeCompletedProcess("\n".join(lines) + "\n")
+    if cmd == ["git", "show", "def456:.github/workflows/unifai-ci.yml"]:
+        lines = [f"workflow line {i}" for i in range(1, 181)]
+        lines[68] = '            echo "❌ CRITICAL: Cannot parse pinned commit from lock file"'
+        lines[69] = "            exit 1"
+        lines[70] = "          fi"
+        lines[71] = ''
+        lines[72] = '          echo "📋 Pinned commit from lock:  $PINNED_COMMIT"'
+        return FakeCompletedProcess("\n".join(lines) + "\n")
+    if cmd == ["git", "show", "def456:.github"]:
+        raise module.subprocess.CalledProcessError(returncode=128, cmd=cmd)
+    raise AssertionError(f"unexpected subprocess command: {cmd}")
 
 
 print("=== UnifAI Smoke Test: GitHub check gate inspector ===")
@@ -113,7 +181,11 @@ if "[INFO] Optional check not present: Core Modules & Exoskeleton E2E" not in st
     print("[FAIL] Expected optional-check informational line missing in success case.")
     raise SystemExit(1)
 
-code, stdout, stderr = run_case(failure_get, [str(SCRIPT), "bad-ref"])
+code, stdout, stderr = run_case(
+    failure_get,
+    [str(SCRIPT), "bad-ref"],
+    fake_subprocess_run=fake_subprocess_run,
+)
 print(stdout, end="")
 print(stderr, end="")
 if code != 1:
@@ -122,14 +194,46 @@ if code != 1:
 if "Bootstrap Installer Preflight: status=completed conclusion=failure" not in stdout:
     print("[FAIL] Expected failure-case check status line missing.")
     raise SystemExit(1)
-if "likely root signal: failure: .github/workflows/bootstrap-preflight.yml line 71 — Process completed with exit code 1." not in stdout:
+if "likely root signal: failure: .github/workflows/bootstrap-preflight.yml line 40 — Process completed with exit code 1." not in stdout:
     print("[FAIL] Expected root-signal summary missing from failure case.")
+    raise SystemExit(1)
+if "source context (.github/workflows/bootstrap-preflight.yml:38-42 @ def456):" not in stdout:
+    print("[FAIL] Expected direct-file source-context header missing from failure case.")
+    raise SystemExit(1)
+if "    > 40:           chmod +x scripts/bootstrap_installer_preflight.sh" not in stdout:
+    print("[FAIL] Expected direct-file highlighted source-context line missing from failure case.")
     raise SystemExit(1)
 if "annotations:" not in stdout or "Node.js 20 actions are deprecated." not in stdout or "Process completed with exit code 1." not in stdout:
     print("[FAIL] Expected failure annotations missing from failure case.")
     raise SystemExit(1)
 if "... 95 more annotation(s) omitted" not in stdout and "… 95 more annotation(s) omitted" not in stdout:
     print("[FAIL] Expected annotation omission summary missing from failure case.")
+    raise SystemExit(1)
+
+code, stdout, stderr = run_case(
+    directory_failure_get,
+    [str(SCRIPT), "directory-ref"],
+    fake_subprocess_run=fake_subprocess_run,
+)
+print(stdout, end="")
+print(stderr, end="")
+if code != 1:
+    print("[FAIL] Expected directory-level failure case to return exit code 1.")
+    raise SystemExit(1)
+if "likely root signal: failure: .github line 71 — Process completed with exit code 1." not in stdout:
+    print("[FAIL] Expected directory-level root-signal summary missing.")
+    raise SystemExit(1)
+if "source context (.github/workflows/unifai-ci.yml:69-73 @ def456):" not in stdout:
+    print("[FAIL] Expected hinted source-context header missing from directory-level failure case.")
+    raise SystemExit(1)
+if "    > 71:           fi" not in stdout:
+    print("[FAIL] Expected hinted highlighted source-context line missing from directory-level failure case.")
+    raise SystemExit(1)
+if "GitHub highlighted a generic shell control line" not in stdout:
+    print("[FAIL] Expected generic-shell-line note missing from directory-level failure case.")
+    raise SystemExit(1)
+if "nearest failure-looking line: .github/workflows/unifai-ci.yml:70 — exit 1" not in stdout:
+    print("[FAIL] Expected nearest failure-looking line hint missing from directory-level failure case.")
     raise SystemExit(1)
 
 rate_limit_error = urllib.error.HTTPError(

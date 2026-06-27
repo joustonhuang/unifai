@@ -21,7 +21,9 @@ It is not proof that a fresh VM really boots the stack.
 Implementation note:
 - `scripts/bootstrap_installer_preflight.sh` is the single local entrypoint for these cheap checks.
 - The GitHub Actions workflow should invoke that preflight once and avoid re-running the same smoke tests separately.
-- The local preflight now also syntax-checks `scripts/check_github_check_gate.py`, contract-checks `scripts/bootstrap_installer_preflight.sh`, smoke-tests `scripts/check_github_check_gate.py`, and smoke-tests `scripts/check_github_branch_visibility.sh`, so the check-gate, preflight, and branch-visibility diagnosis paths stay under the same contract as the verifier.
+- The local preflight now also syntax-checks `scripts/check_github_check_gate.py`, contract-checks `scripts/bootstrap_installer_preflight.sh`, contract-checks `scripts/check_bootstrap_workflow_contract.py` via `scripts/check_bootstrap_workflow_contract_contract.py`, smoke-tests `scripts/check_github_check_gate.py`, and smoke-tests `scripts/check_github_branch_visibility.sh`, so the workflow-contract, check-gate, preflight, and branch-visibility diagnosis paths stay under the same contract as the verifier.
+- `scripts/check_bootstrap_preflight_contract.py` now asserts the broader real preflight surface too: required lock/config/verifier files, the Stage 50 and VM-verifier contract checkers, the VM verifier script path itself, and the GitHub-fallback / red-path smoke checks, so local contract drift gets caught before the next GitHub-visible run.
+- `scripts/check_bootstrap_preflight_contract_contract.py` now contract-checks that checker too, so the local preflight cannot silently lose installer syntax/verify coverage, service-boundary assertions, or the Stage 50 OpenClaw installer grep.
 
 ## Layer 2: Local fresh-VM verification
 
@@ -72,7 +74,7 @@ bash scripts/check_github_branch_visibility.sh
 python3 scripts/check_github_check_gate.py <github-visible-ref>
 ```
 
-Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status, paginates through public check runs and annotations, highlights the likely root failure signal first, and caps noisy annotation dumps with an omission summary before you touch verifier logic.
+Use the branch-visibility check first to confirm your local branch actually matches the GitHub-visible branch head. Use the check-gate inspector next when a visible ref is unexpectedly red; it prints the current required-check status, paginates through public check runs and annotations, highlights the likely root failure signal first, shows nearby source lines from the exact failing git ref when the annotation points at a tracked file, can fall back to hinted workflow files when GitHub only reports a directory-level path like `.github`, warns when GitHub only points at a generic shell control line such as `fi`, and caps noisy annotation dumps with an omission summary before you touch verifier logic.
 
 If you want the common local sequence as one command, use:
 
@@ -123,8 +125,8 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `5baa4b0`
-- the local hardening stack is currently ahead of that public ref through `368ab8f` (`docs: narrow host-only checkpoint fallback guidance`), 59 commits ahead in total
-- the local sandbox currently also carries 4 uncommitted verifier-hardening path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`)
+- the local hardening stack is currently ahead of that public ref through `375406f` (`docs: refresh vm verifier checkpoint state`), 62 commits ahead in total
+- the local sandbox currently also carries 8 uncommitted verifier-hardening path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `scripts/bootstrap_installer_preflight.sh`, `scripts/check_bootstrap_preflight_contract.py`, `scripts/check_bootstrap_workflow_contract.py`, `scripts/check_bootstrap_workflow_contract_contract.py`, `scripts/check_github_check_gate.py`, `scripts/check_github_check_gate_contract.py`, `scripts/smoke_test_github_check_gate.py`)
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed but unauthenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
 

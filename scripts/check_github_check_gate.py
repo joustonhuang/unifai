@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -11,6 +12,26 @@ DEFAULT_REQUIRED = ["Bootstrap Installer Preflight"]
 OPTIONAL_IF_PRESENT = ["Core Modules & Exoskeleton E2E", "smoke-test"]
 API_BASE = "https://api.github.com"
 MAX_ANNOTATIONS_PER_LEVEL = 5
+GENERIC_EXIT_MESSAGES = {
+    "Process completed with exit code 1.",
+}
+SHELL_CONTROL_LINES = {
+    "fi",
+    "done",
+    "then",
+    "else",
+    "elif",
+    "}",
+}
+CHECK_NAME_SOURCE_HINTS = {
+    "Bootstrap Installer Preflight": [
+        ".github/workflows/bootstrap-preflight.yml",
+        ".github/workflows/unifai-ci.yml",
+    ],
+    "smoke-test": [
+        ".github/workflows/gaia-smoke.yml",
+    ],
+}
 
 
 def usage() -> int:
@@ -121,7 +142,100 @@ def fetch_annotations(repo: str, check_run_id: int):
     return github_get_paged(f"repos/{repo}/check-runs/{check_run_id}/annotations")
 
 
-def summarize_annotations(annotations: list[dict]) -> None:
+def load_file_at_ref(ref: str, path: str) -> list[str] | None:
+    try:
+        proc = subprocess.run(
+            ["git", "show", f"{ref}:{path}"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None
+    return proc.stdout.splitlines()
+
+
+def resolve_source_path(ref: str, annotation: dict, check_name: str) -> tuple[str, list[str]] | None:
+    path = annotation.get("path")
+    if not path:
+        return None
+
+    try:
+        line_no = int(annotation.get("start_line"))
+    except (TypeError, ValueError):
+        line_no = None
+
+    direct = load_file_at_ref(ref, path)
+    if direct is not None and (line_no is None or 1 <= line_no <= len(direct)):
+        return path, direct
+
+    fallback = (path, direct) if direct is not None else None
+    for candidate in CHECK_NAME_SOURCE_HINTS.get(check_name, []):
+        hinted = load_file_at_ref(ref, candidate)
+        if hinted is None:
+            continue
+        if line_no is None or 1 <= line_no <= len(hinted):
+            return candidate, hinted
+        if fallback is None:
+            fallback = (candidate, hinted)
+
+    return fallback
+
+
+def find_nearby_failure_hint(lines: list[str], line_no: int) -> tuple[int, str] | None:
+    start = max(1, line_no - 8)
+    end = min(len(lines), line_no + 1)
+    for current in range(end, start - 1, -1):
+        content = lines[current - 1].strip()
+        if content.startswith("echo ") and ("❌" in content or "CRITICAL" in content or "FAIL" in content):
+            return current, content
+        if content == "exit 1":
+            return current, content
+    return None
+
+
+def print_annotation_source_context(ref: str, annotation: dict, check_name: str) -> None:
+    raw_path = annotation.get("path")
+    line = annotation.get("start_line")
+    if not raw_path or line in {None, ""}:
+        return
+
+    try:
+        line_no = int(line)
+    except (TypeError, ValueError):
+        return
+    if line_no < 1:
+        return
+
+    resolved = resolve_source_path(ref, annotation, check_name)
+    if not resolved:
+        return
+
+    path, lines = resolved
+    if line_no > len(lines):
+        return
+
+    start = max(1, line_no - 2)
+    end = min(len(lines), line_no + 2)
+    print(f"  source context ({path}:{start}-{end} @ {ref}):")
+    for current in range(start, end + 1):
+        marker = ">" if current == line_no else " "
+        print(f"    {marker} {current}: {lines[current - 1]}")
+
+    message = str(annotation.get("message") or "")
+    highlighted = lines[line_no - 1].strip()
+    if message in GENERIC_EXIT_MESSAGES and highlighted in SHELL_CONTROL_LINES:
+        hint = find_nearby_failure_hint(lines, line_no)
+        print(
+            "  note: GitHub highlighted a generic shell control line, so the true failure may be earlier in the same run block."
+        )
+        if hint:
+            hint_line, hint_text = hint
+            print(f"  nearest failure-looking line: {path}:{hint_line} — {hint_text}")
+
+
+def summarize_annotations(ref: str, check_name: str, annotations: list[dict]) -> None:
     if not annotations:
         print("  annotations: none exposed")
         return
@@ -139,6 +253,7 @@ def summarize_annotations(annotations: list[dict]) -> None:
             f"{root.get('annotation_level')}: {root.get('path')} line {root.get('start_line')}"
             f" — {root.get('message')}"
         )
+        print_annotation_source_context(ref, root, check_name)
 
     print("  annotations:")
     for level in priority + sorted(k for k in grouped if k not in priority):
@@ -182,7 +297,7 @@ def main() -> int:
         if check_run.get("conclusion") != "success":
             failures += 1
             annotations = fetch_annotations(repo, check_run["id"])
-            summarize_annotations(annotations)
+            summarize_annotations(sha, name, annotations)
 
     for name in OPTIONAL_IF_PRESENT:
         check_run = collect_check_run(check_runs, name)

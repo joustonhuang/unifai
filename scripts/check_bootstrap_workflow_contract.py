@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -8,6 +9,8 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "bootstrap-preflight.yml"
+UNIFAI_CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unifai-ci.yml"
+LOCK_FILE = REPO_ROOT / "little7-installer" / "config" / "supervisor-secretvault.lock"
 
 
 def fail(message: str) -> None:
@@ -21,6 +24,9 @@ def ok(message: str) -> None:
 
 with WORKFLOW.open("r", encoding="utf-8") as f:
     data = yaml.safe_load(f)
+
+unifai_ci_text = UNIFAI_CI_WORKFLOW.read_text(encoding="utf-8")
+lock_text = LOCK_FILE.read_text(encoding="utf-8")
 
 on_block = data.get("on", data.get(True))
 if not isinstance(on_block, dict):
@@ -98,5 +104,35 @@ for forbidden in [
     if forbidden in step_names:
         fail(f"Workflow should not duplicate smoke tests outside bootstrap preflight: {forbidden}")
 ok("Workflow does not duplicate VM verifier smoke tests")
+
+for required_snippet, label in [
+    ("submodule-integrity-audit:", "UnifAI CI workflow preserves the submodule-integrity-audit job"),
+    ("🔐 Step 2: SHA Pin Verification Against Lock Contract", "UnifAI CI workflow preserves the SHA pin verification step"),
+    ('grep "SUPERVISOR_SECRETVAULT_PIN="', "UnifAI CI parses SUPERVISOR_SECRETVAULT_PIN from the lock file"),
+    ('"${{ env.SECRETVAULT_LOCK_FILE }}"', "UnifAI CI reads the configured SecretVault lock file path"),
+    ('if [ -z "$PINNED_COMMIT" ]; then', "UnifAI CI fails closed when the pinned commit parse is empty"),
+    ('git rev-parse HEAD', "UnifAI CI compares the parsed pin against the actual submodule commit"),
+]:
+    if required_snippet not in unifai_ci_text:
+        fail(label)
+ok("UnifAI CI preserves the SHA pin verification path for the SecretVault lock contract")
+
+pin_parse_match = re.search(r'grep "([A-Z0-9_]+)="', unifai_ci_text)
+if not pin_parse_match:
+    fail("UnifAI CI missing a grep-based SecretVault pin extraction key")
+pin_key = pin_parse_match.group(1)
+ok(f"UnifAI CI exposes the grep-based SecretVault pin key: {pin_key}")
+
+matching_lock_lines = [
+    line for line in lock_text.splitlines() if line.startswith(f"{pin_key}=")
+]
+if len(matching_lock_lines) != 1:
+    fail(f"SecretVault lock file must expose exactly one {pin_key}= line for workflow parsing")
+ok(f"SecretVault lock file exposes exactly one {pin_key}= line for workflow parsing")
+
+parsed_pin = matching_lock_lines[0].split("=", 1)[1].strip()
+if not re.fullmatch(r"[0-9a-f]{40}", parsed_pin):
+    fail(f"Workflow-parsed {pin_key} value is not a 40-char git commit SHA")
+ok(f"Workflow-parsed {pin_key} value is a 40-char git commit SHA")
 
 print("[PASS] Bootstrap workflow contract looks sane")

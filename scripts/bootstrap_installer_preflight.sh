@@ -43,7 +43,9 @@ require_file "$STAGE_INSTALLER"
 require_file "$REPO_ROOT/little7-installer/config/supervisor-secretvault.lock"
 require_file "$REPO_ROOT/scripts/check_stage50_openclaw_config.py"
 require_file "$REPO_ROOT/scripts/check_bootstrap_preflight_contract.py"
+require_file "$REPO_ROOT/scripts/check_bootstrap_preflight_contract_contract.py"
 require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
+require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 require_file "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
@@ -88,8 +90,14 @@ pass "Stage 50 OpenClaw config checker passes py_compile"
 python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_preflight_contract.py"
 pass "Bootstrap preflight contract checker passes py_compile"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_preflight_contract_contract.py"
+pass "Bootstrap preflight contract checker contract passes py_compile"
+
 python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
 pass "Bootstrap workflow contract checker passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"
+pass "Bootstrap workflow contract checker contract passes py_compile"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_github_check_gate.py"
 pass "GitHub check gate inspector passes py_compile"
@@ -130,8 +138,14 @@ pass "Stage 50 OpenClaw config contract check passed"
 python3 "$REPO_ROOT/scripts/check_bootstrap_preflight_contract.py"
 pass "Bootstrap preflight contract check passed"
 
+python3 "$REPO_ROOT/scripts/check_bootstrap_preflight_contract_contract.py"
+pass "Bootstrap preflight contract checker contract check passed"
+
 python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"
 pass "Bootstrap workflow contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"
+pass "Bootstrap workflow contract checker contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 pass "GitHub check gate contract check passed"
