@@ -74,6 +74,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_excerpts.
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_remote_failure_missing_report.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_installer_failure_excerpts.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh"
 
 if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   git -C "$REPO_ROOT" submodule update --init --recursive supervisor/supervisor-secretvault
@@ -224,6 +225,9 @@ pass "VM verifier installer-failure excerpt smoke script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh"
+pass "VM verifier preflight no-GitHub-remote smoke script passes bash -n"
+
 bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 pass "GitHub branch visibility smoke test passed"
 
@@ -271,6 +275,9 @@ pass "VM verifier installer-failure excerpt smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_wrapper.sh"
 pass "VM verifier preflight wrapper smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh"
+pass "VM verifier preflight no-GitHub-remote smoke test passed"
 
 require_grep 'check_root\s*\(' "$INSTALLER"
 require_grep 'check_os\s*\(' "$INSTALLER"

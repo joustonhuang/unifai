@@ -51,6 +51,7 @@ required = [
     ('bash "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"', 'Bootstrap preflight contract checker requires the publish stack parity smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"', 'Bootstrap preflight contract checker requires the verifier GitHub fallback smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"', 'Bootstrap preflight contract checker requires the verifier red-path smoke test'),
+    ('bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh"', 'Bootstrap preflight contract checker requires the missing-GitHub-remote preflight smoke test'),
     ('for service in unifai-secretvault unifai-keyman unifai-supervisor unifai-openclaw; do', 'Bootstrap preflight contract checker requires the installer service-boundary loop'),
     ('require_grep "$service" "$INSTALLER"', 'Bootstrap preflight contract checker requires per-service installer grep assertions'),
     ('\'require_grep \\\'curl -fsSL https://openclaw.ai/install.sh \\\\| bash\\\' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"\'', 'Bootstrap preflight contract checker requires the Stage 50 OpenClaw installer grep'),

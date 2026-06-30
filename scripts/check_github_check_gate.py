@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import json
 import os
+import shutil
 import subprocess
 import sys
+import re
+from datetime import datetime, timedelta, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -12,6 +15,7 @@ DEFAULT_REQUIRED = ["Bootstrap Installer Preflight"]
 OPTIONAL_IF_PRESENT = ["Core Modules & Exoskeleton E2E", "smoke-test"]
 API_BASE = "https://api.github.com"
 MAX_ANNOTATIONS_PER_LEVEL = 5
+MAX_LOG_EXCERPT_LINES = 12
 GENERIC_EXIT_MESSAGES = {
     "Process completed with exit code 1.",
 }
@@ -156,6 +160,47 @@ def load_file_at_ref(ref: str, path: str) -> list[str] | None:
     return proc.stdout.splitlines()
 
 
+def run_gh_api_text(path: str) -> str | None:
+    if not shutil.which("gh"):
+        return None
+    try:
+        auth = subprocess.run(
+            ["gh", "auth", "status"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if auth.returncode != 0:
+        return None
+
+    try:
+        proc = subprocess.run(
+            ["gh", "api", path],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None
+    return proc.stdout
+
+
+def extract_run_id(details_url: str | None) -> int | None:
+    if not details_url:
+        return None
+    match = re.search(r"/actions/runs/(\d+)(?:/|$)", details_url)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
 def resolve_source_path(ref: str, annotation: dict, check_name: str) -> tuple[str, list[str]] | None:
     path = annotation.get("path")
     if not path:
@@ -181,6 +226,18 @@ def resolve_source_path(ref: str, annotation: dict, check_name: str) -> tuple[st
             fallback = (candidate, hinted)
 
     return fallback
+
+
+def find_workflow_step_context(ref: str, check_name: str, step_name: str) -> tuple[str, int, list[str]] | None:
+    needle = f"- name: {step_name}"
+    for candidate in CHECK_NAME_SOURCE_HINTS.get(check_name, []):
+        lines = load_file_at_ref(ref, candidate)
+        if lines is None:
+            continue
+        for idx, line in enumerate(lines, start=1):
+            if line.strip() == needle:
+                return candidate, idx, lines
+    return None
 
 
 def find_nearby_failure_hint(lines: list[str], line_no: int) -> tuple[int, str] | None:
@@ -233,6 +290,136 @@ def print_annotation_source_context(ref: str, annotation: dict, check_name: str)
         if hint:
             hint_line, hint_text = hint
             print(f"  nearest failure-looking line: {path}:{hint_line} — {hint_text}")
+
+
+def print_step_source_context(ref: str, check_name: str, step_name: str) -> None:
+    resolved = find_workflow_step_context(ref, check_name, step_name)
+    if not resolved:
+        return
+
+    path, line_no, lines = resolved
+    start = max(1, line_no - 1)
+    end = min(len(lines), line_no + 4)
+    print(f"  workflow step context ({path}:{start}-{end} @ {ref}):")
+    for current in range(start, end + 1):
+        marker = ">" if current == line_no else " "
+        print(f"    {marker} {current}: {lines[current - 1]}")
+
+
+def fetch_actions_job(repo: str, check_run: dict) -> dict | None:
+    run_id = extract_run_id(check_run.get("details_url"))
+    check_run_id = check_run.get("id")
+    if run_id is None or check_run_id is None:
+        return None
+
+    jobs = github_get_paged(f"repos/{repo}/actions/runs/{run_id}/jobs", list_key="jobs")
+    for job in jobs:
+        if job.get("id") == check_run_id:
+            return job
+    for job in jobs:
+        if job.get("name") == check_run.get("name"):
+            return job
+    return None
+
+
+def fetch_actions_job_log(repo: str, job_id: int) -> list[str] | None:
+    text = run_gh_api_text(f"repos/{repo}/actions/jobs/{job_id}/logs")
+    if text is None:
+        return None
+    return text.splitlines()
+
+
+def parse_github_timestamp(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        return datetime.fromisoformat(raw).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def parse_log_line_timestamp(line: str) -> datetime | None:
+    token = line.split(" ", 1)[0]
+    return parse_github_timestamp(token)
+
+
+def extract_failing_step_log_excerpt(
+    log_lines: list[str], started_at: str | None, completed_at: str | None
+) -> list[str]:
+    start_ts = parse_github_timestamp(started_at)
+    end_ts = parse_github_timestamp(completed_at)
+    if start_ts is None or end_ts is None:
+        return []
+    end_ts = end_ts + timedelta(seconds=1)
+
+    bounded: list[tuple[int, str]] = []
+    for idx, line in enumerate(log_lines):
+        ts = parse_log_line_timestamp(line)
+        if ts is None:
+            continue
+        if start_ts <= ts <= end_ts:
+            bounded.append((idx, line))
+    if not bounded:
+        return []
+
+    error_idx = None
+    for idx, line in bounded:
+        if "##[error]" in line or "[FAIL]" in line or "fatal:" in line:
+            error_idx = idx
+    # Prefer the last failure marker inside the step window because bootstrap preflight
+    # intentionally runs many red-path smoke tests before the real terminal failure.
+    if error_idx is None:
+        return []
+
+    start_idx = bounded[0][0]
+    last_idx = bounded[-1][0]
+    start = max(start_idx, error_idx - 4)
+    end = min(last_idx + 1, error_idx + MAX_LOG_EXCERPT_LINES)
+    return log_lines[start:end]
+
+
+def print_log_excerpt(repo: str, check_run: dict, step: dict) -> None:
+    job_id = check_run.get("id")
+    if not isinstance(job_id, int):
+        return
+    log_lines = fetch_actions_job_log(repo, job_id)
+    if not log_lines:
+        return
+    excerpt = extract_failing_step_log_excerpt(
+        log_lines,
+        step.get("started_at"),
+        step.get("completed_at"),
+    )
+    if not excerpt:
+        return
+    print("  failing step log excerpt:")
+    for line in excerpt:
+        print(f"    {line}")
+
+
+def summarize_job_steps(ref: str, repo: str, check_name: str, check_run: dict) -> None:
+    job = fetch_actions_job(repo, check_run)
+    if not job:
+        return
+
+    failing_steps = [
+        step
+        for step in job.get("steps", [])
+        if step.get("conclusion") == "failure"
+    ]
+    if not failing_steps:
+        return
+
+    print("  failing job step(s):")
+    for step in failing_steps:
+        print(
+            f"    - step {step.get('number')}: {step.get('name')}"
+            f" (started {step.get('started_at')}, completed {step.get('completed_at')})"
+        )
+        print_step_source_context(ref, check_name, str(step.get("name") or ""))
+        print_log_excerpt(repo, check_run, step)
 
 
 def summarize_annotations(ref: str, check_name: str, annotations: list[dict]) -> None:
@@ -296,6 +483,7 @@ def main() -> int:
         print_check("", check_run)
         if check_run.get("conclusion") != "success":
             failures += 1
+            summarize_job_steps(sha, repo, name, check_run)
             annotations = fetch_annotations(repo, check_run["id"])
             summarize_annotations(sha, name, annotations)
 
