@@ -368,6 +368,26 @@ if "Unauthenticated GitHub API access can fail closed here" not in rate_limit_ou
     print("[FAIL] Expected unauthenticated rate-limit guidance missing.")
     raise SystemExit(1)
 
+secondary_rate_limit_error = urllib.error.HTTPError(
+    "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+    429,
+    "Too Many Requests",
+    hdrs=None,
+    fp=None,
+)
+stderr = io.StringIO()
+with contextlib.redirect_stderr(stderr):
+    module.explain_http_error(
+        secondary_rate_limit_error,
+        "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
+        '{"message":"Secondary rate limit. Please wait a few minutes before you try again.","documentation_url":"https://docs.github.com/rest/overview/resources-in-the-rest-api#secondary-rate-limits"}',
+    )
+secondary_rate_limit_output = stderr.getvalue()
+print(secondary_rate_limit_output, end="")
+if "export GH_TOKEN/GITHUB_TOKEN" not in secondary_rate_limit_output:
+    print("[FAIL] Expected token guidance missing from 429 rate-limit explanation.")
+    raise SystemExit(1)
+
 bad_credentials_error = urllib.error.HTTPError(
     "https://api.github.com/repos/joustonhuang/unifai/commits/visible-ref",
     401,
