@@ -104,6 +104,28 @@ def github_get(path: str):
         raise SystemExit(1) from exc
 
 
+def github_get_optional(path: str, allowed_codes: set[int] | None = None):
+    url = f"{API_BASE}/{path.lstrip('/')}"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "unifai-check-gate",
+    }
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        if allowed_codes and exc.code in allowed_codes:
+            return None
+        explain_http_error(exc, url, body)
+        raise SystemExit(1) from exc
+
+
 def github_get_paged(path: str, list_key: str | None = None, per_page: int = 100):
     items = []
     page = 1
@@ -120,13 +142,68 @@ def github_get_paged(path: str, list_key: str | None = None, per_page: int = 100
         page += 1
 
 
+def github_remote_branch_candidate(ref: str) -> str | None:
+    if ref.startswith("refs/remotes/"):
+        parts = ref.split("/", 3)
+        if len(parts) == 4:
+            remote = parts[2]
+            branch = parts[3]
+        else:
+            return None
+    elif "/" in ref:
+        remote, branch = ref.split("/", 1)
+    else:
+        return None
+
+    try:
+        proc = subprocess.run(
+            ["git", "remote", "get-url", remote],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None
+
+    url = proc.stdout.strip()
+    if "github.com" not in url and not url.startswith("git@github.com:"):
+        return None
+    return branch or None
+
+
 def resolve_sha(repo: str, ref: str) -> str:
-    data = github_get(f"repos/{repo}/commits/{urllib.parse.quote(ref, safe='')}")
-    sha = data.get("sha")
-    if not sha:
-        print(f"[FAIL] Could not resolve SHA for {repo}@{ref}", file=sys.stderr)
-        raise SystemExit(1)
-    return sha
+    candidates: list[str] = []
+    for candidate in [ref, github_remote_branch_candidate(ref)]:
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+
+    for candidate in candidates:
+        data = github_get_optional(
+            f"repos/{repo}/commits/{urllib.parse.quote(candidate, safe='')}",
+            allowed_codes={404, 422},
+        )
+        if data and data.get("sha"):
+            return str(data["sha"])
+
+        for kind in ("heads", "tags"):
+            ref_data = github_get_optional(
+                f"repos/{repo}/git/ref/{kind}/{urllib.parse.quote(candidate, safe='/')}",
+                allowed_codes={404},
+            )
+            if not ref_data:
+                continue
+            obj = ref_data.get("object") or {}
+            sha = obj.get("sha")
+            if sha:
+                return str(sha)
+
+    print(f"[FAIL] Could not resolve SHA for {repo}@{ref}", file=sys.stderr)
+    print(
+        "[INFO] Use a GitHub-visible branch, tag, or commit SHA; remote-tracking refs must point at a GitHub-backed remote.",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
 
 
 def collect_check_run(check_runs, name: str):

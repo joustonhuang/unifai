@@ -22,7 +22,10 @@ class FakeCompletedProcess:
 
 
 def run_case(fake_github_get, argv: list[str], fake_subprocess_run=None) -> tuple[int, str, str]:
+    old_github_get = module.github_get
+    old_github_get_optional = module.github_get_optional
     module.github_get = fake_github_get
+    module.github_get_optional = lambda path, allowed_codes=None: fake_github_get(path)
     old_argv = module.sys.argv[:]
     old_subprocess_run = module.subprocess.run
     module.sys.argv = argv
@@ -34,6 +37,8 @@ def run_case(fake_github_get, argv: list[str], fake_subprocess_run=None) -> tupl
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             code = module.main()
     finally:
+        module.github_get = old_github_get
+        module.github_get_optional = old_github_get_optional
         module.sys.argv = old_argv
         module.subprocess.run = old_subprocess_run
     return code, stdout.getvalue(), stderr.getvalue()
@@ -64,6 +69,40 @@ def success_get(path: str):
                     "status": "completed",
                     "conclusion": "success",
                     "html_url": "https://example.invalid/preflight",
+                }
+            ]
+        }
+    raise AssertionError(f"unexpected path: {path}")
+
+
+def remote_branch_get(path: str):
+    if path == "repos/joustonhuang/unifai/commits/github%2Ffix%2Fvisible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/commits/refs%2Fremotes%2Fgithub%2Ffix%2Fvisible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/commits/fix%2Fvisible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/heads/refs/remotes/github/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/heads/github/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/heads/fix/visible-branch":
+        return {"object": {"sha": "feed123", "type": "commit"}}
+    if path == "repos/joustonhuang/unifai/git/ref/tags/refs/remotes/github/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/tags/github/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/tags/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/commits/feed123/check-runs?per_page=100&page=1":
+        return {
+            "check_runs": [
+                {
+                    "id": 301,
+                    "name": "Bootstrap Installer Preflight",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "html_url": "https://example.invalid/remote-branch-preflight",
                 }
             ]
         }
@@ -145,6 +184,8 @@ def directory_failure_get(path: str):
 
 
 def fake_subprocess_run(cmd, check, capture_output, text, timeout):
+    if cmd == ["git", "remote", "get-url", "github"]:
+        return FakeCompletedProcess("https://github.com/joustonhuang/unifai.git\n")
     if cmd == ["git", "show", "def456:.github/workflows/bootstrap-preflight.yml"]:
         lines = [f"line {i}" for i in range(1, 57)]
         lines[37] = '      - name: Run bootstrap installer preflight'
@@ -179,6 +220,40 @@ if "Bootstrap Installer Preflight: status=completed conclusion=success" not in s
     raise SystemExit(1)
 if "[INFO] Optional check not present: Core Modules & Exoskeleton E2E" not in stdout:
     print("[FAIL] Expected optional-check informational line missing in success case.")
+    raise SystemExit(1)
+
+code, stdout, stderr = run_case(
+    remote_branch_get,
+    [str(SCRIPT), "github/fix/visible-branch"],
+    fake_subprocess_run=fake_subprocess_run,
+)
+print(stdout, end="")
+print(stderr, end="")
+if code != 0:
+    print("[FAIL] Expected GitHub remote-tracking branch case to return exit code 0.")
+    raise SystemExit(1)
+if "Ref: github/fix/visible-branch" not in stdout:
+    print("[FAIL] Expected remote-tracking branch ref line missing.")
+    raise SystemExit(1)
+if "SHA: feed123" not in stdout:
+    print("[FAIL] Expected remote-tracking branch SHA resolution missing.")
+    raise SystemExit(1)
+
+code, stdout, stderr = run_case(
+    remote_branch_get,
+    [str(SCRIPT), "refs/remotes/github/fix/visible-branch"],
+    fake_subprocess_run=fake_subprocess_run,
+)
+print(stdout, end="")
+print(stderr, end="")
+if code != 0:
+    print("[FAIL] Expected refs/remotes GitHub remote-tracking branch case to return exit code 0.")
+    raise SystemExit(1)
+if "Ref: refs/remotes/github/fix/visible-branch" not in stdout:
+    print("[FAIL] Expected refs/remotes remote-tracking branch ref line missing.")
+    raise SystemExit(1)
+if "SHA: feed123" not in stdout:
+    print("[FAIL] Expected refs/remotes remote-tracking branch SHA resolution missing.")
     raise SystemExit(1)
 
 code, stdout, stderr = run_case(
