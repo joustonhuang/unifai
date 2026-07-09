@@ -124,11 +124,18 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
 
 Current known boundary on this branch family:
-- GitHub-visible branch head remains `5baa4b0`
-- the local hardening stack is currently ahead of that public ref through `375406f` (`docs: refresh vm verifier checkpoint state`), 62 commits ahead in total
-- the local sandbox currently also carries 8 uncommitted verifier-hardening path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `scripts/bootstrap_installer_preflight.sh`, `scripts/check_bootstrap_preflight_contract.py`, `scripts/check_bootstrap_workflow_contract.py`, `scripts/check_bootstrap_workflow_contract_contract.py`, `scripts/check_github_check_gate.py`, `scripts/check_github_check_gate_contract.py`, `scripts/smoke_test_github_check_gate.py`)
+- GitHub-visible branch head remains `ccda045`
+- the local hardening stack is currently ahead of that public ref through `27c03a9` (`scripts: check publish stack parity`), 16 commits ahead in total
+- the local sandbox currently also carries 12 uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/bootstrap_installer_preflight.sh`, `scripts/check_bootstrap_preflight_contract.py`, `scripts/check_bootstrap_preflight_contract_contract.py`, and 7 more)
+- the latest non-doc logic delta in that local stack is `27c03a9` (`scripts: check publish stack parity`) in:
+  - `scripts/check_publish_stack_parity.py`
+  - `scripts/smoke_test_publish_stack_parity.sh`
+- the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
+- that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
+- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place
+- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
-- on the current host, `/dev/kvm` is present but not writable, `gh` is installed but unauthenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
+- on the current host, `/dev/kvm` is present but not writable, `gh` is installed and authenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
 
 Override the cloud image explicitly if needed:
 

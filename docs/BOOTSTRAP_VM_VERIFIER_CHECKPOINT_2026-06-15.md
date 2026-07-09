@@ -2,79 +2,36 @@
 
 ## Branch
 - Working branch: `fix/openclaw-config-path-and-local-mode`
-- GitHub-visible branch head: `5baa4b0`
-- Latest tracked local head in the stack: `368ab8f`
-- Latest non-doc logic head in the local stack: `6f59ca6`
-- Tracked local branch state at checkpoint: ahead by 59 commits over the GitHub-visible branch head
+- GitHub-visible branch head: `ccda045`
+- Latest tracked local head in the stack: `27c03a9`
+- Latest non-doc logic head in the local stack: `27c03a9`
+- Tracked local branch state at checkpoint: ahead by 16 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
-1. `d8c9143` — `dev: add GitHub branch visibility check`
-2. `517332a` — `dev: add GitHub check gate inspector`
-3. `3063370` — `dev: fold check gate inspector into preflight`
-4. `48bc63e` — `docs: clarify verifier preflight flow`
-5. `3f57e39` — `scripts: add vm verifier preflight wrapper`
-6. `588eb85` — `scripts: relax verifier preflight ref handling`
-7. `e85623d` — `tests: guard verifier preflight wrapper contract`
-8. `ab2a7b2` — `tests: smoke test verifier preflight wrapper`
-9. `d18e5ff` — `docs: checkpoint vm verifier branch state`
-10. `d0551e5` — `ci: pin bootstrap preflight actions to node24-safe majors`
-11. `b5c3210` — `docs: refresh vm verifier checkpoint state`
-12. `e724750` — `tests: smoke test github branch visibility gate`
-13. `87b553a` — `docs: refresh verifier checkpoint after guardrail updates`
-14. `70709d3` — `tests: lock bootstrap preflight contract`
-15. `d013011` — `tests: smoke test github check gate`
-16. `1cb116d` — `tests: harden github check gate diagnostics`
-17. `9f238a4` — `docs: refresh vm verifier publish boundary`
-18. `b29f575` — `scripts: fail fast on local-only verifier refs`
-19. `3f1688c` — `docs: note local-only ref preflight guard`
-20. `82b6f43` — `tests: lock verifier preflight wrapper into bootstrap contract`
-21. `7e54422` — `tests: lock workflow guard steps into contract`
-22. `d91ab00` — `tests: harden verifier tcg fallback path`
-23. `1be4456` — `tests: cover vm host readiness helper`
-24. `f9f0b25` — `docs: refresh vm verifier checkpoint state`
-25. `2debfb0` — `docs: sync vm verifier boundary guidance`
-26. `54e3760` — `docs: refresh vm verifier publish state`
-27. `9457332` — `docs: refresh vm verifier publish boundary`
-28. `2b31af0` — `tests: harden vm verifier failure diagnostics`
-29. `376062b` — `tests: cover vm verifier remote failure excerpts`
-30. `f24a91a` — `docs: refresh vm verifier checkpoint state`
-31. `03d08af` — `tests: cover missing vm report on verifier failure`
-32. `5b132f5` — `docs: refresh vm verifier checkpoint state`
-33. `aa8cd7b` — `docs: refresh vm verifier checkpoint state`
-34. `8222e65` — `docs: refresh vm verifier checkpoint state`
-35. `6eab4dc` — `tests: cover installer failure excerpts in vm verifier`
-36. `b82b772` — `docs: refresh vm verifier checkpoint state`
-37. `9f7046a` — `tests: cover installer failure smoke in preflight`
-38. `ae85aee` — `docs: refresh vm verifier checkpoint state`
-39. `7382c09` — `docs: refresh vm verifier checkpoint state`
-40. `e0576fb` — `docs: refresh vm verifier checkpoint state`
-41. `e8ffe9a` — `scripts: automate vm verifier checkpoint refresh`
-42. `542fe16` — `tests: guard vm verifier checkpoint refresh helper`
-43. `d087495` — `tests: smoke test vm verifier checkpoint refresh`
-44. `f9bdd27` — `scripts: support explicit vm preflight dry run flag`
-45. `9fb3d3c` — `scripts: explain github check gate auth failures`
-46. `5ca7a79` — `scripts: explain github unknown ref failures`
-47. `8b0f79b` — `scripts: explain github bad credential failures`
-48. `b4fa1ec` — `scripts: suggest kvm access recovery path`
-49. `63f50ad` — `scripts: explain kvm recovery in vm verifier`
-50. `a6f3aff` — `scripts: smoke test verifier kvm fallback guidance`
-51. `d98f751` — `scripts: fail closed when vm report copy-back is missing`
-52. `e0a6dc8` — `docs: refresh vm verifier checkpoint state`
-53. `962707a` — `scripts: harden verifier gh fallback and checkpoint tracking`
-54. `72a50e8` — `docs: refresh vm verifier checkpoint state`
-55. `6f59ca6` — `scripts: surface host readiness in verifier preflight`
-56. `31b582a` — `docs: refresh vm verifier checkpoint state`
-57. `73518ff` — `docs: point preflight summary at wrapper first`
-58. `0e632ec` — `docs: refresh vm verifier checkpoint state`
-59. `368ab8f` — `docs: narrow host-only checkpoint fallback guidance`
+1. `7756061` — `dev: harden verifier preflight remote boundary`
+2. `18f633f` — `docs: refresh verifier publish checkpoint`
+3. `0b062e3` — `docs: refresh verifier publish checkpoint`
+4. `4996e4f` — `docs: sync verifier publish boundary`
+5. `f4232c5` — `docs: sync visible verifier boundary state`
+6. `4aa294f` — `docs: refresh visible verifier checkpoint`
+7. `1836417` — `scripts: stabilize verifier checkpoint refresh tracking`
+8. `d7e7152` — `docs: refresh checkpoint helper boundary`
+9. `7af8398` — `docs: refresh checkpoint helper state`
+10. `9e2f0bf` — `docs: sync verifier checkpoint narrative`
+11. `d8539bb` — `scripts: harden verifier publish boundary`
+12. `b07fbe1` — `scripts: cover default vm preflight ref path`
+13. `8ee658e` — `scripts: lock missing-remote preflight guidance`
+14. `77bd08b` — `tests: cover non-github check-gate refs`
+15. `d70998f` — `tests: cover secondary check-gate rate limits`
+16. `27c03a9` — `scripts: check publish stack parity`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
 - Bootstrap installer preflight now also smoke-tests the GitHub branch-visibility helper in a temporary repo, so the “is this branch actually GitHub-visible?” gate no longer relies on syntax-only coverage.
 - Bootstrap installer preflight now has its own explicit contract checker and an offline smoke test for the GitHub check-gate inspector, so the preflight scaffold and required-check diagnosis path are both self-tested instead of syntax-only guarded.
 - The GitHub check-gate inspector is now more resilient on busy commits: it paginates through check runs and annotations, still prioritizes the likely root failure signal, and caps noisy annotation dumps with an omission summary.
-- The check-gate hardening bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted verifier-hardening delta.
-- Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current warnings are narrower (`/dev/kvm` not writable, `gh` installed but unauthenticated, no `GH_TOKEN`/`GITHUB_TOKEN` exported).
+- The verifier-preflight remote-boundary hardening bundle is now preserved as a clean local checkpoint commit: `7756061` (`dev: harden verifier preflight remote boundary`).
+- Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current live state is narrower (`/dev/kvm` is present but not writable, `gh` is installed and authenticated, no `GH_TOKEN`/`GITHUB_TOKEN` is exported).
 - The verifier path now has three distinct local guard layers before VM boot:
   1. branch visibility check
   2. GitHub required-check gate inspection
@@ -83,46 +40,43 @@
   - syntax checking in bootstrap preflight
   - a contract checker (`scripts/check_vm_verifier_preflight_contract.py`)
   - a dry-run smoke test (`scripts/smoke_test_vm_verifier_preflight_wrapper.sh`)
+- The latest local hardening commit narrows one more mismatch between smoke coverage and real operator repos:
+  - the preflight-wrapper smoke test now auto-detects the GitHub-backed remote instead of assuming a hard-coded `github` remote name
+  - explicit local SHAs now have a dedicated fail-closed smoke path when no GitHub-backed remote can be detected at all
+  - bootstrap preflight and its contract checkers now require that missing-GitHub-remote smoke path
+  - the wrapper contract checker now also forbids the stale hard-coded smoke ref `github/fix/openclaw-config-path-and-local-mode`, so this exact GitHub-visible failure mode cannot quietly re-enter the local bundle
+- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place.
+- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.
 - The verifier/preflight stack now has fail-closed smoke coverage for:
   - GitHub branch visibility divergence
   - GitHub required-check success/failure inspection with annotations
   - forced red-path failure
   - GitHub fallback SHA-resolution failure
+  - explicit local SHA preflight failure when no GitHub-backed remote exists
   - SSH-never-ready excerpt surfacing from serial/qemu logs
   - remote-verification failure excerpt surfacing from installer/report/serial/qemu logs
   - remote-verification failure when `report.txt` cannot be copied back from the VM
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack is not fully committed: tracked head is `368ab8f` and the working tree still carries 4 uncommitted path(s) (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`).
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `27c03a9`, that same commit is also the latest non-doc logic head, the sandbox currently carries 12 uncommitted checkpoint-refresh helper/doc updates, and the branch is `ahead 16` over `github/fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-
-## Known real blocker
-- First real VM proof still cannot start from this branch until these local commits become GitHub-visible.
-- The last GitHub-visible ref tested was `5baa4b0`, and its required check `Bootstrap Installer Preflight` was red, so verifier execution stopped before VM boot.
-- A fresh gate check on 2026-06-17 still shows `5baa4b0` red: `Bootstrap Installer Preflight` failed at https://github.com/joustonhuang/unifai/actions/runs/27492489483/job/81260207531. The public workflow still pins Node20-era actions (`actions/checkout@v4`, `actions/setup-python@v5`, `actions/upload-artifact@v4`), and the failing annotation summary surfaces those deprecation warnings alongside a generic `Process completed with exit code 1` marker.
-- `main` has moved independently since that public branch head, but that does not change the current blocker: the verifier boundary is still GitHub visibility plus a green required-check gate on the exact visible ref you plan to boot.
-- Once the branch is visible, the first likely execution friction is host-side, not code-side: `/dev/kvm` is present but not writable on this host so the verifier will run in slower TCG mode, and `gh` is installed but unauthenticated with no `GH_TOKEN`/`GITHUB_TOKEN` exported, so the API gate may fail closed or rate-limit.
-
-## Recommended next move when external boundary opens
-1. Make the current local branch tip GitHub-visible (the latest non-doc logic commit in that tip is `6f59ca6`).
-2. Run:
-   ```bash
-   bash scripts/run_vm_verifier_preflight.sh <github-visible-ref>
-   ```
-3. If preflight reports a red required check, inspect it first with:
-   ```bash
-   python3 scripts/check_github_check_gate.py <github-visible-ref>
-   ```
-4. If preflight passes, run:
-   ```bash
-   bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
-   ```
-5. If verifier startup friction still appears after wrapper preflight, re-run the narrow host-only check with:
-   ```bash
-   bash scripts/check_vm_host_readiness.sh
-   ```
-
-## Why this checkpoint exists
-This branch now contains several small local hardening commits. The main risk is not code uncertainty but restart friction and losing the verified sequence. This note preserves the exact branch state and next action boundary.
+- The current local sandbox now carries 12 uncommitted checkpoint-refresh helper/doc updates beyond the tracked local stack:
+  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
+  - `scripts/bootstrap_installer_preflight.sh`
+  - `scripts/check_bootstrap_preflight_contract.py`
+  - `scripts/check_bootstrap_preflight_contract_contract.py`
+  - `scripts/check_vm_host_readiness.sh`
+  - `scripts/refresh_vm_verifier_checkpoint_state.py`
+  - `scripts/smoke_test_vm_host_readiness.sh`
+  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
+  - `scripts/check_publish_stack_parity_contract.py`
+  - `scripts/check_vm_host_readiness_contract.py`
+  - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
+- Fresh local verification at the current sandbox state is green again:
+  - `python3 scripts/check_publish_stack_parity_contract.py`
+  - `python3 scripts/check_vm_host_readiness_contract.py`
+  - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
+  - `bash scripts/bootstrap_installer_preflight.sh` (rerun with the checkpoint-refresh helper/doc sync bundle in place)

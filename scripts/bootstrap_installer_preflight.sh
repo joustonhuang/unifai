@@ -49,9 +49,14 @@ require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 require_file "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
+require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
+require_file "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
+require_file "$REPO_ROOT/scripts/check_publish_stack_parity.py"
+require_file "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
+require_file "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
 require_file "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
@@ -108,6 +113,9 @@ pass "GitHub check gate contract checker passes py_compile"
 python3 -m py_compile "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
 pass "VM verifier checkpoint refresh helper passes py_compile"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
+pass "VM verifier checkpoint refresh contract checker passes py_compile"
+
 python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 pass "VM verifier checkpoint refresh smoke script passes py_compile"
 
@@ -117,8 +125,20 @@ pass "GitHub check gate smoke script passes py_compile"
 bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 pass "VM host readiness helper passes bash -n"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
+pass "VM host readiness contract checker passes py_compile"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 pass "VM host readiness smoke script passes bash -n"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_publish_stack_parity.py"
+pass "Publish stack parity checker passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
+pass "Publish stack parity contract checker passes py_compile"
+
+bash -n "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
+pass "Publish stack parity smoke script passes bash -n"
 
 bash -n "$REPO_ROOT/scripts/check_github_branch_visibility.sh"
 pass "GitHub branch visibility helper passes bash -n"
@@ -149,6 +169,15 @@ pass "Bootstrap workflow contract checker contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 pass "GitHub check gate contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
+pass "VM verifier checkpoint refresh contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
+pass "VM host readiness contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
+pass "Publish stack parity contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 pass "VM verifier contract check passed"
@@ -201,10 +230,13 @@ pass "GitHub branch visibility smoke test passed"
 bash "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 pass "VM host readiness smoke test passed"
 
+bash "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
+pass "Publish stack parity smoke test passed"
+
 python3 "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 pass "GitHub check gate smoke test passed"
 
-python3 "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
+python3 -B "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 pass "VM verifier checkpoint refresh smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"

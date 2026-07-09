@@ -4,6 +4,9 @@ set -euo pipefail
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
+GH_INSTALLED=0
+GH_AUTHENTICATED=0
+TOKEN_PRESENT=0
 
 pass() {
   printf '[PASS] %s\n' "$1"
@@ -48,7 +51,9 @@ else
 fi
 
 if command -v gh >/dev/null 2>&1; then
+  GH_INSTALLED=1
   if gh auth status >/dev/null 2>&1; then
+    GH_AUTHENTICATED=1
     pass 'gh is installed and authenticated'
   else
     warn 'gh is installed but not authenticated; curl fallback or token env will be used'
@@ -58,6 +63,7 @@ else
 fi
 
 if [ -n "${GH_TOKEN:-}" ] || [ -n "${GITHUB_TOKEN:-}" ]; then
+  TOKEN_PRESENT=1
   pass 'GitHub token env is present for curl fallback'
 else
   warn 'No GH_TOKEN/GITHUB_TOKEN in environment; public API fallback may rate-limit or fail closed'
@@ -74,13 +80,13 @@ if [ "$WARN_COUNT" -ne 0 ]; then
     printf -- '- /dev/kvm is absent; use TCG mode or prepare a KVM-capable host for faster VM proof.\n'
   fi
 
-  if command -v gh >/dev/null 2>&1 && ! gh auth status >/dev/null 2>&1; then
+  if [ "$GH_INSTALLED" -eq 1 ] && [ "$GH_AUTHENTICATED" -eq 0 ]; then
     printf -- '- Authenticate gh on this host before the first GitHub-visible VM proof, or rely on a token-only fallback.\n'
-  elif ! command -v gh >/dev/null 2>&1; then
+  elif [ "$GH_INSTALLED" -eq 0 ]; then
     printf -- '- Install/authenticate gh if you want API-backed verifier checks without token-only fallback.\n'
   fi
 
-  if [ -z "${GH_TOKEN:-}" ] && [ -z "${GITHUB_TOKEN:-}" ]; then
+  if [ "$TOKEN_PRESENT" -eq 0 ]; then
     printf -- '- Export GH_TOKEN or GITHUB_TOKEN if you want curl fallback to avoid unauthenticated GitHub API limits.\n'
   fi
 fi
