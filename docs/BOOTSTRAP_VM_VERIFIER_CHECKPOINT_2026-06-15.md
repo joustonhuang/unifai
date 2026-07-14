@@ -6,6 +6,7 @@
 - Latest tracked local head in the stack: `a16bb5f`
 - Latest non-doc logic head in the local stack: `a16bb5f`
 - Tracked local branch state at checkpoint: ahead by 11 commits over the GitHub-visible branch head
+- Current checked-out branch tip: `a6d8e52` (`docs: refresh verifier checkpoint stack`); tracked publish-boundary head stays `a16bb5f` because doc-only checkpoint refresh commits are intentionally excluded from that comparison.
 
 ## Local commit stack after `5baa4b0`
 1. `2c75337` — `scripts: check publish stack parity`
