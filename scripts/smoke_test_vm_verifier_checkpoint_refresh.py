@@ -347,6 +347,32 @@ def main() -> int:
         assert "GitHub auth / a visible ref" not in stable_commit_candidate
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in stable_checkpoint
 
+        run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
+        run(["git", "commit", "-m", "docs: refresh visible verifier boundary state"], work)
+        doc_only_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
+        doc_only_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
+        subprocess.check_call(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
+
+        doc_only_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
+        doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        doc_only_commit_candidate = read_commit_candidate(work)
+
+        assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
+        assert (
+            f"the current checked-out branch tip is `{doc_only_tip}` (`{doc_only_subject}`), but the tracked publish-boundary head stays "
+            f"`{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
+        ) in doc_only_boundary
+        assert f"Latest tracked local head in the stack: `{stable_head}`" in doc_only_checkpoint
+        assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in doc_only_checkpoint
+        assert (
+            f"- Current checked-out branch tip: `{doc_only_tip}` (`{doc_only_subject}`); tracked publish-boundary head stays "
+            f"`{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
+        ) in doc_only_checkpoint
+        assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
+        assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
+        assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
+        assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
+
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:
             raise AssertionError("Could not load checkpoint refresh helper for no-gh smoke validation")

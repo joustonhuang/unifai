@@ -32,6 +32,10 @@ required = [
     ('if access("/dev/kvm", W_OK):', "Refresh helper still distinguishes writable vs non-writable /dev/kvm state"),
     ('if command_succeeds("gh", "auth", "status"):', "Refresh helper still captures authenticated vs unauthenticated gh state"),
     ('if environ.get("GH_TOKEN") or environ.get("GITHUB_TOKEN")', "Refresh helper still reports GH_TOKEN/GITHUB_TOKEN export state"),
+    ('current_head_short = git("rev-parse", "--short", "HEAD")', "Refresh helper captures the checked-out branch tip separately from the tracked publish head"),
+    ('current_head_subject = git("show", "-s", "--format=%s", "HEAD")', "Refresh helper captures the checked-out branch-tip subject"),
+    ('if tracked_ref != "HEAD":', "Refresh helper distinguishes doc-only checkpoint commits sitting on top of the tracked publish head"),
+    ('doc-only checkpoint refresh commits are intentionally excluded from that comparison', "Refresh helper explains why a checked-out doc-only tip can differ from the tracked publish head"),
     ('git("status", "--short")', "Refresh helper still reads git status to capture dirty working-tree state"),
     ('git("diff", "--name-only", upstream)', "Refresh helper still derives bundle paths from the upstream diff"),
     ('"python3 scripts/check_publish_stack_parity_contract.py\\n"', "Refresh helper keeps the publish-stack parity contract gate in the handoff artifact"),
@@ -42,6 +46,7 @@ required = [
     ('f"Commit candidate: checkpoint-refresh helper/doc sync for publish-boundary state @ {tracked_head_short}\\n"', "Refresh helper labels the handoff artifact with the live checkpoint head"),
     ('f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{upstream_short}`', "Refresh helper keeps the public blocker note tied to the live GitHub-visible head"),
     ('"Next clean move once the branch tip is GitHub-visible:\\n"', "Refresh helper keeps the visible-ref handoff section"),
+    ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),
 ]
 
