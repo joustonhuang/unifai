@@ -57,6 +57,9 @@ require_file "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 require_file "$REPO_ROOT/scripts/check_publish_stack_parity.py"
 require_file "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
+require_file "$REPO_ROOT/scripts/compare_publish_branch_histories.py"
+require_file "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
+require_file "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
 require_file "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
@@ -141,6 +144,15 @@ pass "Publish stack parity contract checker passes py_compile"
 bash -n "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
 pass "Publish stack parity smoke script passes bash -n"
 
+python3 -m py_compile "$REPO_ROOT/scripts/compare_publish_branch_histories.py"
+pass "Publish branch history helper passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
+pass "Publish branch history contract checker passes py_compile"
+
+bash -n "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
+pass "Publish branch history smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/check_github_branch_visibility.sh"
 pass "GitHub branch visibility helper passes bash -n"
 
@@ -179,6 +191,9 @@ pass "VM host readiness contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
 pass "Publish stack parity contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
+pass "Publish branch history contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 pass "VM verifier contract check passed"
@@ -236,6 +251,9 @@ pass "VM host readiness smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
 pass "Publish stack parity smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
+pass "Publish branch history smoke test passed"
 
 python3 "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 pass "GitHub check gate smoke test passed"
