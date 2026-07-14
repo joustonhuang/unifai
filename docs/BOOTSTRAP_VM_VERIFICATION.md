@@ -126,8 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
 - the local hardening stack is currently ahead of that public ref through `a16bb5f` (`scripts: clarify checkpoint tip drift`), 11 commits ahead in total
-- the current checked-out branch tip is `a6d8e52` (`docs: refresh verifier checkpoint stack`), but the tracked publish-boundary head stays `a16bb5f` because doc-only checkpoint refresh commits are intentionally excluded from that comparison
-- the local sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc delta
+- the local sandbox currently also carries 2 uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD (`scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`)
 - the latest non-doc logic delta in that local stack is `a16bb5f` (`scripts: clarify checkpoint tip drift`) in:
   - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
   - `scripts/refresh_vm_verifier_checkpoint_state.py`

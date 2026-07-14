@@ -358,16 +358,10 @@ def main() -> int:
         doc_only_commit_candidate = read_commit_candidate(work)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
-        assert (
-            f"the current checked-out branch tip is `{doc_only_tip}` (`{doc_only_subject}`), but the tracked publish-boundary head stays "
-            f"`{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
-        ) in doc_only_boundary
         assert f"Latest tracked local head in the stack: `{stable_head}`" in doc_only_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in doc_only_checkpoint
-        assert (
-            f"- Current checked-out branch tip: `{doc_only_tip}` (`{doc_only_subject}`); tracked publish-boundary head stays "
-            f"`{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
-        ) in doc_only_checkpoint
+        assert "the current checked-out branch tip is" not in doc_only_boundary
+        assert "- Current checked-out branch tip:" not in doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
