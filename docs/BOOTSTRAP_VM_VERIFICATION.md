@@ -125,10 +125,17 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `de9b247` (`tests: cover secondary check-gate rate limits`), 8 commits ahead in total
-- the local sandbox currently also carries 8 uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/bootstrap_installer_preflight.sh`, `scripts/check_bootstrap_preflight_contract.py`, `scripts/check_bootstrap_preflight_contract_contract.py`, and 3 more)
-- the latest non-doc logic delta in that local stack is `de9b247` (`tests: cover secondary check-gate rate limits`) in:
-  - `scripts/smoke_test_github_check_gate.py`
+- the local hardening stack is currently ahead of that public ref through `e26db83` (`scripts: compare publish branch histories`), 9 commits ahead in total
+- the local sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc delta
+- the latest non-doc logic delta in that local stack is `e26db83` (`scripts: compare publish branch histories`) in:
+  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
+  - `scripts/bootstrap_installer_preflight.sh`
+  - `scripts/check_bootstrap_preflight_contract.py`
+  - `scripts/check_bootstrap_preflight_contract_contract.py`
+  - `scripts/check_compare_publish_branch_histories_contract.py`
+  - `scripts/compare_publish_branch_histories.py`
+  - `scripts/smoke_test_compare_publish_branch_histories.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place
