@@ -55,4 +55,14 @@ if ! grep -q "\[FAIL\] Local branch and GitHub branch differ (ahead 1, behind 0)
   exit 1
 fi
 
+if ! grep -q "\[INFO\] Local branch tip is not GitHub-visible yet; push it with: git push github feature/test-visibility" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected ahead-only push guidance missing after local divergence."
+  exit 1
+fi
+
+if ! grep -q "\[INFO\] Review with: git log --oneline --left-right --cherry-pick feature/test-visibility...github/feature/test-visibility" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected review guidance missing after local divergence."
+  exit 1
+fi
+
 echo "[PASS] GitHub branch visibility helper behaves as expected."

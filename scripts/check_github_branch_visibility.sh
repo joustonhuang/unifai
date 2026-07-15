@@ -142,6 +142,13 @@ fi
 
 if [ "$ahead" -ne 0 ] || [ "$behind" -ne 0 ]; then
   echo "[FAIL] Local branch and GitHub branch differ (ahead $ahead, behind $behind)." >&2
+  if [ "$ahead" -gt 0 ] && [ "$behind" -eq 0 ]; then
+    echo "[INFO] Local branch tip is not GitHub-visible yet; push it with: git push $GITHUB_REMOTE $branch" >&2
+  elif [ "$ahead" -eq 0 ] && [ "$behind" -gt 0 ]; then
+    echo "[INFO] Local branch is behind the GitHub-visible head; fast-forward or rebase before verifier work." >&2
+  else
+    echo "[INFO] Local and GitHub-visible history diverged; reconcile before verifier work." >&2
+  fi
   echo "[INFO] Review with: git log --oneline --left-right --cherry-pick $branch...$GITHUB_REMOTE/$branch" >&2
   exit 1
 fi
