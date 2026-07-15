@@ -57,10 +57,12 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `05b564a`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc updates, and the branch is `ahead 14` over `github/fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `05b564a`, that same commit is also the latest non-doc logic head, the sandbox currently carries 2 uncommitted checkpoint-refresh helper/doc updates, and the branch is `ahead 14` over `github/fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries no additional uncommitted checkpoint-refresh delta beyond the tracked local stack.
+- The current local sandbox now carries 2 uncommitted checkpoint-refresh helper/doc updates beyond the tracked local stack:
+  - `scripts/refresh_vm_verifier_checkpoint_state.py`
+  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
 - Fresh local verification at the current sandbox state is green again:
   - `python3 scripts/check_publish_stack_parity_contract.py`
   - `python3 scripts/check_vm_host_readiness_contract.py`

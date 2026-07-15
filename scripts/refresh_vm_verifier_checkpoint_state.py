@@ -444,6 +444,21 @@ def main() -> int:
         working_tree_block = "Working-tree files:\n" + "\n".join(dirty_paths)
     else:
         working_tree_block = "Working-tree files:\n(clean)"
+    if tracked_ref != "HEAD":
+        next_move_line = (
+            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{current_branch}`; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
+        )
+        external_blocker_line = (
+            f"- The branch still needs the current branch tip `{current_head_short}` GitHub-visible; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
+        )
+    else:
+        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{current_branch}`.\n"
+        external_blocker_line = (
+            f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` to become GitHub-visible before the real VM-proof path can continue.\n"
+        )
+
     commit_candidate_text = (
         f"Commit candidate: checkpoint-refresh helper/doc sync for publish-boundary state @ {tracked_head_short}\n"
         f"Current local checkpoint: {tracked_head_short}\n"
@@ -460,10 +475,10 @@ def main() -> int:
         "Current checkpoint chain:\n"
         f"{checkpoint_chain_bullets}\n\n"
         "Current external blocker:\n"
-        f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` to become GitHub-visible before the real VM-proof path can continue.\n"
+        f"{external_blocker_line}"
         f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{upstream_short}`, so the next real boundary is still a visible rerun on the exact published ref.\n\n"
         "Next clean move once the branch tip is GitHub-visible:\n"
-        f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{current_branch}`.\n"
+        f"{next_move_line}"
         "- Rerun `Bootstrap Installer Preflight` on the exact visible ref.\n"
         "- If green, run `bash scripts/run_vm_verifier_preflight.sh <visible-ref>` and then `bash scripts/vm/verify_bootstrap_in_vm.sh <visible-ref>`.\n"
     )

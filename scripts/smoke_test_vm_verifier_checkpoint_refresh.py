@@ -255,6 +255,8 @@ def main() -> int:
         refreshed_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         refreshed_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         refreshed_commit_candidate = read_commit_candidate(work)
+        refreshed_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
+        refreshed_tip_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
         refreshed_delta_section = refreshed_checkpoint.split("Current uncommitted delta on top:\n", 1)[1].split("- Files in the bundle:", 1)[0]
         refreshed_bundle_section = extract_bundle_section(refreshed_checkpoint)
 
@@ -293,9 +295,18 @@ def main() -> int:
         assert "Current host-readiness snapshot:\n" in refreshed_commit_candidate
         assert expected_checkpoint_host_line in refreshed_commit_candidate
         assert "- The checkpoint-refresh helper/doc sync bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in refreshed_commit_candidate
+        assert (
+            f"- The branch still needs the current branch tip `{refreshed_tip}` GitHub-visible; "
+            f"the tracked publish-boundary checkpoint remains `{head_sha}` until that visible ref exists.\n"
+        ) in refreshed_commit_candidate
         assert f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{remote_sha}`, so the next real boundary is still a visible rerun on the exact published ref.\n" in refreshed_commit_candidate
         assert "Next clean move once the branch tip is GitHub-visible:\n" in refreshed_commit_candidate
+        assert (
+            f"- Make the current branch tip `{refreshed_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"the tracked publish-boundary checkpoint remains `{head_sha}` until a non-doc commit supersedes it.\n"
+        ) in refreshed_commit_candidate
         assert "GitHub auth / a visible ref" not in refreshed_commit_candidate
+        assert f"Current checked-out branch tip: {refreshed_tip} ({refreshed_tip_subject})\n" in refreshed_commit_candidate
 
         run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
         run(["git", "commit", "-m", "docs: sync visible verifier boundary state"], work)
@@ -366,6 +377,14 @@ def main() -> int:
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
+        assert (
+            f"- The branch still needs the current branch tip `{doc_only_tip}` GitHub-visible; "
+            f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
+        ) in doc_only_commit_candidate
+        assert (
+            f"- Make the current branch tip `{doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
+        ) in doc_only_commit_candidate
 
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:
