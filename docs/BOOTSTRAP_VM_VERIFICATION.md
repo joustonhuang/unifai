@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
 - the local hardening stack is currently ahead of that public ref through `e6c2390` (`scripts: clarify branch visibility recovery guidance`), 18 commits ahead in total
-- the local sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc delta
+- the local sandbox currently also carries 2 uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD (`scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`)
 - the latest non-doc logic delta in that local stack is `e6c2390` (`scripts: clarify branch visibility recovery guidance`) in:
   - `scripts/check_github_branch_visibility.sh`
   - `scripts/smoke_test_github_branch_visibility.sh`

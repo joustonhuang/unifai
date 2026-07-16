@@ -194,6 +194,7 @@ def main() -> int:
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in boundary
         assert "that helper hardening" not in boundary
         assert expected_boundary_host_line in boundary
+        assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in checkpoint
         assert f"Latest tracked local head in the stack: `{head_sha}`" in checkpoint
         assert f"Latest non-doc logic head in the local stack: `{logic_sha}`" in checkpoint
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
@@ -269,6 +270,7 @@ def main() -> int:
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in refreshed_boundary
         assert "that helper hardening" not in refreshed_boundary
         assert expected_boundary_host_line in refreshed_boundary
+        assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in refreshed_checkpoint
         assert f"Latest tracked local head in the stack: `{head_sha}`" in refreshed_checkpoint
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in refreshed_checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in refreshed_checkpoint
@@ -330,6 +332,7 @@ def main() -> int:
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in stable_boundary
         assert "that helper hardening" not in stable_boundary
         assert expected_boundary_host_line in stable_boundary
+        assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in stable_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in stable_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in stable_checkpoint
         assert f"`{stable_head}` — `{stable_subject}`" in stable_checkpoint
@@ -369,6 +372,7 @@ def main() -> int:
         doc_only_commit_candidate = read_commit_candidate(work)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
+        assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in doc_only_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in doc_only_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in doc_only_checkpoint
         assert "the current checked-out branch tip is" not in doc_only_boundary
