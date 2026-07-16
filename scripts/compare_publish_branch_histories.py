@@ -258,6 +258,10 @@ def print_reconciliation_next_step(
         print(
             f"  # {len(doc_only_older)} older-only doc/checkpoint commit(s) remain for manual review or drop"
         )
+    if older_unique and not replay_candidates and not mixed_older and doc_only_older:
+        print(
+            "  # remaining older-only history is doc/checkpoint churn only; treat it as intentional drop noise unless you need it for archaeology"
+        )
     if older_unique:
         print(
             f"  # older branch still has {len(older_unique)} older-only commit(s) to review/drop consciously"

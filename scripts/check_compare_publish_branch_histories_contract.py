@@ -46,6 +46,7 @@ EXPECTATIONS = [
     ('already absorbed on', "Branch-history helper reports code-only commits already absorbed by the cleaner ref"),
     ('older mixed docs+code commit(s) remain for manual review before replay', "Branch-history helper leaves mixed docs+code commits for manual review"),
     ('older-only doc/checkpoint commit(s) remain for manual review or drop', "Branch-history helper leaves doc-only churn for conscious review"),
+    ('remaining older-only history is doc/checkpoint churn only; treat it as intentional drop noise unless you need it for archaeology', "Branch-history helper can declare the doc-only terminal reconciliation state explicitly"),
     ('parser.add_argument("older_ref"', "Branch-history helper accepts an older branch ref"),
     ('parser.add_argument("cleaner_ref"', "Branch-history helper accepts a cleaner branch ref"),
 ]
