@@ -84,7 +84,7 @@ f4232c5 docs: sync visible verifier boundary state
     Its behavior is already represented and extended on transplant: `22b7bc9` carries the GitHub check-gate hardening and smoke coverage forward, `a16bb5f` plus the later checkpoint-refresh chain keep the boundary/checkpoint narration in sync, and the current tree still contains the explicit remote-tracking-ref resolution and wrapper coverage that this older commit was trying to protect. The remaining delta is older checkpoint/doc wording and state capture, not missing functionality.
   - `aaee837 scripts/docs: refresh vm verifier checkpoint state`
     Its checkpoint-refresh/helper bundle is already represented and extended on transplant by `47c18d7` plus the later stabilization chain: the refresh-helper contract still passes, the checkpoint-refresh smoke still passes, and the host-readiness smoke still passes. The remaining delta is older checkpoint/doc state capture, not missing helper or verification behavior.
-- Older doc/checkpoint-only commits remaining for review or drop:
+- Older doc/checkpoint-only commits now ready to drop as non-replay churn:
   - `18f633f docs: refresh verifier publish checkpoint`
   - `0b062e3 docs: refresh verifier publish checkpoint`
   - `4996e4f docs: sync verifier publish boundary`
@@ -92,7 +92,8 @@ f4232c5 docs: sync visible verifier boundary state
   - `d7e7152 docs: refresh checkpoint helper boundary`
   - `7af8398 docs: refresh checkpoint helper state`
   - `9e2f0bf docs: sync verifier checkpoint narrative`
+  These are all older checkpoint/doc-state snapshots on the legacy branch. With replay-safe code-only commits exhausted and the mixed queue fully closed, they no longer represent functional replay candidates and should be treated as intentional drop noise unless a future audit wants one purely for narrative archaeology.
 
 ## Best next move
 
-Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The mixed older queue is now exhausted, so the next manual block should treat the 7 remaining older doc-only checkpoint commits as intentional drop candidates and record that they no longer represent replay work.
+Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely doc/checkpoint churn already marked as ready-to-drop non-replay noise, so the next manual block can move straight to preserving or pruning that history consciously instead of reopening reconciliation.
