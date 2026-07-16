@@ -74,8 +74,7 @@ f4232c5 docs: sync visible verifier boundary state
 ## Manual review queue
 
 - Mixed docs+code older commits still needing conscious keep/drop review:
-  - `aaee837 scripts/docs: refresh vm verifier checkpoint state`
-    Likely superseded by `47c18d7` plus the later checkpoint/doc stabilization chain on transplant.
+  - none
 - Reviewed mixed docs+code older commits now ready to drop:
   - `7756061 dev: harden verifier preflight remote boundary`
     Functional coverage is already present on transplant via `c867fa3` for the preflight/GitHub-gate code path, `22b7bc9` for the later publish-boundary hardening, and `5837f8c` for the missing-remote smoke restoration. Remaining delta is checkpoint/doc churn, not missing behavior.
@@ -83,6 +82,8 @@ f4232c5 docs: sync visible verifier boundary state
     Its exact behavior is already represented and then extended on transplant: the checkpoint-refresh helper still rewrites the GitHub-visible head and tracked local head lines, the smoke test still asserts those synced boundary values, and later commits such as `05b564a`, `47c18d7`, and `6b715c9` broaden that same checkpoint/doc sync path substantially. Remaining delta is earlier wording/doc-state churn, not missing logic.
   - `d8539bb scripts: harden verifier publish boundary`
     Its behavior is already represented and extended on transplant: `22b7bc9` carries the GitHub check-gate hardening and smoke coverage forward, `a16bb5f` plus the later checkpoint-refresh chain keep the boundary/checkpoint narration in sync, and the current tree still contains the explicit remote-tracking-ref resolution and wrapper coverage that this older commit was trying to protect. The remaining delta is older checkpoint/doc wording and state capture, not missing functionality.
+  - `aaee837 scripts/docs: refresh vm verifier checkpoint state`
+    Its checkpoint-refresh/helper bundle is already represented and extended on transplant by `47c18d7` plus the later stabilization chain: the refresh-helper contract still passes, the checkpoint-refresh smoke still passes, and the host-readiness smoke still passes. The remaining delta is older checkpoint/doc state capture, not missing helper or verification behavior.
 - Older doc/checkpoint-only commits remaining for review or drop:
   - `18f633f docs: refresh verifier publish checkpoint`
   - `0b062e3 docs: refresh verifier publish checkpoint`
@@ -94,4 +95,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 ## Best next move
 
-Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The next manual block should review the 1 still-open mixed older commit above, confirm it is already functionally represented by newer transplant commits, and then treat the 7 older doc-only commits as intentional drop candidates rather than replay work.
+Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The mixed older queue is now exhausted, so the next manual block should treat the 7 remaining older doc-only checkpoint commits as intentional drop candidates and record that they no longer represent replay work.
