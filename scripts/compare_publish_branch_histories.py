@@ -151,6 +151,15 @@ def print_section(title: str, rows: list[tuple[str, str, str, list[str]]], marke
             print(f"    paths: {', '.join(paths)}")
 
 
+def print_commit_list(title: str, commits: list[str]) -> None:
+    print(title)
+    if not commits:
+        print("  (none)")
+        return
+    for commit in commits:
+        print(f"  {commit} {commit_subject(commit)}")
+
+
 def commits_with_marker(rows: list[tuple[str, str, str, list[str]]], marker: str) -> list[str]:
     return [commit for row_marker, commit, _, _ in rows if row_marker == marker]
 
@@ -294,6 +303,41 @@ def main() -> None:
         f"True branch-only commits on {args.cleaner_ref}:",
         cleaner_vs_older,
         "+",
+    )
+    older_unique_rows = [row for row in older_vs_cleaner if row[0] == "+"]
+    absorbed_candidates = [
+        commit
+        for _, commit, _, paths in older_unique_rows
+        if is_code_only(paths) and commit_is_absorbed_by_ref(commit, args.cleaner_ref)
+    ]
+    replay_candidates = [
+        commit
+        for _, commit, _, paths in older_unique_rows
+        if is_code_only(paths) and commit not in absorbed_candidates
+    ]
+    mixed_older = [
+        commit
+        for _, commit, _, paths in older_unique_rows
+        if paths and not is_doc_only(paths) and not is_code_only(paths)
+    ]
+    doc_only_older = [
+        commit for _, commit, _, paths in older_unique_rows if is_doc_only(paths)
+    ]
+    print_commit_list(
+        f"Code-only older commits already absorbed on {args.cleaner_ref}:",
+        absorbed_candidates,
+    )
+    print_commit_list(
+        f"Replay-safe code-only older commits still unique to {args.older_ref}:",
+        replay_candidates,
+    )
+    print_commit_list(
+        f"Older mixed docs+code commits requiring manual review:",
+        mixed_older,
+    )
+    print_commit_list(
+        f"Older doc/checkpoint-only commits requiring manual review or drop:",
+        doc_only_older,
     )
     print_reconciliation_next_step(
         args.older_ref,
