@@ -151,13 +151,17 @@ def print_section(title: str, rows: list[tuple[str, str, str, list[str]]], marke
             print(f"    paths: {', '.join(paths)}")
 
 
-def print_commit_list(title: str, commits: list[str]) -> None:
+def print_commit_list(title: str, commits: list[str], include_paths: bool = False) -> None:
     print(title)
     if not commits:
         print("  (none)")
         return
     for commit in commits:
         print(f"  {commit} {commit_subject(commit)}")
+        if include_paths:
+            paths = commit_paths(commit)
+            if paths:
+                print(f"    paths: {', '.join(paths)}")
 
 
 def commits_with_marker(rows: list[tuple[str, str, str, list[str]]], marker: str) -> list[str]:
@@ -326,18 +330,22 @@ def main() -> None:
     print_commit_list(
         f"Code-only older commits already absorbed on {args.cleaner_ref}:",
         absorbed_candidates,
+        include_paths=True,
     )
     print_commit_list(
         f"Replay-safe code-only older commits still unique to {args.older_ref}:",
         replay_candidates,
+        include_paths=True,
     )
     print_commit_list(
         f"Older mixed docs+code commits requiring manual review:",
         mixed_older,
+        include_paths=True,
     )
     print_commit_list(
         f"Older doc/checkpoint-only commits requiring manual review or drop:",
         doc_only_older,
+        include_paths=True,
     )
     print_reconciliation_next_step(
         args.older_ref,

@@ -216,16 +216,32 @@ grep -q "$older_absorbed older absorbed" <<<"$OUTPUT" || {
   echo "[FAIL] Expected absorbed older commit to be listed in the absorbed bucket."
   exit 1
 }
+grep -q "$older_absorbed older absorbed"$'\n'"    paths: absorbed.txt" <<<"$OUTPUT" || {
+  echo "[FAIL] Expected absorbed older commit bucket to show touched paths."
+  exit 1
+}
 grep -q "$older_unique_1 older unique" <<<"$OUTPUT" || {
   echo "[FAIL] Expected replay-safe older commit to be listed in the explicit replay bucket."
+  exit 1
+}
+grep -q "$older_unique_1 older unique"$'\n'"    paths: old_only.txt" <<<"$OUTPUT" || {
+  echo "[FAIL] Expected replay-safe older commit bucket to show touched paths."
   exit 1
 }
 grep -q "$older_mixed older mixed" <<<"$OUTPUT" || {
   echo "[FAIL] Expected mixed older commit to be listed in the mixed-review bucket."
   exit 1
 }
+grep -q "$older_mixed older mixed"$'\n'"    paths: docs/helper-notes.md, helper.py" <<<"$OUTPUT" || {
+  echo "[FAIL] Expected mixed older commit bucket to show touched paths."
+  exit 1
+}
 grep -q "$older_docs_only older docs only" <<<"$OUTPUT" || {
   echo "[FAIL] Expected doc-only older commit to be listed in the doc-only review bucket."
+  exit 1
+}
+grep -q "$older_docs_only older docs only"$'\n'"    paths: docs/checkpoint.md" <<<"$OUTPUT" || {
+  echo "[FAIL] Expected doc-only older commit bucket to show touched paths."
   exit 1
 }
 
