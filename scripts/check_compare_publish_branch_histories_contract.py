@@ -8,6 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TARGET = REPO_ROOT / "scripts" / "compare_publish_branch_histories.py"
 
 EXPECTATIONS = [
+    ('REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {', "Branch-history helper tracks reviewed older commits that are already ready to drop for known branch pairs"),
     ('KNOWN_ABSORPTION_MARKERS: dict[str, dict[str, list[str]]] = {', "Branch-history helper carries known absorbed-commit markers for generalized coverage cases"),
     ('"scripts: stabilize verifier checkpoint refresh tracking"', "Branch-history helper recognizes the older checkpoint-refresh tracking commit as a known absorption case"),
     ('def cherry(from_ref: str, to_ref: str)', "Branch-history helper defines a git cherry reader"),
@@ -35,11 +36,13 @@ EXPECTATIONS = [
     ('True branch-only commits on', "Branch-history helper reports truly unique commits"),
     ('print(f"    paths: {\', \'.join(paths)}")', "Branch-history helper prints touched paths under each listed commit"),
     ('def print_commit_list(title: str, commits: list[str], include_paths: bool = False) -> None:', "Branch-history helper can print explicit commit buckets"),
+    ('def reviewed_drop_candidates(older_ref: str, cleaner_ref: str) -> set[str]:', "Branch-history helper can load reviewed drop candidates for a branch pair"),
     ('if include_paths:', "Branch-history helper can optionally show touched paths inside explicit buckets"),
     ('Code-only older commits already absorbed on', "Branch-history helper prints absorbed older code-only commits explicitly"),
     ('Replay-safe code-only older commits still unique to', "Branch-history helper prints replay-safe older code-only commits explicitly"),
     ('Older mixed docs+code commits requiring manual review:', "Branch-history helper prints mixed older commits explicitly"),
     ('Older doc/checkpoint-only commits requiring manual review or drop:', "Branch-history helper prints doc-only older commits explicitly"),
+    ('Older commits already reviewed and ready to drop:', "Branch-history helper prints previously reviewed older commits explicitly"),
     ('Suggested next step:', "Branch-history helper prints a reconciliation next-step section"),
     ('git cherry-pick', "Branch-history helper prints an exact cherry-pick command"),
     ('review code-only older commits and cherry-pick only the ones worth keeping onto', "Branch-history helper prefers code-only replay guidance"),

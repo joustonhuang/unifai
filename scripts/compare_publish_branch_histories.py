@@ -8,6 +8,24 @@ import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {
+    (
+        "fix/openclaw-config-path-and-local-mode",
+        "transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+    ): {
+        "775606195dd1f9e275a08a2c2a7bf106a7e2519f",
+        "f4232c51b9b4f933c4eb1c5b679a0a305dbc6aa6",
+        "d8539bb09dcbb186570f85ab0cc23216e5427a4b",
+        "aaee8379ded3136f2031e9e7bd4155981d31fbac",
+        "18f633fae3367195c103ff49a8f96fe04721cd5d",
+        "0b062e3fae0ec3202755a1ed6b78a261d66f6255",
+        "4996e4ffe250b1b7ecbbff1d70c0b8f4cb518417",
+        "4aa294f103acee4eb8ed0df1ca777c5374eb0b59",
+        "d7e71524f926dad3f1febff576848298e319c8c8",
+        "7af8398310b9858c741127127e8b3250bbba7d67",
+        "9e2f0bf2a63e6adf32de81981b4a2895640ff165",
+    },
+}
 KNOWN_ABSORPTION_MARKERS: dict[str, dict[str, list[str]]] = {
     "scripts: stabilize verifier checkpoint refresh tracking": {
         "scripts/refresh_vm_verifier_checkpoint_state.py": [
@@ -168,6 +186,10 @@ def commits_with_marker(rows: list[tuple[str, str, str, list[str]]], marker: str
     return [commit for row_marker, commit, _, _ in rows if row_marker == marker]
 
 
+def reviewed_drop_candidates(older_ref: str, cleaner_ref: str) -> set[str]:
+    return REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR.get((older_ref, cleaner_ref), set())
+
+
 def is_doc_only(paths: list[str]) -> bool:
     return bool(paths) and all(path.startswith("docs/") for path in paths)
 
@@ -206,7 +228,10 @@ def print_reconciliation_next_step(
     older_vs_cleaner: list[tuple[str, str, str, list[str]]],
     cleaner_vs_older: list[tuple[str, str, str, list[str]]],
 ) -> None:
-    older_unique_rows = [row for row in older_vs_cleaner if row[0] == "+"]
+    already_reviewed = reviewed_drop_candidates(older_ref, cleaner_ref)
+    older_unique_rows = [
+        row for row in older_vs_cleaner if row[0] == "+" and row[1] not in already_reviewed
+    ]
     older_unique = [commit for _, commit, _, _ in older_unique_rows]
     cleaner_unique = commits_with_marker(cleaner_vs_older, "+")
     older_duplicates = commits_with_marker(older_vs_cleaner, "-")
@@ -313,6 +338,12 @@ def main() -> None:
         "+",
     )
     older_unique_rows = [row for row in older_vs_cleaner if row[0] == "+"]
+    reviewed_drop_commits = [
+        commit for _, commit, _, _ in older_unique_rows if commit in reviewed_drop_candidates(args.older_ref, args.cleaner_ref)
+    ]
+    older_unique_rows = [
+        row for row in older_unique_rows if row[1] not in reviewed_drop_candidates(args.older_ref, args.cleaner_ref)
+    ]
     absorbed_candidates = [
         commit
         for _, commit, _, paths in older_unique_rows
@@ -349,6 +380,11 @@ def main() -> None:
     print_commit_list(
         f"Older doc/checkpoint-only commits requiring manual review or drop:",
         doc_only_older,
+        include_paths=True,
+    )
+    print_commit_list(
+        f"Older commits already reviewed and ready to drop:",
+        reviewed_drop_commits,
         include_paths=True,
     )
     print_reconciliation_next_step(
