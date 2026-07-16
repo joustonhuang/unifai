@@ -74,14 +74,15 @@ f4232c5 docs: sync visible verifier boundary state
 ## Manual review queue
 
 - Mixed docs+code older commits still needing conscious keep/drop review:
-  - `7756061 dev: harden verifier preflight remote boundary`
-    Likely covered functionally by `c867fa3` plus `5837f8c`; remaining delta is mostly checkpoint/doc churn.
   - `f4232c5 docs: sync visible verifier boundary state`
     Likely superseded by later checkpoint-refresh work on transplant, especially `05b564a` and `6b715c9`.
   - `d8539bb scripts: harden verifier publish boundary`
     Likely split across `22b7bc9`, `a16bb5f`, and later checkpoint-refresh commits; review only for any behavior still missing.
   - `aaee837 scripts/docs: refresh vm verifier checkpoint state`
     Likely superseded by `47c18d7` plus the later checkpoint/doc stabilization chain on transplant.
+- Reviewed mixed docs+code older commits now ready to drop:
+  - `7756061 dev: harden verifier preflight remote boundary`
+    Functional coverage is already present on transplant via `c867fa3` for the preflight/GitHub-gate code path, `22b7bc9` for the later publish-boundary hardening, and `5837f8c` for the missing-remote smoke restoration. Remaining delta is checkpoint/doc churn, not missing behavior.
 - Older doc/checkpoint-only commits remaining for review or drop:
   - `18f633f docs: refresh verifier publish checkpoint`
   - `0b062e3 docs: refresh verifier publish checkpoint`
@@ -93,4 +94,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 ## Best next move
 
-Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The next manual block should review the 4 mixed older commits above in order, confirm each one is already functionally represented by newer transplant commits, and then treat the 7 older doc-only commits as intentional drop candidates rather than replay work.
+Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The next manual block should review the 3 still-open mixed older commits above in order, confirm each one is already functionally represented by newer transplant commits, and then treat the 7 older doc-only commits as intentional drop candidates rather than replay work.
