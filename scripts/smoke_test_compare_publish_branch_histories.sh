@@ -220,6 +220,70 @@ grep -q "$older_absorbed older absorbed"$'\n'"    paths: absorbed.txt" <<<"$OUTP
   echo "[FAIL] Expected absorbed older commit bucket to show touched paths."
   exit 1
 }
+grep -q "older branch still has 4 older-only commit(s) to review/drop consciously" <<<"$OUTPUT" || {
+  echo "[FAIL] Expected unresolved older-only summary to exclude only absorbed churn, not replay/doc/mixed work."
+  exit 1
+}
+
+ABSORB_DIR="$(mktemp -d -t unifai-compare-publish-history-absorbed-XXXXXX)"
+trap 'rm -rf "$TMP_DIR" "$ABSORB_DIR"' EXIT
+ABSORB_WORKTREE="$ABSORB_DIR/repo"
+mkdir -p "$ABSORB_WORKTREE/scripts"
+cp "$REPO_ROOT/scripts/compare_publish_branch_histories.py" "$ABSORB_WORKTREE/scripts/compare_publish_branch_histories.py"
+chmod +x "$ABSORB_WORKTREE/scripts/compare_publish_branch_histories.py"
+
+cd "$ABSORB_WORKTREE"
+git init -q
+git config user.name "UnifAI Smoke"
+git config user.email "smoke@unifai.invalid"
+
+cat > absorbed.txt <<'EOF'
+base
+EOF
+git add absorbed.txt
+git commit -q -m "base"
+git branch -M base
+
+git checkout -q -b older
+cat > absorbed.txt <<'EOF'
+absorbed from older
+EOF
+git add absorbed.txt
+git commit -q -m "older absorbed"
+
+git checkout -q base
+git checkout -q -b cleaner
+cat > absorbed.txt <<'EOF'
+absorbed temp
+EOF
+git add absorbed.txt
+git commit -q -m "cleaner absorbed temp"
+
+cat > absorbed.txt <<'EOF'
+absorbed from older
+EOF
+git add absorbed.txt
+git commit -q -m "cleaner absorbed via cleaner path"
+
+ABSORB_OUTPUT="$("$REAL_BASH" -lc "cd '$ABSORB_WORKTREE' && python3 scripts/compare_publish_branch_histories.py older cleaner")"
+printf '%s\n' "$ABSORB_OUTPUT"
+
+grep -q "no code-only older commits remain to replay from older" <<<"$ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected absorbed-only older history to skip replay guidance."
+  exit 1
+}
+grep -q "code-only older commit(s) are already absorbed on cleaner and can stay out of replay" <<<"$ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected absorbed-only older history to report absorbed churn."
+  exit 1
+}
+grep -q "no older-only commits remain" <<<"$ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected absorbed-only older history to clear the final unresolved summary."
+  exit 1
+}
+if grep -q "older branch still has" <<<"$ABSORB_OUTPUT"; then
+  echo "[FAIL] Absorbed-only older history should not claim unresolved older commits remain."
+  exit 1
+fi
 grep -q "$older_unique_1 older unique" <<<"$OUTPUT" || {
   echo "[FAIL] Expected replay-safe older commit to be listed in the explicit replay bucket."
   exit 1

@@ -241,6 +241,9 @@ def print_reconciliation_next_step(
         for _, commit, _, paths in older_unique_rows
         if is_code_only(paths) and commit_is_absorbed_by_ref(commit, cleaner_ref)
     ]
+    unresolved_older = [
+        commit for commit in older_unique if commit not in absorbed_candidates
+    ]
     replay_candidates = [
         commit
         for _, commit, _, paths in older_unique_rows
@@ -283,13 +286,13 @@ def print_reconciliation_next_step(
         print(
             f"  # {len(doc_only_older)} older-only doc/checkpoint commit(s) remain for manual review or drop"
         )
-    if older_unique and not replay_candidates and not mixed_older and doc_only_older:
+    if unresolved_older and not replay_candidates and not mixed_older and doc_only_older:
         print(
             "  # remaining older-only history is doc/checkpoint churn only; treat it as intentional drop noise unless you need it for archaeology"
         )
-    if older_unique:
+    if unresolved_older:
         print(
-            f"  # older branch still has {len(older_unique)} older-only commit(s) to review/drop consciously"
+            f"  # older branch still has {len(unresolved_older)} older-only commit(s) to review/drop consciously"
         )
     else:
         print("  # no older-only commits remain")

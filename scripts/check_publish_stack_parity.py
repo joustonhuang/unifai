@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import subprocess
 import sys
 from pathlib import Path
@@ -43,6 +44,47 @@ def file_text(ref: str, path: str) -> str | None:
     return None
 
 
+def path_delta(base_ref: str, tip_ref: str, path: str) -> tuple[Counter[str], Counter[str]]:
+    result = run_git(
+        "diff",
+        "--no-ext-diff",
+        "--unified=0",
+        f"{base_ref}..{tip_ref}",
+        "--",
+        path,
+    )
+    added: Counter[str] = Counter()
+    removed: Counter[str] = Counter()
+    for line in result.stdout.splitlines():
+        if line.startswith(("diff --git", "index ", "--- ", "+++ ", "@@")):
+            continue
+        if line.startswith("+"):
+            added[line[1:]] += 1
+        elif line.startswith("-"):
+            removed[line[1:]] += 1
+    return removed, added
+
+
+def path_matches_expected_delta(
+    base_ref: str,
+    candidate_ref: str,
+    expected_ref: str,
+    path: str,
+) -> bool:
+    expected_text = file_text(expected_ref, path)
+    candidate_text = file_text(candidate_ref, path)
+    if candidate_text == expected_text:
+        return True
+    if expected_text is None or candidate_text is None:
+        return False
+    if "\0" in expected_text or "\0" in candidate_text:
+        return False
+
+    expected_removed, expected_added = path_delta(base_ref, expected_ref, path)
+    candidate_removed, candidate_added = path_delta(base_ref, candidate_ref, path)
+    return not (expected_removed - candidate_removed or expected_added - candidate_added)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -71,11 +113,17 @@ def main() -> None:
 
     expected_changed = set(changed_paths(args.base_ref, args.expected_ref))
     candidate_changed = set(changed_paths(args.base_ref, args.candidate_ref))
-    interesting_paths = sorted((expected_changed | candidate_changed) - allowed_paths)
+    interesting_paths = sorted(expected_changed - allowed_paths)
+    candidate_only_paths = sorted((candidate_changed - expected_changed) - allowed_paths)
 
     mismatches: list[str] = []
     for path in interesting_paths:
-        if file_text(args.candidate_ref, path) != file_text(args.expected_ref, path):
+        if not path_matches_expected_delta(
+            args.base_ref,
+            args.candidate_ref,
+            args.expected_ref,
+            path,
+        ):
             mismatches.append(path)
 
     if mismatches:
@@ -87,6 +135,10 @@ def main() -> None:
         if allowed_paths:
             print("Allowed differing paths:")
             for path in sorted(allowed_paths):
+                print(f"  {path}")
+        if candidate_only_paths:
+            print("Ignored candidate-only paths:")
+            for path in candidate_only_paths:
                 print(f"  {path}")
         print("Mismatched functional paths:")
         for path in mismatches:
@@ -102,7 +154,11 @@ def main() -> None:
         print("Allowed differing paths:")
         for path in sorted(allowed_paths):
             print(f"  {path}")
-    print(f"Checked functional paths: {len(interesting_paths)}")
+    if candidate_only_paths:
+        print("Ignored candidate-only paths:")
+        for path in candidate_only_paths:
+            print(f"  {path}")
+    print(f"Checked expected functional paths: {len(interesting_paths)}")
 
 
 if __name__ == "__main__":

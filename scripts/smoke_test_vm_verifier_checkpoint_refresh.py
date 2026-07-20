@@ -112,9 +112,9 @@ def main() -> int:
                 "## Local commit stack after `oldhead`\n"
                 "1. `oldsha` — `old subject`\n\n"
                 "## What is now true locally\n"
-                "- The checkpoint-refresh helper/doc sync bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.\n"
+                "- The publish-boundary maintenance bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.\n"
                 "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n\n"
-                "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place.\n"
+                "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.\n"
                 "- The current local sandbox also carries one more small checkpoint-refresh helper/doc delta beyond the tracked doc commits:\n"
                 "  - `placeholder/helper.py`\n"
                 "  - `placeholder/smoke.sh`\n"
@@ -187,10 +187,10 @@ def main() -> int:
         assert f"GitHub-visible branch head remains `{remote_sha}`" in boundary
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in boundary
         assert "local sandbox currently also carries" in boundary
-        assert "uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD" in boundary
+        assert "uncommitted publish-boundary maintenance path(s) beyond HEAD" in boundary
         assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in boundary
         assert "  - `logic.txt`\n" in boundary
-        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place\n" in boundary
+        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in boundary
         assert "that helper hardening" not in boundary
         assert expected_boundary_host_line in boundary
@@ -200,23 +200,27 @@ def main() -> int:
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
         assert f"1. `{logic_sha}` — `tests: add logic commit`" in checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in checkpoint
-        assert "checkpoint-refresh helper/doc sync bundle is no longer only a clean-commit story" in checkpoint
+        assert "publish-boundary maintenance bundle is no longer only a clean-commit story" in checkpoint
         assert f"tracked head is `{head_sha}`" in checkpoint
         assert "not fully committed" in checkpoint
         assert "uncommitted path(s)" in checkpoint
         assert f"latest non-doc logic commit in that tip is `{logic_sha}`" in checkpoint
-        assert "checkpoint-refresh helper/doc sync for publish-boundary state" in checkpoint
-        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place." in checkpoint
+        assert "publish-boundary maintenance bundle for visible-ref handoff" in checkpoint
+        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place." in checkpoint
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in checkpoint
         assert expected_checkpoint_host_line in checkpoint
-        assert f"the sandbox currently carries 2 uncommitted checkpoint-refresh helper/doc updates, and the branch is `ahead 2` over `origin/fix/openclaw-config-path-and-local-mode`." in checkpoint
+        assert f"the sandbox currently carries 3 uncommitted publish-boundary maintenance updates, and the branch is `ahead 2` over `origin/fix/openclaw-config-path-and-local-mode`." in checkpoint
         assert "remote-detection hardening bundle" not in checkpoint
-        assert "- The current local sandbox now carries 2 uncommitted checkpoint-refresh helper/doc updates beyond the tracked local stack:\n" in checkpoint
+        assert "- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:\n" in checkpoint
         assert "  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n" in checkpoint
         assert "  - `scratch.txt`\n" in checkpoint
+        assert "  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in checkpoint
         assert "`placeholder/helper.py`" not in checkpoint
         assert "  - `python3 scripts/check_publish_stack_parity_contract.py`\n" in checkpoint
+        assert "  - `python3 scripts/check_compare_publish_branch_histories_contract.py`\n" in checkpoint
+        assert "  - `python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py`\n" in checkpoint
         assert "  - `python3 scripts/check_vm_host_readiness_contract.py`\n" in checkpoint
+        assert "  - `bash scripts/smoke_test_compare_publish_branch_histories.sh`\n" in checkpoint
         assert "  - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py`\n" in checkpoint
         assert "old_refresh_smoke.py" not in checkpoint
         assert "- Current local checkpoint chain:\n" in checkpoint
@@ -224,30 +228,30 @@ def main() -> int:
         assert f"  - `{head_sha}` (`docs: trailing docs refresh`)\n" in checkpoint
         assert "`oldsha` (`old subject`)" not in checkpoint
         assert "placeholder scope line" not in checkpoint
-        assert "Current uncommitted delta on top:\n  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n  - `scratch.txt`" in checkpoint
+        assert "Current uncommitted delta on top:\n  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n  - `scratch.txt`\n  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`" in checkpoint
         assert "`placeholder/file.txt`" not in checkpoint
         assert "  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n" in bundle_section
         assert "  - `logic.txt`\n" in bundle_section
         assert "  - `note.txt`\n" in bundle_section
         assert "  - `scratch.txt`\n" in bundle_section
+        assert "  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in bundle_section
         assert "`placeholder/file.txt`" not in bundle_section
         assert "\n- - Files in the bundle:" not in checkpoint
-        assert f"Commit candidate: checkpoint-refresh helper/doc sync for publish-boundary state @ {head_sha}\n" in commit_candidate
+        assert f"Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ {head_sha}\n" in commit_candidate
         assert f"Current local checkpoint: {head_sha}\n" in commit_candidate
         assert "Current branch state: ahead 2 over origin/fix/openclaw-config-path-and-local-mode\n" in commit_candidate
-        assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\nscratch.txt\n" in commit_candidate
-        assert "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md" not in commit_candidate.split("Working-tree files:\n", 1)[1].split("\n\n", 1)[0]
-        assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in commit_candidate
+        assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\nscratch.txt\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in commit_candidate
+        assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in commit_candidate
         assert "Current host-readiness snapshot:\n" in commit_candidate
         assert expected_checkpoint_host_line in commit_candidate
-        assert "- The current local sandbox now carries 2 uncommitted checkpoint-refresh helper/doc updates beyond the tracked local stack:\n" in commit_candidate
-        assert "- The checkpoint-refresh helper/doc sync bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in commit_candidate
+        assert "- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:\n" in commit_candidate
+        assert "- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in commit_candidate
         assert "check-gate hardening bundle" not in commit_candidate
         assert f"- The branch still needs the local checkpoint chain through `{head_sha}` to become GitHub-visible before the real VM-proof path can continue.\n" in commit_candidate
         assert f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{remote_sha}`, so the next real boundary is still a visible rerun on the exact published ref.\n" in commit_candidate
-        assert "Next clean move once the branch tip is GitHub-visible:\n" in commit_candidate
+        assert "Next clean move before the real VM-proof path:\n" in commit_candidate
         assert "GitHub auth / a visible ref" not in commit_candidate
-        assert f"- Make local checkpoint `{head_sha}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`.\n" in commit_candidate
+        assert f"- Make local checkpoint `{head_sha}` GitHub-visible on `origin/fix/openclaw-config-path-and-local-mode`.\n" in commit_candidate
 
         run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
         run(["git", "commit", "-m", "docs: refresh vm verifier checkpoint state"], work)
@@ -265,8 +269,8 @@ def main() -> int:
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in refreshed_boundary
         assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in refreshed_boundary
         assert "  - `logic.txt`\n" in refreshed_boundary
-        assert "uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD" in refreshed_boundary
-        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place\n" in refreshed_boundary
+        assert "uncommitted publish-boundary maintenance path(s) beyond HEAD" in refreshed_boundary
+        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in refreshed_boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in refreshed_boundary
         assert "that helper hardening" not in refreshed_boundary
         assert expected_boundary_host_line in refreshed_boundary
@@ -274,29 +278,31 @@ def main() -> int:
         assert f"Latest tracked local head in the stack: `{head_sha}`" in refreshed_checkpoint
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in refreshed_checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in refreshed_checkpoint
-        assert "checkpoint-refresh helper/doc sync for publish-boundary state" in refreshed_checkpoint
-        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place." in refreshed_checkpoint
+        assert "publish-boundary maintenance bundle for visible-ref handoff" in refreshed_checkpoint
+        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place." in refreshed_checkpoint
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in refreshed_checkpoint
         assert expected_checkpoint_host_line in refreshed_checkpoint
-        assert f"the sandbox currently carries 1 uncommitted checkpoint-refresh helper/doc update, and the branch is `ahead 2` over `origin/fix/openclaw-config-path-and-local-mode`." in refreshed_checkpoint
-        assert "- The current local sandbox now carries one small checkpoint-refresh delta beyond the tracked local stack:\n" in refreshed_checkpoint
+        assert f"the sandbox currently carries 3 uncommitted publish-boundary maintenance updates, and the branch is `ahead 2` over `origin/fix/openclaw-config-path-and-local-mode`." in refreshed_checkpoint
+        assert "- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:\n" in refreshed_checkpoint
         assert f"  - `{logic_sha}` (`tests: add logic commit`)\n" in refreshed_checkpoint
         assert f"  - `{head_sha}` (`docs: trailing docs refresh`)\n" in refreshed_checkpoint
-        assert "Current uncommitted delta on top:\n  - `scratch.txt`" in refreshed_checkpoint
-        assert "`docs/BOOTSTRAP_VM_VERIFICATION.md`" not in refreshed_delta_section
+        assert "Current uncommitted delta on top:\n  - `scratch.txt`\n  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`" in refreshed_checkpoint
+        assert "  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n" in refreshed_delta_section
+        assert "  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in refreshed_delta_section
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt`" not in refreshed_delta_section
         assert "  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n" in refreshed_bundle_section
         assert "  - `logic.txt`\n" in refreshed_bundle_section
         assert "  - `note.txt`\n" in refreshed_bundle_section
         assert "  - `scratch.txt`\n" in refreshed_bundle_section
+        assert "  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in refreshed_bundle_section
         assert "\n- - Files in the bundle:" not in refreshed_checkpoint
         assert f"Current local checkpoint: {head_sha}\n" in refreshed_commit_candidate
-        assert "Working-tree files:\nscratch.txt\n" in refreshed_commit_candidate
-        assert "docs/BOOTSTRAP_VM_VERIFICATION.md" not in refreshed_commit_candidate.split("Working-tree files:\n", 1)[1].split("\n\n", 1)[0]
+        assert "Working-tree files:\nscratch.txt\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in refreshed_commit_candidate
         assert "ci-artifacts/bootstrap-preflight/commit-candidate.txt" not in refreshed_commit_candidate.split("Working-tree files:\n", 1)[1].split("\n\n", 1)[0]
         assert "Current host-readiness snapshot:\n" in refreshed_commit_candidate
+        assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in refreshed_commit_candidate
         assert expected_checkpoint_host_line in refreshed_commit_candidate
-        assert "- The checkpoint-refresh helper/doc sync bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in refreshed_commit_candidate
+        assert "- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in refreshed_commit_candidate
         assert (
             f"- The branch still needs the current branch tip `{refreshed_tip}` GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{head_sha}` until that visible ref exists.\n"
@@ -304,7 +310,7 @@ def main() -> int:
         assert f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{remote_sha}`, so the next real boundary is still a visible rerun on the exact published ref.\n" in refreshed_commit_candidate
         assert "Next clean move once the branch tip is GitHub-visible:\n" in refreshed_commit_candidate
         assert (
-            f"- Make the current branch tip `{refreshed_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Make the current branch tip `{refreshed_tip}` GitHub-visible on `origin/fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{head_sha}` until a non-doc commit supersedes it.\n"
         ) in refreshed_commit_candidate
         assert "GitHub auth / a visible ref" not in refreshed_commit_candidate
@@ -327,8 +333,8 @@ def main() -> int:
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in stable_boundary
         assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in stable_boundary
         assert "  - `logic.txt`\n" in stable_boundary
-        assert "no additional uncommitted checkpoint-refresh helper/doc delta" in stable_boundary
-        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place\n" in stable_boundary
+        assert "2 uncommitted publish-boundary maintenance path(s) beyond HEAD" in stable_boundary
+        assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in stable_boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in stable_boundary
         assert "that helper hardening" not in stable_boundary
         assert expected_boundary_host_line in stable_boundary
@@ -336,28 +342,30 @@ def main() -> int:
         assert f"Latest tracked local head in the stack: `{stable_head}`" in stable_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in stable_checkpoint
         assert f"`{stable_head}` — `{stable_subject}`" in stable_checkpoint
-        assert "checkpoint-refresh helper/doc sync for publish-boundary state" in stable_checkpoint
-        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place." in stable_checkpoint
+        assert "publish-boundary maintenance bundle for visible-ref handoff" in stable_checkpoint
+        assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place." in stable_checkpoint
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in stable_checkpoint
         assert expected_checkpoint_host_line in stable_checkpoint
-        assert f"the sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc updates, and the branch is `ahead {stable_ahead}` over `origin/fix/openclaw-config-path-and-local-mode`." in stable_checkpoint
-        assert "- The current local sandbox now carries no additional uncommitted checkpoint-refresh delta beyond the tracked local stack." in stable_checkpoint
+        assert f"the sandbox currently carries 2 uncommitted publish-boundary maintenance updates, and the branch is `ahead {stable_ahead}` over `origin/fix/openclaw-config-path-and-local-mode`." in stable_checkpoint
+        assert "- The current local sandbox now carries 2 uncommitted publish-boundary maintenance updates beyond the tracked local stack:" in stable_checkpoint
         assert f"  - `{logic_sha}` (`tests: add logic commit`)\n" in stable_checkpoint
         assert f"  - `{stable_head}` (`{stable_subject}`)\n" in stable_checkpoint
-        assert "Current uncommitted delta on top:" not in stable_checkpoint
+        assert "Current uncommitted delta on top:\n  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`" in stable_checkpoint
         assert "  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n" in stable_bundle_section
+        assert "  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in stable_bundle_section
         assert "  - `logic.txt`\n" in stable_bundle_section
         assert "  - `note.txt`\n" in stable_bundle_section
         assert "  - `scratch.txt`\n" in stable_bundle_section
         assert "\n- - Files in the bundle:" not in stable_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in stable_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
-        assert "Working-tree files:\n(clean)\n" in stable_commit_candidate
+        assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in stable_commit_candidate
         assert "Current host-readiness snapshot:\n" in stable_commit_candidate
+        assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in stable_commit_candidate
         assert expected_checkpoint_host_line in stable_commit_candidate
-        assert "- The checkpoint-refresh helper/doc sync bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.\n" in stable_commit_candidate
+        assert "- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.\n" in stable_commit_candidate
         assert f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{remote_sha}`, so the next real boundary is still a visible rerun on the exact published ref.\n" in stable_commit_candidate
-        assert "Next clean move once the branch tip is GitHub-visible:\n" in stable_commit_candidate
+        assert "Next clean move before the real VM-proof path:\n" in stable_commit_candidate
         assert "GitHub auth / a visible ref" not in stable_commit_candidate
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in stable_checkpoint
 
@@ -380,13 +388,14 @@ def main() -> int:
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
-        assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
+        assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in doc_only_commit_candidate
+        assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
         assert (
             f"- The branch still needs the current branch tip `{doc_only_tip}` GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
         ) in doc_only_commit_candidate
         assert (
-            f"- Make the current branch tip `{doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Make the current branch tip `{doc_only_tip}` GitHub-visible on `origin/fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in doc_only_commit_candidate
 

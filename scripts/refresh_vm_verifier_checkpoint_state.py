@@ -83,6 +83,111 @@ def current_host_lines() -> tuple[str, str]:
     return checkpoint_line, boundary_line
 
 
+def collect_bundle_paths(upstream: str, dirty_paths: list[str]) -> list[str]:
+    bundle_paths = [line.strip() for line in git("diff", "--name-only", upstream).splitlines() if line.strip()]
+    for path in dirty_paths:
+        if path not in bundle_paths:
+            bundle_paths.append(path)
+    return bundle_paths
+
+
+def replace_delta_and_bundle_sections(
+    checkpoint_text: str,
+    current_delta_block: str,
+    verification_block: str,
+    dirty_bullets: str,
+    bundle_bullets: str,
+) -> str:
+    checkpoint_text = re.sub(
+        r"- The current local sandbox .*?\n- Fresh local verification at the current sandbox state is green again:\n(?:  - [^\n]*\n)+",
+        current_delta_block + "\n" + verification_block + "\n",
+        checkpoint_text,
+        count=1,
+        flags=re.S,
+    )
+    if dirty_bullets:
+        replacement = "- Current uncommitted delta on top:\n" + dirty_bullets + "\n- Files in the bundle:"
+    else:
+        replacement = "- Files in the bundle:"
+    checkpoint_text = re.sub(
+        r"(?:(?:- )?Current uncommitted delta on top:\n(?:  - `[^\n]+`\n)+)?- Files in the bundle:",
+        replacement,
+        checkpoint_text,
+        count=1,
+    )
+    checkpoint_text = re.sub(
+        r"(- Files in the bundle:\n)(.*?)(\n- Smallest re-verification gate before publishing that commit:)",
+        lambda m: m.group(1) + bundle_bullets + m.group(3),
+        checkpoint_text,
+        count=1,
+        flags=re.S,
+    )
+    return checkpoint_text
+
+
+def describe_dirty_state(
+    dirty_paths: list[str], tracked_head_short: str, ahead_count: str, upstream: str
+) -> tuple[str, str, str, str, str, str]:
+    dirty_bullets = "\n".join(f"  - `{path}`" for path in dirty_paths)
+    if dirty_paths:
+        shown = ", ".join(f"`{path}`" for path in dirty_paths[:5])
+        if len(dirty_paths) > 5:
+            shown += f", and {len(dirty_paths) - 5} more"
+        preservation_line = (
+            f"- The current local hardening stack is not fully committed: tracked head is `{tracked_head_short}` and the working tree still carries "
+            f"{len(dirty_paths)} uncommitted path(s) ({shown})."
+        )
+        publish_boundary_line = (
+            "- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, "
+            "but the current sandbox also carries additional uncommitted publish-boundary maintenance delta."
+        )
+        boundary_dirty_line = (
+            f"- the local sandbox currently also carries {len(dirty_paths)} uncommitted publish-boundary maintenance path(s) beyond HEAD ({shown})"
+        )
+        current_delta_label = (
+            "one small publish-boundary maintenance delta"
+            if len(dirty_paths) == 1
+            else f"{len(dirty_paths)} uncommitted publish-boundary maintenance updates"
+        )
+        current_delta_block = (
+            f"- The current local sandbox now carries {current_delta_label} beyond the tracked local stack:\n"
+            + dirty_bullets
+        )
+        update_word = "update" if len(dirty_paths) == 1 else "updates"
+        stack_progress_line = (
+            "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
+            f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
+            f"non-doc logic head, the sandbox currently carries {len(dirty_paths)} uncommitted publish-boundary maintenance "
+            f"{update_word}, and the branch is `ahead {ahead_count}` over `{upstream}`."
+        )
+    else:
+        preservation_line = (
+            f"- The current local hardening stack is preserved as clean commits through `{tracked_head_short}`, rather than as an uncommitted sandbox delta."
+        )
+        publish_boundary_line = (
+            "- The publish-boundary maintenance bundle is now preserved as a clean local commit instead of only a dirty working tree, "
+            "so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens."
+        )
+        boundary_dirty_line = "- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta"
+        current_delta_block = (
+            "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack."
+        )
+        stack_progress_line = (
+            "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
+            f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
+            f"non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, "
+            f"and the branch is `ahead {ahead_count}` over `{upstream}`."
+        )
+    return (
+        dirty_bullets,
+        preservation_line,
+        publish_boundary_line,
+        boundary_dirty_line,
+        current_delta_block,
+        stack_progress_line,
+    )
+
+
 def main() -> int:
     current_branch = git_optional("branch", "--show-current")
     if not current_branch:
@@ -127,78 +232,39 @@ def main() -> int:
     )
     status_lines = git("status", "--short").splitlines()
     dirty_paths = [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2]
-    bundle_paths = [line.strip() for line in git("diff", "--name-only", upstream).splitlines() if line.strip()]
-    for path in dirty_paths:
-        if path not in bundle_paths:
-            bundle_paths.append(path)
-    dirty_bullets = "\n".join(f"  - `{path}`" for path in dirty_paths)
-    bundle_bullets = "\n".join(f"  - `{path}`" for path in bundle_paths)
+    original_boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
+    original_checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
     checkpoint_chain_bullets = "\n".join(f"  - `{sha}` (`{subject}`)" for sha, subject in commits)
     commit_lines = "\n".join(
         f"{idx}. `{sha}` — `{subject}`" for idx, (sha, subject) in enumerate(commits, start=1)
     )
-    if dirty_paths:
-        shown = ", ".join(f"`{path}`" for path in dirty_paths[:5])
-        if len(dirty_paths) > 5:
-            shown += f", and {len(dirty_paths) - 5} more"
-        preservation_line = (
-            f"- The current local hardening stack is not fully committed: tracked head is `{tracked_head_short}` and the working tree still carries "
-            f"{len(dirty_paths)} uncommitted path(s) ({shown})."
-        )
-        publish_boundary_line = (
-            "- The checkpoint-refresh helper/doc sync bundle is no longer only a clean-commit story: the commit stack is preserved, "
-            "but the current sandbox also carries additional uncommitted publish-boundary maintenance delta."
-        )
-        boundary_dirty_line = (
-            f"- the local sandbox currently also carries {len(dirty_paths)} uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD ({shown})"
-        )
-        current_delta_label = (
-            "one small checkpoint-refresh delta"
-            if len(dirty_paths) == 1
-            else f"{len(dirty_paths)} uncommitted checkpoint-refresh helper/doc updates"
-        )
-        current_delta_block = (
-            f"- The current local sandbox now carries {current_delta_label} beyond the tracked local stack:\n"
-            + dirty_bullets
-        )
-        update_word = "update" if len(dirty_paths) == 1 else "updates"
-        stack_progress_line = (
-            "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
-            f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
-            f"non-doc logic head, the sandbox currently carries {len(dirty_paths)} uncommitted checkpoint-refresh helper/doc "
-            f"{update_word}, and the branch is `ahead {ahead_count}` over `{upstream}`."
-        )
-    else:
-        preservation_line = (
-            f"- The current local hardening stack is preserved as clean commits through `{tracked_head_short}`, rather than as an uncommitted sandbox delta."
-        )
-        publish_boundary_line = (
-            "- The checkpoint-refresh helper/doc sync bundle is now preserved as a clean local commit instead of only a dirty working tree, "
-            "so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens."
-        )
-        boundary_dirty_line = "- the local sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc delta"
-        current_delta_block = (
-            "- The current local sandbox now carries no additional uncommitted checkpoint-refresh delta beyond the tracked local stack."
-        )
-        stack_progress_line = (
-            "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
-            f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
-            f"non-doc logic head, the sandbox currently carries no additional uncommitted checkpoint-refresh helper/doc updates, "
-            f"and the branch is `ahead {ahead_count}` over `{upstream}`."
-        )
+    (
+        dirty_bullets,
+        preservation_line,
+        publish_boundary_line,
+        boundary_dirty_line,
+        current_delta_block,
+        stack_progress_line,
+    ) = describe_dirty_state(dirty_paths, tracked_head_short, ahead_count, upstream)
+    bundle_paths = collect_bundle_paths(upstream, dirty_paths)
+    bundle_bullets = "\n".join(f"  - `{path}`" for path in bundle_paths)
     suggested_scope_line = (
-        "- Suggested scope: checkpoint-refresh helper/doc sync for publish-boundary state, "
+        "- Suggested scope: publish-boundary maintenance bundle for visible-ref handoff, "
         "including the current self-maintaining checkpoint narrative/test bundle"
     )
     verification_block = (
         "- Fresh local verification at the current sandbox state is green again:\n"
         "  - `python3 scripts/check_publish_stack_parity_contract.py`\n"
+        "  - `python3 scripts/check_compare_publish_branch_histories_contract.py`\n"
+        "  - `python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py`\n"
         "  - `python3 scripts/check_vm_host_readiness_contract.py`\n"
+        "  - `bash scripts/smoke_test_publish_stack_parity.sh`\n"
+        "  - `bash scripts/smoke_test_compare_publish_branch_histories.sh`\n"
         "  - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py`\n"
-        "  - `bash scripts/bootstrap_installer_preflight.sh` (rerun with the checkpoint-refresh helper/doc sync bundle in place)"
+        "  - `bash scripts/bootstrap_installer_preflight.sh` (rerun with the publish-boundary maintenance bundle in place)"
     )
     preflight_status_line = (
-        "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current checkpoint-refresh helper/doc sync bundle in place."
+        "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place."
     )
     handoff_artifact_line = (
         "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, "
@@ -206,7 +272,7 @@ def main() -> int:
     )
     checkpoint_host_line, boundary_host_line = current_host_lines()
 
-    boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
+    boundary_text = original_boundary_text
     boundary_text = re.sub(
         r"- GitHub-visible branch head remains `[^`]+`",
         f"- GitHub-visible branch head remains `{upstream_short}`",
@@ -225,9 +291,9 @@ def main() -> int:
         boundary_text,
         count=1,
     )
-    if re.search(r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc) delta)", boundary_text):
+    if re.search(r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)", boundary_text):
         boundary_text = re.sub(
-            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc) delta)",
+            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)",
             boundary_dirty_line,
             boundary_text,
             count=1,
@@ -270,14 +336,14 @@ def main() -> int:
     if re.search(r"- a fresh local `bash scripts/bootstrap_installer_preflight\.sh` rerun is green[^\n]*", boundary_text):
         boundary_text = re.sub(
             r"- a fresh local `bash scripts/bootstrap_installer_preflight\.sh` rerun is green[^\n]*",
-            "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place",
+            "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place",
             boundary_text,
             count=1,
         )
     else:
         boundary_text = re.sub(
             r"(- the latest non-doc logic delta in that local stack is .*? in:\n(?:  - `[^\n]+`\n)+)",
-            r"\1- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place\n",
+            r"\1- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n",
             boundary_text,
             count=1,
             flags=re.S,
@@ -291,14 +357,12 @@ def main() -> int:
         )
     else:
         boundary_text = re.sub(
-            r"(- a fresh local `bash scripts/bootstrap_installer_preflight\.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place\n)",
+            r"(- a fresh local `bash scripts/bootstrap_installer_preflight\.sh` rerun is green with the current publish-boundary maintenance bundle in place\n)",
             lambda m: m.group(1) + handoff_artifact_line + "\n",
             boundary_text,
             count=1,
         )
-    DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
-
-    checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
+    checkpoint_text = original_checkpoint_text
     checkpoint_text = re.sub(r"- Working branch: `[^`]+`", f"- Working branch: `{current_branch}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{upstream_short}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- Latest (?:tracked )?local head in the stack: `[^`]+`", f"- Latest tracked local head in the stack: `{tracked_head_short}`", checkpoint_text, count=1)
@@ -384,14 +448,7 @@ def main() -> int:
             count=1,
         )
     checkpoint_text = re.sub(
-        r"- The current local sandbox .*?\n- Fresh local verification at the current sandbox state is green again:\n(?:  - [^\n]*\n)+",
-        current_delta_block + "\n" + verification_block + "\n",
-        checkpoint_text,
-        count=1,
-        flags=re.S,
-    )
-    checkpoint_text = re.sub(
-        r"- The (?:check-gate hardening bundle|checkpoint-refresh helper/doc sync bundle) is (?:now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens|no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted (?:verifier-hardening|publish-boundary maintenance) delta)\.",
+        r"- The (?:check-gate hardening bundle|checkpoint-refresh helper/doc sync bundle|publish-boundary maintenance bundle) is (?:now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens|no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted (?:verifier-hardening|publish-boundary maintenance) delta)\.",
         publish_boundary_line,
         checkpoint_text,
         count=1,
@@ -402,22 +459,12 @@ def main() -> int:
         checkpoint_text,
         count=1,
     )
-    if dirty_paths:
-        replacement = "- Current uncommitted delta on top:\n" + dirty_bullets + "\n- Files in the bundle:"
-    else:
-        replacement = "- Files in the bundle:"
-    checkpoint_text = re.sub(
-        r"(?:(?:- )?Current uncommitted delta on top:\n(?:  - `[^\n]+`\n)+)?- Files in the bundle:",
-        replacement,
+    checkpoint_text = replace_delta_and_bundle_sections(
         checkpoint_text,
-        count=1,
-    )
-    checkpoint_text = re.sub(
-        r"(- Files in the bundle:\n)(.*?)(\n- Smallest re-verification gate before publishing that commit:)",
-        lambda m: m.group(1) + bundle_bullets + m.group(3),
-        checkpoint_text,
-        count=1,
-        flags=re.S,
+        current_delta_block,
+        verification_block,
+        dirty_bullets,
+        bundle_bullets,
     )
     checkpoint_text = re.sub(
         r"1\. Make the current local branch tip GitHub-visible \(the latest non-doc logic commit in that tip is `[^`]+`\)\.",
@@ -431,13 +478,65 @@ def main() -> int:
         checkpoint_text,
         count=1,
     )
+    doc_dirty_paths: list[str] = []
+    for path, original_text, updated_text in (
+        (str(DOC_BOUNDARY.relative_to(REPO_ROOT)), original_boundary_text, boundary_text),
+        (str(DOC_CHECKPOINT.relative_to(REPO_ROOT)), original_checkpoint_text, checkpoint_text),
+    ):
+        if original_text != updated_text and path not in dirty_paths:
+            doc_dirty_paths.append(path)
+
+    if doc_dirty_paths:
+        dirty_paths = [*dirty_paths, *doc_dirty_paths]
+        (
+            dirty_bullets,
+            preservation_line,
+            publish_boundary_line,
+            boundary_dirty_line,
+            current_delta_block,
+            stack_progress_line,
+        ) = describe_dirty_state(dirty_paths, tracked_head_short, ahead_count, upstream)
+        bundle_paths = collect_bundle_paths(upstream, dirty_paths)
+        bundle_bullets = "\n".join(f"  - `{path}`" for path in bundle_paths)
+
+        boundary_text = re.sub(
+            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)",
+            boundary_dirty_line,
+            boundary_text,
+            count=1,
+        )
+        checkpoint_text = re.sub(
+            r"- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: .*",
+            stack_progress_line,
+            checkpoint_text,
+            count=1,
+        )
+        checkpoint_text = re.sub(
+            r"- The current local hardening stack is (?:preserved as clean commits through `[^`]+`, rather than as an uncommitted sandbox delta|not fully committed: (?:HEAD|tracked head) is `[^`]+` and the working tree still carries \d+ uncommitted path\(s\) \([^\n]+\))\.",
+            preservation_line,
+            checkpoint_text,
+            count=1,
+        )
+        checkpoint_text = replace_delta_and_bundle_sections(
+            checkpoint_text,
+            current_delta_block,
+            verification_block,
+            dirty_bullets,
+            bundle_bullets,
+        )
+
+    DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
 
     current_branch_state = f"ahead {ahead_count} over {upstream}"
     verification_gates = (
         "Verification gates run:\n"
         "python3 scripts/check_publish_stack_parity_contract.py\n"
+        "python3 scripts/check_compare_publish_branch_histories_contract.py\n"
+        "python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\n"
         "python3 scripts/check_vm_host_readiness_contract.py\n"
+        "bash scripts/smoke_test_publish_stack_parity.sh\n"
+        "bash scripts/smoke_test_compare_publish_branch_histories.sh\n"
         "python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\n"
         "bash scripts/bootstrap_installer_preflight.sh"
     )
@@ -446,8 +545,9 @@ def main() -> int:
     else:
         working_tree_block = "Working-tree files:\n(clean)"
     if tracked_ref != "HEAD":
+        next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
         next_move_line = (
-            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{current_branch}`; "
+            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
         )
         external_blocker_line = (
@@ -455,13 +555,14 @@ def main() -> int:
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
         )
     else:
-        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{current_branch}`.\n"
+        next_move_heading = "Next clean move before the real VM-proof path:\n"
+        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\n"
         external_blocker_line = (
             f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` to become GitHub-visible before the real VM-proof path can continue.\n"
         )
 
     commit_candidate_text = (
-        f"Commit candidate: checkpoint-refresh helper/doc sync for publish-boundary state @ {tracked_head_short}\n"
+        f"Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ {tracked_head_short}\n"
         f"Current local checkpoint: {tracked_head_short}\n"
         f"{commit_candidate_tip_line}"
         f"Current branch state: {current_branch_state}\n\n"
@@ -478,7 +579,7 @@ def main() -> int:
         "Current external blocker:\n"
         f"{external_blocker_line}"
         f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{upstream_short}`, so the next real boundary is still a visible rerun on the exact published ref.\n\n"
-        "Next clean move once the branch tip is GitHub-visible:\n"
+        f"{next_move_heading}"
         f"{next_move_line}"
         "- Rerun `Bootstrap Installer Preflight` on the exact visible ref.\n"
         "- If green, run `bash scripts/run_vm_verifier_preflight.sh <visible-ref>` and then `bash scripts/vm/verify_bootstrap_in_vm.sh <visible-ref>`.\n"

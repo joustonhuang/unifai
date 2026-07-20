@@ -43,6 +43,7 @@ EXPECTATIONS = [
     ('Older mixed docs+code commits requiring manual review:', "Branch-history helper prints mixed older commits explicitly"),
     ('Older doc/checkpoint-only commits requiring manual review or drop:', "Branch-history helper prints doc-only older commits explicitly"),
     ('Older commits already reviewed and ready to drop:', "Branch-history helper prints previously reviewed older commits explicitly"),
+    ('unresolved_older = [', "Branch-history helper tracks unresolved older-only commits separately from already-absorbed churn"),
     ('Suggested next step:', "Branch-history helper prints a reconciliation next-step section"),
     ('git cherry-pick', "Branch-history helper prints an exact cherry-pick command"),
     ('review code-only older commits and cherry-pick only the ones worth keeping onto', "Branch-history helper prefers code-only replay guidance"),
@@ -50,6 +51,8 @@ EXPECTATIONS = [
     ('older mixed docs+code commit(s) remain for manual review before replay', "Branch-history helper leaves mixed docs+code commits for manual review"),
     ('older-only doc/checkpoint commit(s) remain for manual review or drop', "Branch-history helper leaves doc-only churn for conscious review"),
     ('remaining older-only history is doc/checkpoint churn only; treat it as intentional drop noise unless you need it for archaeology', "Branch-history helper can declare the doc-only terminal reconciliation state explicitly"),
+    ('older branch still has {len(unresolved_older)} older-only commit(s) to review/drop consciously', "Branch-history helper reports only unresolved older-only commits in the final summary"),
+    ('# no older-only commits remain', "Branch-history helper can clear the final older-only summary once only absorbed churn remains"),
     ('parser.add_argument("older_ref"', "Branch-history helper accepts an older branch ref"),
     ('parser.add_argument("cleaner_ref"', "Branch-history helper accepts a cleaner branch ref"),
 ]

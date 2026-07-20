@@ -125,14 +125,14 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `e6c2390` (`scripts: clarify branch visibility recovery guidance`), 18 commits ahead in total
-- the local sandbox currently also carries 2 uncommitted checkpoint-refresh helper/doc path(s) beyond HEAD (`scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`)
-- the latest non-doc logic delta in that local stack is `e6c2390` (`scripts: clarify branch visibility recovery guidance`) in:
-  - `scripts/check_github_branch_visibility.sh`
-  - `scripts/smoke_test_github_branch_visibility.sh`
+- the local hardening stack is currently ahead of that public ref through `8d1aace` (`scripts: suppress reviewed legacy publish history`), 30 commits ahead in total
+- the local sandbox currently also carries 11 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/check_compare_publish_branch_histories_contract.py`, `scripts/check_publish_stack_parity.py`, `scripts/check_publish_stack_parity_contract.py`, and 6 more)
+- the latest non-doc logic delta in that local stack is `8d1aace` (`scripts: suppress reviewed legacy publish history`) in:
+  - `scripts/check_compare_publish_branch_histories_contract.py`
+  - `scripts/compare_publish_branch_histories.py`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
-- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current checkpoint-refresh helper/doc sync bundle in place
+- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
 - `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed and authenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes

@@ -31,6 +31,7 @@ git branch -M base
 git checkout -q -b expected
 cat > app.py <<'EOF'
 print("functional change")
+print("expected shared line")
 EOF
 cat > docs/BOOTSTRAP_VM_VERIFICATION.md <<'EOF'
 expected docs refresh
@@ -42,11 +43,17 @@ git checkout -q base
 git checkout -q -b candidate-good
 cat > app.py <<'EOF'
 print("functional change")
+print("expected shared line")
+print("candidate extension")
 EOF
 cat > docs/BOOTSTRAP_VM_VERIFICATION.md <<'EOF'
 candidate docs refresh
 EOF
+cat > candidate_extra.py <<'EOF'
+print("candidate-only helper")
+EOF
 git add app.py docs/BOOTSTRAP_VM_VERIFICATION.md
+git add candidate_extra.py
 git commit -q -m "candidate good"
 
 PASS_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py base candidate-good expected")"
@@ -56,16 +63,28 @@ if ! grep -q "\[PASS\] Candidate publish stack matches the expected functional t
   echo "[FAIL] Expected passing parity verdict missing."
   exit 1
 fi
+if ! grep -q "Ignored candidate-only paths:" <<<"$PASS_OUTPUT"; then
+  echo "[FAIL] Expected candidate-only path banner missing from parity pass output."
+  exit 1
+fi
+if ! grep -q "candidate_extra.py" <<<"$PASS_OUTPUT"; then
+  echo "[FAIL] Expected candidate-only helper path to be reported and ignored."
+  exit 1
+fi
 
 git checkout -q base
 git checkout -q -b candidate-bad
 cat > app.py <<'EOF'
 print("wrong functional change")
+print("candidate extension")
 EOF
 cat > docs/BOOTSTRAP_VM_VERIFICATION.md <<'EOF'
 candidate docs refresh
 EOF
-git add app.py docs/BOOTSTRAP_VM_VERIFICATION.md
+cat > candidate_extra.py <<'EOF'
+print("candidate-only helper")
+EOF
+git add app.py docs/BOOTSTRAP_VM_VERIFICATION.md candidate_extra.py
 git commit -q -m "candidate bad"
 
 STATUS=0
@@ -79,6 +98,14 @@ fi
 
 if ! grep -q "app.py" <<<"$FAIL_OUTPUT"; then
   echo "[FAIL] Expected functional mismatch path missing from parity failure output."
+  exit 1
+fi
+if ! grep -q "Ignored candidate-only paths:" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected candidate-only path banner missing from parity failure output."
+  exit 1
+fi
+if ! grep -q "candidate_extra.py" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected candidate-only helper path to be reported and ignored in failure output."
   exit 1
 fi
 
