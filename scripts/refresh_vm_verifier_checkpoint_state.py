@@ -204,6 +204,7 @@ def main() -> int:
     upstream_short = git("rev-parse", "--short", upstream)
     current_head_short = git("rev-parse", "--short", "HEAD")
     current_head_subject = git("show", "-s", "--format=%s", "HEAD")
+    current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")
     tracked_ref = "HEAD"
     while tracked_ref != upstream and is_checkpoint_doc_only_commit(tracked_ref):
         tracked_ref = git("rev-parse", f"{tracked_ref}^")
@@ -528,7 +529,7 @@ def main() -> int:
     DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
 
-    current_branch_state = f"ahead {ahead_count} over {upstream}"
+    current_branch_state = f"ahead {current_head_ahead_count} over {upstream}"
     verification_gates = (
         "Verification gates run:\n"
         "python3 scripts/check_publish_stack_parity_contract.py\n"

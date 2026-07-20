@@ -378,6 +378,7 @@ def main() -> int:
         doc_only_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         doc_only_commit_candidate = read_commit_candidate(work)
+        doc_only_ahead = run(["git", "rev-list", "--count", "origin/fix/openclaw-config-path-and-local-mode..HEAD"], work)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in doc_only_checkpoint
@@ -387,7 +388,7 @@ def main() -> int:
         assert "- Current checked-out branch tip:" not in doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
-        assert f"Current branch state: ahead {stable_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
+        assert f"Current branch state: ahead {doc_only_ahead} over origin/fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
         assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in doc_only_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
         assert (

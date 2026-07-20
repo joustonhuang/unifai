@@ -37,6 +37,7 @@ required = [
     ('if environ.get("GH_TOKEN") or environ.get("GITHUB_TOKEN")', "Refresh helper still reports GH_TOKEN/GITHUB_TOKEN export state"),
     ('current_head_short = git("rev-parse", "--short", "HEAD")', "Refresh helper captures the checked-out branch tip separately from the tracked publish head"),
     ('current_head_subject = git("show", "-s", "--format=%s", "HEAD")', "Refresh helper captures the checked-out branch-tip subject"),
+    ('current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")', "Refresh helper captures the checked-out branch-tip ahead count separately from the tracked publish head"),
     ('if tracked_ref != "HEAD":', "Refresh helper distinguishes doc-only checkpoint commits sitting on top of the tracked publish head"),
     ('doc-only checkpoint refresh commits are intentionally excluded from that comparison', "Refresh helper explains why a checked-out doc-only tip can differ from the tracked publish head"),
     ('original_boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")', "Refresh helper snapshots the boundary doc before rewriting it"),
@@ -62,6 +63,7 @@ required = [
     ('f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\\n"', "Refresh helper targets the tracked upstream ref for direct visible-ref handoff"),
     ('f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "', "Refresh helper targets the tracked upstream ref for doc-only tip visible-ref handoff"),
     ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
+    ('current_branch_state = f"ahead {current_head_ahead_count} over {upstream}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),
 ]
 
