@@ -49,7 +49,10 @@ require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 require_file "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
+require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"
+require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
+require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
@@ -117,8 +120,17 @@ pass "GitHub check gate contract checker passes py_compile"
 python3 -m py_compile "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
 pass "VM verifier checkpoint refresh helper passes py_compile"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"
+pass "VM verifier checkpoint freshness checker passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"
+pass "VM verifier checkpoint freshness contract checker passes py_compile"
+
 python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
 pass "VM verifier checkpoint refresh contract checker passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"
+pass "VM verifier checkpoint freshness smoke script passes py_compile"
 
 python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 pass "VM verifier checkpoint refresh smoke script passes py_compile"
@@ -182,6 +194,9 @@ pass "Bootstrap workflow contract checker contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 pass "GitHub check gate contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"
+pass "VM verifier checkpoint freshness contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
 pass "VM verifier checkpoint refresh contract check passed"
@@ -257,6 +272,9 @@ pass "Publish branch history smoke test passed"
 
 python3 "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 pass "GitHub check gate smoke test passed"
+
+python3 -B "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"
+pass "VM verifier checkpoint freshness smoke test passed"
 
 python3 -B "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
 pass "VM verifier checkpoint refresh smoke test passed"
