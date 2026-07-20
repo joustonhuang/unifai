@@ -111,6 +111,8 @@ required = [
     ('python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract.py"', 'Preflight runs the workflow contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"', 'Preflight runs the workflow contract checker contract'),
     ('python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight runs the GitHub check-gate contract checker'),
+    ('python3 "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"', 'Preflight refreshes the VM verifier checkpoint state before freshness validation'),
+    ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"', 'Preflight runs the VM verifier checkpoint freshness checker against the refreshed state'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"', 'Preflight runs the VM verifier checkpoint freshness contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"', 'Preflight runs the VM verifier checkpoint refresh contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"', 'Preflight runs the VM host readiness contract checker'),

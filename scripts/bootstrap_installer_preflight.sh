@@ -195,6 +195,12 @@ pass "Bootstrap workflow contract checker contract check passed"
 python3 "$REPO_ROOT/scripts/check_github_check_gate_contract.py"
 pass "GitHub check gate contract check passed"
 
+python3 "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
+pass "VM verifier checkpoint state refreshed"
+
+python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"
+pass "VM verifier checkpoint freshness check passed"
+
 python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"
 pass "VM verifier checkpoint freshness contract check passed"
 
