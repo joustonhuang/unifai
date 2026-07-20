@@ -98,13 +98,6 @@ if ! git show-ref --verify --quiet "refs/heads/$branch"; then
   exit 1
 fi
 
-remote_ref="refs/remotes/$GITHUB_REMOTE/$branch"
-if ! git show-ref --verify --quiet "$remote_ref"; then
-  echo "[FAIL] Remote branch '$GITHUB_REMOTE/$branch' does not exist yet." >&2
-  echo "[INFO] Push the branch first if this work is meant to be public signal." >&2
-  exit 1
-fi
-
 upstream_ref=""
 if upstream_ref="$(git rev-parse --abbrev-ref "$branch@{upstream}" 2>/dev/null)"; then
   :
@@ -112,15 +105,31 @@ else
   upstream_ref=""
 fi
 
-local_sha="$(git rev-parse "$branch")"
-remote_sha="$(git rev-parse "$GITHUB_REMOTE/$branch")"
+github_branch="$GITHUB_REMOTE/$branch"
+if [ -n "$upstream_ref" ] && [ "${upstream_ref%%/*}" = "$GITHUB_REMOTE" ]; then
+  github_branch="$upstream_ref"
+fi
 
-counts="$(git rev-list --left-right --count "$branch...$GITHUB_REMOTE/$branch")"
+remote_ref="refs/remotes/$github_branch"
+if ! git show-ref --verify --quiet "$remote_ref"; then
+  echo "[FAIL] Remote branch '$github_branch' does not exist yet." >&2
+  if [ -n "$upstream_ref" ] && [ "${upstream_ref%%/*}" = "$GITHUB_REMOTE" ]; then
+    echo "[INFO] Push the tracked upstream ref first if this work is meant to be public signal." >&2
+  else
+    echo "[INFO] Push the branch first if this work is meant to be public signal." >&2
+  fi
+  exit 1
+fi
+
+local_sha="$(git rev-parse "$branch")"
+remote_sha="$(git rev-parse "$github_branch")"
+
+counts="$(git rev-list --left-right --count "$branch...$github_branch")"
 read -r ahead behind <<< "$counts"
 
 printf 'Branch: %s\n' "$branch"
 printf 'GitHub remote: %s (%s)\n' "$GITHUB_REMOTE" "$remote_url"
-printf 'GitHub branch: %s/%s\n' "$GITHUB_REMOTE" "$branch"
+printf 'GitHub branch: %s\n' "$github_branch"
 if [ -n "$upstream_ref" ]; then
   printf 'Tracked upstream: %s\n' "$upstream_ref"
 else
@@ -129,9 +138,9 @@ fi
 printf 'Local HEAD: %s\n' "$local_sha"
 printf 'GitHub HEAD: %s\n' "$remote_sha"
 
-if [ "$upstream_ref" != "$GITHUB_REMOTE/$branch" ]; then
-  echo "[FAIL] Branch is not tracking the GitHub-visible upstream '$GITHUB_REMOTE/$branch'." >&2
-  echo "[INFO] Fix with: git branch --set-upstream-to=$GITHUB_REMOTE/$branch $branch" >&2
+if [ "$upstream_ref" != "$github_branch" ]; then
+  echo "[FAIL] Branch is not tracking the GitHub-visible upstream '$github_branch'." >&2
+  echo "[INFO] Fix with: git branch --set-upstream-to=$github_branch $branch" >&2
   exit 1
 fi
 
@@ -143,13 +152,13 @@ fi
 if [ "$ahead" -ne 0 ] || [ "$behind" -ne 0 ]; then
   echo "[FAIL] Local branch and GitHub branch differ (ahead $ahead, behind $behind)." >&2
   if [ "$ahead" -gt 0 ] && [ "$behind" -eq 0 ]; then
-    echo "[INFO] Local branch tip is not GitHub-visible yet; push it with: git push $GITHUB_REMOTE $branch" >&2
+    echo "[INFO] Local branch tip is not GitHub-visible yet; push it with: git push $GITHUB_REMOTE HEAD:${github_branch#"$GITHUB_REMOTE/"}" >&2
   elif [ "$ahead" -eq 0 ] && [ "$behind" -gt 0 ]; then
     echo "[INFO] Local branch is behind the GitHub-visible head; fast-forward or rebase before verifier work." >&2
   else
     echo "[INFO] Local and GitHub-visible history diverged; reconcile before verifier work." >&2
   fi
-  echo "[INFO] Review with: git log --oneline --left-right --cherry-pick $branch...$GITHUB_REMOTE/$branch" >&2
+  echo "[INFO] Review with: git log --oneline --left-right --cherry-pick $branch...$github_branch" >&2
   exit 1
 fi
 

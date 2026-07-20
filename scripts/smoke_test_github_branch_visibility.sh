@@ -19,19 +19,24 @@ git config user.email "little7@example.invalid"
 echo "alpha" > sample.txt
 git add sample.txt
 git commit -q -m "init"
-git branch -M feature/test-visibility
+git branch -M transplant/test-visibility
 
 git remote add github git@github.com:example/unifai.git
 REMOTE_SHA="$(git rev-parse HEAD)"
-git update-ref refs/remotes/github/feature/test-visibility "$REMOTE_SHA"
-git branch --set-upstream-to=github/feature/test-visibility feature/test-visibility >/dev/null
+git update-ref refs/remotes/github/fix/test-visibility "$REMOTE_SHA"
+git branch --set-upstream-to=github/fix/test-visibility transplant/test-visibility >/dev/null
 
 echo "=== UnifAI Smoke Test: GitHub branch visibility helper ==="
-PASS_OUTPUT="$("$REAL_BASH" "$HELPER" feature/test-visibility)"
+PASS_OUTPUT="$("$REAL_BASH" "$HELPER" transplant/test-visibility)"
 printf '%s\n' "$PASS_OUTPUT"
 
 if ! grep -q "\[PASS\] Local branch matches the GitHub-visible branch head." <<<"$PASS_OUTPUT"; then
   echo "[FAIL] Expected PASS output when local and remote-tracking refs match."
+  exit 1
+fi
+
+if ! grep -q "GitHub branch: github/fix/test-visibility" <<<"$PASS_OUTPUT"; then
+  echo "[FAIL] Expected helper to print the tracked GitHub branch when it differs from the local branch name."
   exit 1
 fi
 
@@ -40,7 +45,7 @@ git add sample.txt
 git commit -q -m "ahead locally"
 
 set +e
-FAIL_OUTPUT="$("$REAL_BASH" "$HELPER" feature/test-visibility 2>&1)"
+FAIL_OUTPUT="$("$REAL_BASH" "$HELPER" transplant/test-visibility 2>&1)"
 FAIL_STATUS=$?
 set -e
 printf '%s\n' "$FAIL_OUTPUT"
@@ -55,13 +60,13 @@ if ! grep -q "\[FAIL\] Local branch and GitHub branch differ (ahead 1, behind 0)
   exit 1
 fi
 
-if ! grep -q "\[INFO\] Local branch tip is not GitHub-visible yet; push it with: git push github feature/test-visibility" <<<"$FAIL_OUTPUT"; then
-  echo "[FAIL] Expected ahead-only push guidance missing after local divergence."
+if ! grep -q "\[INFO\] Local branch tip is not GitHub-visible yet; push it with: git push github HEAD:fix/test-visibility" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected ahead-only push guidance to target the tracked GitHub branch after local divergence."
   exit 1
 fi
 
-if ! grep -q "\[INFO\] Review with: git log --oneline --left-right --cherry-pick feature/test-visibility...github/feature/test-visibility" <<<"$FAIL_OUTPUT"; then
-  echo "[FAIL] Expected review guidance missing after local divergence."
+if ! grep -q "\[INFO\] Review with: git log --oneline --left-right --cherry-pick transplant/test-visibility...github/fix/test-visibility" <<<"$FAIL_OUTPUT"; then
+  echo "[FAIL] Expected review guidance to reference the tracked GitHub branch after local divergence."
   exit 1
 fi
 
