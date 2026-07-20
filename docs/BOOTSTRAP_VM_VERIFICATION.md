@@ -125,20 +125,11 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `e771a87` (`scripts/docs: preserve publish-boundary maintenance bundle`), 31 commits ahead in total
+- the local hardening stack is currently ahead of that public ref through `3c159fe` (`scripts: respect tracked github visibility branch`), 33 commits ahead in total
 - the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
-- the latest non-doc logic delta in that local stack is `e771a87` (`scripts/docs: preserve publish-boundary maintenance bundle`) in:
-  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
-  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
-  - `scripts/check_compare_publish_branch_histories_contract.py`
-  - `scripts/check_publish_stack_parity.py`
-  - `scripts/check_publish_stack_parity_contract.py`
-  - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
-  - `scripts/compare_publish_branch_histories.py`
-  - `scripts/refresh_vm_verifier_checkpoint_state.py`
-  - `scripts/smoke_test_compare_publish_branch_histories.sh`
-  - `scripts/smoke_test_publish_stack_parity.sh`
-  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
+- the latest non-doc logic delta in that local stack is `3c159fe` (`scripts: respect tracked github visibility branch`) in:
+  - `scripts/check_github_branch_visibility.sh`
+  - `scripts/smoke_test_github_branch_visibility.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
