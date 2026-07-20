@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REFRESH_HELPER = REPO_ROOT / "scripts" / "refresh_vm_verifier_checkpoint_state.py"
+FRESHNESS_CHECKER = REPO_ROOT / "scripts" / "check_vm_verifier_checkpoint_freshness.py"
+
+
+def run(cmd: list[str], cwd: Path) -> str:
+    return subprocess.check_output(cmd, cwd=cwd, text=True).strip()
+
+
+def run_ok(cmd: list[str], cwd: Path) -> str:
+    result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+    if result.returncode != 0:
+        raise AssertionError(
+            f"Expected success but command failed: {' '.join(cmd)}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        )
+    return result.stdout + result.stderr
+
+
+def expect_fail(cmd: list[str], cwd: Path) -> str:
+    result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+    if result.returncode == 0:
+        raise AssertionError(f"Expected failure but command succeeded: {' '.join(cmd)}")
+    return result.stdout + result.stderr
+
+
+def seed_repo(work: Path) -> None:
+    (work / "docs").mkdir(parents=True)
+    (work / "scripts").mkdir(parents=True)
+    (work / "ci-artifacts" / "bootstrap-preflight").mkdir(parents=True)
+    shutil.copy2(REFRESH_HELPER, work / "scripts" / REFRESH_HELPER.name)
+    shutil.copy2(FRESHNESS_CHECKER, work / "scripts" / FRESHNESS_CHECKER.name)
+    (work / ".gitignore").write_text("ci-artifacts/\n", encoding="utf-8")
+    (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").write_text(
+        "Current known boundary on this branch family:\n"
+        "- GitHub-visible branch head remains `oldhead`\n"
+        "- the local hardening stack is currently ahead of that public ref through `oldsha` (`old subject`), 0 commits ahead in total\n"
+        "- the latest non-doc logic delta in that local stack is the placeholder publish-boundary bundle in:\n"
+        "  - `old/path.py`\n",
+        encoding="utf-8",
+    )
+    (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").write_text(
+        (
+            "# Bootstrap VM Verifier Checkpoint — 2026-06-15\n\n"
+            "## Branch\n"
+            "- Working branch: `fix/openclaw-config-path-and-local-mode`\n"
+            "- GitHub-visible branch head: `oldhead`\n"
+            "- Latest local head in the stack: `oldsha`\n"
+            "- Latest non-doc logic head in the local stack: `oldlogic`\n"
+            "- Local branch state at checkpoint: ahead by 0 commits over the GitHub-visible branch head\n\n"
+            "## Local commit stack after `oldhead`\n"
+            "1. `oldsha` — `old subject`\n\n"
+            "## What is now true locally\n"
+            "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n"
+            "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.\n"
+            "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n"
+        ),
+        encoding="utf-8",
+    )
+    (work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt").write_text(
+        "Commit candidate: placeholder candidate fixture\n"
+        "Current local checkpoint: oldsha\n"
+        "Current branch state: ahead 0 over origin/fix/openclaw-config-path-and-local-mode\n",
+        encoding="utf-8",
+    )
+
+
+def main() -> int:
+    with tempfile.TemporaryDirectory(prefix="unifai-vm-checkpoint-freshness-") as tmp:
+        root = Path(tmp)
+        remote = root / "remote.git"
+        work = root / "work"
+
+        subprocess.check_call(["git", "init", "--bare", str(remote)])
+        subprocess.check_call(["git", "clone", str(remote), str(work)])
+        run(["git", "config", "user.name", "Little7 Smoke Test"], work)
+        run(["git", "config", "user.email", "little7@example.invalid"], work)
+        seed_repo(work)
+        run(["git", "add", "."], work)
+        run(["git", "commit", "-m", "docs: seed checkpoint templates"], work)
+        run(["git", "branch", "-M", "fix/openclaw-config-path-and-local-mode"], work)
+        run(["git", "push", "-u", "origin", "fix/openclaw-config-path-and-local-mode"], work)
+
+        (work / "logic.txt").write_text("logic\n", encoding="utf-8")
+        run(["git", "add", "logic.txt"], work)
+        run(["git", "commit", "-m", "tests: add logic commit"], work)
+
+        stale_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "is stale; expected to find:" in stale_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in fresh_output
+
+        run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
+        run(["git", "commit", "-m", "docs: refresh visible verifier boundary state"], work)
+
+        stale_doc_only_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate branch state is stale; expected to find:" in stale_doc_only_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in doc_only_fresh_output
+
+    print("[PASS] VM verifier checkpoint freshness smoke test passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
