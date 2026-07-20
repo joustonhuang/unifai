@@ -5,6 +5,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_DIR="${1:-$REPO_ROOT/ci-artifacts/bootstrap-preflight}"
 REPORT_FILE="$REPORT_DIR/report.txt"
 mkdir -p "$REPORT_DIR"
+CHECKPOINT_HANDOFF_PATHS=(
+  "docs/BOOTSTRAP_VM_VERIFICATION.md"
+  "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
+  "ci-artifacts/bootstrap-preflight/commit-candidate.txt"
+)
 
 exec > >(tee "$REPORT_FILE")
 exec 2>&1
@@ -29,6 +34,11 @@ require_grep() {
   local path="$2"
   grep -Eq "$pattern" "$path" || fail "Expected pattern '$pattern' in ${path#$REPO_ROOT/}"
   pass "Pattern '$pattern' present in ${path#$REPO_ROOT/}"
+}
+
+checkpoint_handoff_dirty_paths() {
+  git -C "$REPO_ROOT" status --porcelain --untracked-files=all -- "${CHECKPOINT_HANDOFF_PATHS[@]}" |
+    sed -E 's/^.. //'
 }
 
 echo "== Bootstrap installer preflight =="
@@ -200,6 +210,15 @@ pass "VM verifier checkpoint state refreshed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"
 pass "VM verifier checkpoint freshness check passed"
+
+mapfile -t refreshed_handoff_paths < <(checkpoint_handoff_dirty_paths)
+if [ "${#refreshed_handoff_paths[@]}" -gt 0 ]; then
+  printf '[FAIL] Bootstrap preflight refreshed checkpoint handoff artifacts but they are not committed yet:\n'
+  printf '  - %s\n' "${refreshed_handoff_paths[@]}"
+  echo "[INFO] Review/add/commit the refreshed verifier checkpoint handoff before treating this ref as preflight-green."
+  exit 1
+fi
+pass "Checkpoint handoff artifacts already match the current tracked state"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"
 pass "VM verifier checkpoint freshness contract check passed"
