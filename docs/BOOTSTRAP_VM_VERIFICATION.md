@@ -125,12 +125,12 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `7f3558f` (`scripts: use gh auth for check gate API reads`), 47 commits ahead in total
+- the local hardening stack is currently ahead of that public ref through `7731422` (`scripts: narrow vm host token warnings`), 49 commits ahead in total
 - the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
-- the latest non-doc logic delta in that local stack is `7f3558f` (`scripts: use gh auth for check gate API reads`) in:
-  - `scripts/check_github_check_gate.py`
-  - `scripts/check_github_check_gate_contract.py`
-  - `scripts/smoke_test_github_check_gate.py`
+- the latest non-doc logic delta in that local stack is `7731422` (`scripts: narrow vm host token warnings`) in:
+  - `scripts/check_vm_host_readiness.sh`
+  - `scripts/check_vm_host_readiness_contract.py`
+  - `scripts/smoke_test_vm_host_readiness.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
