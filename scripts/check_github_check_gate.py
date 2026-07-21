@@ -36,6 +36,7 @@ CHECK_NAME_SOURCE_HINTS = {
         ".github/workflows/gaia-smoke.yml",
     ],
 }
+_GH_AUTHENTICATED: bool | None = None
 
 
 def usage() -> int:
@@ -84,7 +85,59 @@ def explain_http_error(exc: urllib.error.HTTPError, url: str, body: str) -> None
         )
 
 
+def gh_cli_authenticated() -> bool:
+    global _GH_AUTHENTICATED
+    if _GH_AUTHENTICATED is not None:
+        return _GH_AUTHENTICATED
+
+    if not shutil.which("gh"):
+        _GH_AUTHENTICATED = False
+        return _GH_AUTHENTICATED
+
+    try:
+        auth = subprocess.run(
+            ["gh", "auth", "status"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        _GH_AUTHENTICATED = False
+        return _GH_AUTHENTICATED
+
+    _GH_AUTHENTICATED = auth.returncode == 0
+    return _GH_AUTHENTICATED
+
+
+def github_get_via_gh(path: str):
+    if os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+        return None
+    if not gh_cli_authenticated():
+        return None
+
+    try:
+        proc = subprocess.run(
+            ["gh", "api", path],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None
+
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
 def github_get(path: str):
+    gh_data = github_get_via_gh(path)
+    if gh_data is not None:
+        return gh_data
+
     url = f"{API_BASE}/{path.lstrip('/')}"
     headers = {
         "Accept": "application/vnd.github+json",
@@ -105,6 +158,10 @@ def github_get(path: str):
 
 
 def github_get_optional(path: str, allowed_codes: set[int] | None = None):
+    gh_data = github_get_via_gh(path)
+    if gh_data is not None:
+        return gh_data
+
     url = f"{API_BASE}/{path.lstrip('/')}"
     headers = {
         "Accept": "application/vnd.github+json",
@@ -238,19 +295,7 @@ def load_file_at_ref(ref: str, path: str) -> list[str] | None:
 
 
 def run_gh_api_text(path: str) -> str | None:
-    if not shutil.which("gh"):
-        return None
-    try:
-        auth = subprocess.run(
-            ["gh", "auth", "status"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    if auth.returncode != 0:
+    if not gh_cli_authenticated():
         return None
 
     try:

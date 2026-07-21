@@ -17,8 +17,9 @@ spec.loader.exec_module(module)
 
 
 class FakeCompletedProcess:
-    def __init__(self, stdout: str):
+    def __init__(self, stdout: str, returncode: int = 0):
         self.stdout = stdout
+        self.returncode = returncode
 
 
 def run_case(fake_github_get, argv: list[str], fake_subprocess_run=None) -> tuple[int, str, str]:
@@ -224,6 +225,14 @@ def fake_subprocess_run(cmd, check, capture_output, text, timeout):
     raise AssertionError(f"unexpected subprocess command: {cmd}")
 
 
+def fake_gh_authenticated_subprocess_run(cmd, check, capture_output, text, timeout):
+    if cmd == ["gh", "auth", "status"]:
+        return FakeCompletedProcess("", returncode=0)
+    if cmd == ["gh", "api", "repos/joustonhuang/unifai/commits/gh-visible-ref"]:
+        return FakeCompletedProcess('{"sha":"ghabc123"}\n')
+    raise AssertionError(f"unexpected gh subprocess command: {cmd}")
+
+
 print("=== UnifAI Smoke Test: GitHub check gate inspector ===")
 
 code, stdout, stderr = run_case(success_get, [str(SCRIPT), "visible-ref"])
@@ -272,6 +281,28 @@ if "Ref: refs/remotes/github/fix/visible-branch" not in stdout:
 if "SHA: feed123" not in stdout:
     print("[FAIL] Expected refs/remotes remote-tracking branch SHA resolution missing.")
     raise SystemExit(1)
+
+old_subprocess_run = module.subprocess.run
+old_shutil_which = module.shutil.which
+old_urlopen = module.urllib.request.urlopen
+old_gh_authenticated = module._GH_AUTHENTICATED
+module.subprocess.run = fake_gh_authenticated_subprocess_run
+module.shutil.which = lambda name: "/usr/bin/gh" if name == "gh" else None
+module.urllib.request.urlopen = lambda *args, **kwargs: (_ for _ in ()).throw(
+    AssertionError("urllib fallback should not run when gh api is authenticated")
+)
+module._GH_AUTHENTICATED = None
+try:
+    gh_data = module.github_get("repos/joustonhuang/unifai/commits/gh-visible-ref")
+finally:
+    module.subprocess.run = old_subprocess_run
+    module.shutil.which = old_shutil_which
+    module.urllib.request.urlopen = old_urlopen
+    module._GH_AUTHENTICATED = old_gh_authenticated
+if gh_data.get("sha") != "ghabc123":
+    print("[FAIL] Expected authenticated gh api fallback to satisfy main JSON fetches.")
+    raise SystemExit(1)
+print("[PASS] Authenticated gh api satisfies main JSON fetches without urllib fallback.")
 
 code, stdout, stderr = run_case(
     remote_branch_get,
