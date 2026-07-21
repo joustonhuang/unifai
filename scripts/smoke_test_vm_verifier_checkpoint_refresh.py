@@ -164,7 +164,8 @@ def main() -> int:
         assert "has no upstream; set a GitHub-visible upstream before refreshing the verifier publish-boundary checkpoint" in no_upstream_output
 
         (work / "logic.txt").write_text("logic\n", encoding="utf-8")
-        run(["git", "add", "logic.txt"], work)
+        (work / "docs" / "logic-sidecar.md").write_text("doc companion\n", encoding="utf-8")
+        run(["git", "add", "logic.txt", "docs/logic-sidecar.md"], work)
         run(["git", "commit", "-m", "tests: add logic commit"], work)
         logic_sha = run(["git", "rev-parse", "--short", "HEAD"], work)
 
@@ -193,6 +194,7 @@ def main() -> int:
         assert "uncommitted publish-boundary maintenance path(s) beyond HEAD" in boundary
         assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in boundary
         assert "  - `logic.txt`\n" in boundary
+        assert "  - `docs/logic-sidecar.md`\n" not in boundary
         assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in boundary
         assert "that helper hardening" not in boundary

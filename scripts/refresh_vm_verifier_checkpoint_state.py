@@ -226,11 +226,14 @@ def main() -> int:
     commits = [line.split("\t", 1) for line in raw_commits if line.strip()]
     latest_non_doc = next((sha for sha, subject in reversed(commits) if not subject.startswith("docs:")), tracked_head_short)
     latest_non_doc_subject = next((subject for sha, subject in reversed(commits) if sha == latest_non_doc), tracked_head_subject)
-    latest_non_doc_paths = [
+    latest_non_doc_all_paths = [
         line.strip()
         for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", latest_non_doc).splitlines()
         if line.strip()
     ]
+    latest_non_doc_paths = [
+        path for path in latest_non_doc_all_paths if not path.startswith("docs/")
+    ] or latest_non_doc_all_paths
     latest_non_doc_block = (
         f"- the latest non-doc logic delta in that local stack is `{latest_non_doc}` (`{latest_non_doc_subject}`) in:\n"
         + "\n".join(f"  - `{path}`" for path in latest_non_doc_paths)
