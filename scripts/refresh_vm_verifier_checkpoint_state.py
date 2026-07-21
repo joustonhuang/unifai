@@ -481,53 +481,6 @@ def main() -> int:
         checkpoint_text,
         count=1,
     )
-    doc_dirty_paths: list[str] = []
-    for path, original_text, updated_text in (
-        (str(DOC_BOUNDARY.relative_to(REPO_ROOT)), original_boundary_text, boundary_text),
-        (str(DOC_CHECKPOINT.relative_to(REPO_ROOT)), original_checkpoint_text, checkpoint_text),
-    ):
-        if original_text != updated_text and path not in dirty_paths:
-            doc_dirty_paths.append(path)
-
-    if doc_dirty_paths:
-        dirty_paths = [*dirty_paths, *doc_dirty_paths]
-        (
-            dirty_bullets,
-            preservation_line,
-            publish_boundary_line,
-            boundary_dirty_line,
-            current_delta_block,
-            stack_progress_line,
-        ) = describe_dirty_state(dirty_paths, tracked_head_short, ahead_count, upstream)
-        bundle_paths = collect_bundle_paths(upstream, dirty_paths)
-        bundle_bullets = "\n".join(f"  - `{path}`" for path in bundle_paths)
-
-        boundary_text = re.sub(
-            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)",
-            boundary_dirty_line,
-            boundary_text,
-            count=1,
-        )
-        checkpoint_text = re.sub(
-            r"- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: .*",
-            stack_progress_line,
-            checkpoint_text,
-            count=1,
-        )
-        checkpoint_text = re.sub(
-            r"- The current local hardening stack is (?:preserved as clean commits through `[^`]+`, rather than as an uncommitted sandbox delta|not fully committed: (?:HEAD|tracked head) is `[^`]+` and the working tree still carries \d+ uncommitted path\(s\) \([^\n]+\))\.",
-            preservation_line,
-            checkpoint_text,
-            count=1,
-        )
-        checkpoint_text = replace_delta_and_bundle_sections(
-            checkpoint_text,
-            current_delta_block,
-            verification_block,
-            dirty_bullets,
-            bundle_bullets,
-        )
-
     DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
 
