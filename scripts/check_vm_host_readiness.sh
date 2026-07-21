@@ -65,6 +65,8 @@ fi
 if [ -n "${GH_TOKEN:-}" ] || [ -n "${GITHUB_TOKEN:-}" ]; then
   TOKEN_PRESENT=1
   pass 'GitHub token env is present for curl fallback'
+elif [ "$GH_AUTHENTICATED" -eq 1 ]; then
+  pass 'Authenticated gh covers normal GitHub API reads without token-only fallback'
 else
   warn 'No GH_TOKEN/GITHUB_TOKEN in environment; public API fallback may rate-limit or fail closed'
 fi
@@ -86,7 +88,7 @@ if [ "$WARN_COUNT" -ne 0 ]; then
     printf -- '- Install/authenticate gh if you want API-backed verifier checks without token-only fallback.\n'
   fi
 
-  if [ "$TOKEN_PRESENT" -eq 0 ]; then
+  if [ "$TOKEN_PRESENT" -eq 0 ] && [ "$GH_AUTHENTICATED" -eq 0 ]; then
     printf -- '- Export GH_TOKEN or GITHUB_TOKEN if you want curl fallback to avoid unauthenticated GitHub API limits.\n'
   fi
 fi
