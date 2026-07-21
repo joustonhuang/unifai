@@ -65,10 +65,13 @@ def current_host_lines() -> tuple[str, str]:
         "- Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, "
         f"and the current live state is narrower ({kvm_desc}, {gh_desc}, {token_desc})."
     )
-    boundary_line = (
-        f"- on the current host, {kvm_desc}, {gh_desc}, and {token_desc}, "
-        "so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes"
-    )
+    if gh_desc == "`gh` is installed and authenticated":
+        github_expectation = "so the first live run should expect TCG fallback, while normal GitHub API reads should flow through authenticated `gh` unless the host state changes"
+    elif token_desc == "`GH_TOKEN`/`GITHUB_TOKEN` is exported":
+        github_expectation = "so the first live run should expect TCG fallback, while GitHub API access should rely on token-backed curl fallback unless the host state changes"
+    else:
+        github_expectation = "so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes"
+    boundary_line = f"- on the current host, {kvm_desc}, {gh_desc}, and {token_desc}, {github_expectation}"
     return checkpoint_line, boundary_line
 
 

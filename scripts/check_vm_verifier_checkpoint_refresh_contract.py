@@ -35,6 +35,8 @@ required = [
     ('if access("/dev/kvm", W_OK):', "Refresh helper still distinguishes writable vs non-writable /dev/kvm state"),
     ('if command_succeeds("gh", "auth", "status"):', "Refresh helper still captures authenticated vs unauthenticated gh state"),
     ('if environ.get("GH_TOKEN") or environ.get("GITHUB_TOKEN")', "Refresh helper still reports GH_TOKEN/GITHUB_TOKEN export state"),
+    ('while normal GitHub API reads should flow through authenticated `gh` unless the host state changes', "Refresh helper narrows the host-readiness warning when gh auth already covers normal API reads"),
+    ('while GitHub API access should rely on token-backed curl fallback unless the host state changes', "Refresh helper can still describe the token-backed curl fallback case"),
     ('current_head_short = git("rev-parse", "--short", "HEAD")', "Refresh helper captures the checked-out branch tip separately from the tracked publish head"),
     ('current_head_subject = git("show", "-s", "--format=%s", "HEAD")', "Refresh helper captures the checked-out branch-tip subject"),
     ('current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")', "Refresh helper captures the checked-out branch-tip ahead count separately from the tracked publish head"),

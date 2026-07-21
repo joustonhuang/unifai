@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
 - the local hardening stack is currently ahead of that public ref through `7731422` (`scripts: narrow vm host token warnings`), 49 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
+- the local sandbox currently also carries 3 uncommitted publish-boundary maintenance path(s) beyond HEAD (`scripts/check_vm_verifier_checkpoint_refresh_contract.py`, `scripts/refresh_vm_verifier_checkpoint_state.py`, `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`)
 - the latest non-doc logic delta in that local stack is `7731422` (`scripts: narrow vm host token warnings`) in:
   - `scripts/check_vm_host_readiness.sh`
   - `scripts/check_vm_host_readiness_contract.py`
@@ -136,7 +136,7 @@ Current known boundary on this branch family:
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
 - `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
-- on the current host, `/dev/kvm` is present but not writable, `gh` is installed and authenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback plus possible GitHub API auth/rate-limit friction unless the host state changes
+- on the current host, `/dev/kvm` is present but not writable, `gh` is installed and authenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback, while normal GitHub API reads should flow through authenticated `gh` unless the host state changes
 
 Override the cloud image explicitly if needed:
 
