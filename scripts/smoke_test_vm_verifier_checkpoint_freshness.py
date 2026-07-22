@@ -101,6 +101,22 @@ def main() -> int:
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in fresh_output
 
         commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+        current_head_short = run(["git", "rev-parse", "--short", "HEAD"], work)
+        current_head_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "Current branch state: ahead 1 over origin/fix/openclaw-config-path-and-local-mode\n",
+                f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
+                "Current branch state: ahead 1 over origin/fix/openclaw-config-path-and-local-mode\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        unexpected_head_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "commit-candidate tip line should not be present when the tracked checkpoint is HEAD." in unexpected_head_tip_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
