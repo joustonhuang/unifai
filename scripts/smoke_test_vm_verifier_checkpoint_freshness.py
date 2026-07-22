@@ -114,6 +114,19 @@ def main() -> int:
         boundary_text = boundary_doc.read_text(encoding="utf-8")
         boundary_doc.write_text(
             boundary_text.replace(
+                f"- the latest non-doc logic delta in that local stack is `{run(['git', 'rev-parse', '--short', 'HEAD^'], work)}` (`tests: add logic commit`) in:\n",
+                "- the latest non-doc logic delta in that local stack is `wrongsha` (`wrong subject`) in:\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_boundary_head_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Boundary doc latest non-doc head is stale; expected to find:" in stale_boundary_head_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        boundary_text = boundary_doc.read_text(encoding="utf-8")
+        boundary_doc.write_text(
+            boundary_text.replace(
                 "- `logic.txt`\n",
                 "- `wrong-path.txt`\n",
                 1,
