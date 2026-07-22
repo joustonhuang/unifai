@@ -100,6 +100,46 @@ def main() -> int:
         fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in fresh_output
 
+        commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- The branch still needs the local checkpoint chain through ",
+                "- The branch still needs the stale checkpoint chain through ",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_head_blocker_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate external blocker is stale; expected to find:" in stale_head_blocker_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- Make local checkpoint ",
+                "- Make stale local checkpoint ",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_head_move_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate next move is stale; expected to find:" in stale_head_move_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `",
+                "- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `stale-",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_head_public_blocker_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate public blocker note is stale; expected to find:" in stale_head_public_blocker_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         run(["git", "add", "docs/BOOTSTRAP_VM_VERIFICATION.md", "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"], work)
         run(["git", "commit", "-m", "docs: refresh visible verifier boundary state"], work)
 
@@ -110,7 +150,6 @@ def main() -> int:
         doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in doc_only_fresh_output
 
-        commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
