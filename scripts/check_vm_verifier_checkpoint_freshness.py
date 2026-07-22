@@ -65,6 +65,14 @@ def main() -> int:
     current_head_subject = git("show", "-s", "--format=%s", "HEAD")
     ahead_count = git("rev-list", "--count", f"{upstream}..{tracked_ref}")
     current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")
+    latest_non_doc_all_paths = [
+        line.strip()
+        for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", tracked_ref).splitlines()
+        if line.strip()
+    ]
+    latest_non_doc_paths = [
+        path for path in latest_non_doc_all_paths if not path.startswith("docs/")
+    ] or latest_non_doc_all_paths
 
     boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
@@ -75,6 +83,11 @@ def main() -> int:
             boundary_text,
             f"through `{tracked_head_short}` (`{tracked_head_subject}`), {ahead_count} commits ahead in total",
             "Boundary doc",
+        ),
+        (
+            boundary_text,
+            f"- the latest non-doc logic delta in that local stack is `{tracked_head_short}` (`{tracked_head_subject}`) in:",
+            "Boundary doc latest non-doc head",
         ),
         (
             checkpoint_text,
@@ -100,6 +113,11 @@ def main() -> int:
 
     for text, needle, label in checks:
         status = require_contains(text, needle, label)
+        if status:
+            return status
+
+    for path in latest_non_doc_paths:
+        status = require_contains(boundary_text, f"  - `{path}`", "Boundary doc latest non-doc paths")
         if status:
             return status
 

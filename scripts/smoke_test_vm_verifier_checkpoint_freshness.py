@@ -110,6 +110,23 @@ def main() -> int:
         doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in doc_only_fresh_output
 
+        boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
+        boundary_text = boundary_doc.read_text(encoding="utf-8")
+        boundary_doc.write_text(
+            boundary_text.replace(
+                "- `logic.txt`\n",
+                "- `wrong-path.txt`\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_boundary_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Boundary doc latest non-doc paths is stale; expected to find:" in stale_boundary_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        boundary_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in boundary_fresh_output
+
     print("[PASS] VM verifier checkpoint freshness smoke test passed")
     return 0
 
