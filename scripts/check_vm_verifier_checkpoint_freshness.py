@@ -65,6 +65,7 @@ def main() -> int:
     current_head_subject = git("show", "-s", "--format=%s", "HEAD")
     ahead_count = git("rev-list", "--count", f"{upstream}..{tracked_ref}")
     current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")
+    upstream_short = git("rev-parse", "--short", upstream)
     latest_non_doc_all_paths = [
         line.strip()
         for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", tracked_ref).splitlines()
@@ -126,8 +127,57 @@ def main() -> int:
         status = require_contains(commit_candidate_text, tip_line, "Commit-candidate checked-out tip")
         if status:
             return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The branch still needs the current branch tip `{current_head_short}` GitHub-visible; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
+            ),
+            "Commit-candidate external blocker",
+        )
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
+            ),
+            "Commit-candidate next move",
+        )
+        if status:
+            return status
     elif tip_line in commit_candidate_text:
         return fail("commit-candidate tip line should not be present when the tracked checkpoint is HEAD.")
+    else:
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` "
+                "to become GitHub-visible before the real VM-proof path can continue.\n"
+            ),
+            "Commit-candidate external blocker",
+        )
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\n",
+            "Commit-candidate next move",
+        )
+        if status:
+            return status
+
+    status = require_contains(
+        commit_candidate_text,
+        (
+            f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on "
+            f"`{upstream_short}`, so the next real boundary is still a visible rerun on the exact published ref.\n"
+        ),
+        "Commit-candidate public blocker note",
+    )
+    if status:
+        return status
 
     print("[PASS] VM verifier checkpoint artifacts match current repo state")
     return 0

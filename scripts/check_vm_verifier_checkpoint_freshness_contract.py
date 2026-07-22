@@ -33,7 +33,13 @@ required = [
     ('f"  - `{path}`"', "Freshness checker checks the exact latest non-doc path bullets"),
     ('f"Current branch state: ahead {current_head_ahead_count} over {upstream}\\n"', "Freshness checker validates the handoff branch-state line against HEAD"),
     ('f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\\n"', "Freshness checker validates the handoff checked-out tip line for doc-only cases"),
+    ('f"- The branch still needs the current branch tip `{current_head_short}` GitHub-visible; "', "Freshness checker validates the doc-only handoff blocker line against the checked-out tip"),
+    ('f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "', "Freshness checker validates the doc-only next-move line against the checked-out tip"),
     ('"commit-candidate tip line should not be present when the tracked checkpoint is HEAD."', "Freshness checker fails closed on an unexpected tip line at HEAD"),
+    ('f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` "', "Freshness checker validates the direct-checkpoint blocker line when HEAD is the tracked publish head"),
+    ('f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\\n"', "Freshness checker validates the direct-checkpoint next-move line when HEAD is the tracked publish head"),
+    ('f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on "',
+     "Freshness checker validates the public blocker note against the live GitHub-visible head"),
     ('"[PASS] VM verifier checkpoint artifacts match current repo state"', "Freshness checker emits a passing verdict"),
 ]
 

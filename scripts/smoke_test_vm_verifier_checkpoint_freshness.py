@@ -110,6 +110,33 @@ def main() -> int:
         doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in doc_only_fresh_output
 
+        commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "Current checked-out branch tip: ",
+                "Current checked-out branch tip: stale ",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_doc_only_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate checked-out tip is stale; expected to find:" in stale_doc_only_tip_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- Make the current branch tip ",
+                "- Make the stale branch tip ",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_doc_only_move_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate next move is stale; expected to find:" in stale_doc_only_move_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
         boundary_text = boundary_doc.read_text(encoding="utf-8")
         boundary_doc.write_text(
