@@ -127,6 +127,19 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
+                "- The branch still needs the current branch tip ",
+                "- The branch still needs the stale branch tip ",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_doc_only_blocker_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate external blocker is stale; expected to find:" in stale_doc_only_blocker_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
                 "- Make the current branch tip ",
                 "- Make the stale branch tip ",
                 1,
@@ -135,6 +148,19 @@ def main() -> int:
         )
         stale_doc_only_move_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "Commit-candidate next move is stale; expected to find:" in stale_doc_only_move_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `",
+                "- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `stale-",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_public_blocker_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate public blocker note is stale; expected to find:" in stale_public_blocker_output
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
