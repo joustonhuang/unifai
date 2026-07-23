@@ -51,6 +51,7 @@ required = [
     ('bundle_paths = collect_bundle_paths(upstream, dirty_paths)', "Refresh helper derives bundle paths from the real worktree dirty snapshot"),
     ('"python3 scripts/check_publish_stack_parity_contract.py\\n"', "Refresh helper keeps the publish-stack parity contract gate in the handoff artifact"),
     ('"python3 scripts/check_compare_publish_branch_histories_contract.py\\n"', "Refresh helper keeps the publish-branch-history contract gate in the handoff artifact"),
+    ('"python3 scripts/check_github_branch_visibility_contract.py\\n"', "Refresh helper keeps the branch-visibility contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\\n"', "Refresh helper keeps the checkpoint-freshness contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\\n"', "Refresh helper keeps its own contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_host_readiness_contract.py\\n"', "Refresh helper keeps the host-readiness contract gate in the handoff artifact"),
