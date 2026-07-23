@@ -78,6 +78,7 @@ require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_github_fallback.sh"
@@ -247,6 +248,9 @@ pass "VM verifier script passes bash -n"
 bash -n "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 pass "GitHub branch visibility smoke script passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"
+pass "GitHub branch visibility no-GitHub-remote smoke script passes bash -n"
+
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_verifier_red_path.sh"
 pass "VM verifier red-path smoke script passes bash -n"
 
@@ -285,6 +289,9 @@ pass "VM verifier preflight no-GitHub-remote smoke script passes bash -n"
 
 bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 pass "GitHub branch visibility smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"
+pass "GitHub branch visibility no-GitHub-remote smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 pass "VM host readiness smoke test passed"
