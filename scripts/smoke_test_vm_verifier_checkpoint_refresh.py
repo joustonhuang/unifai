@@ -192,8 +192,9 @@ def main() -> int:
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in boundary
         assert "local sandbox currently also carries" in boundary
         assert "uncommitted publish-boundary maintenance path(s) beyond HEAD" in boundary
-        assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in boundary
-        assert "  - `logic.txt`\n" in boundary
+        assert f"latest non-doc logic delta in that local stack is `{head_sha}` (`docs: trailing docs refresh`) in:" in boundary
+        assert "  - `note.txt`\n" in boundary
+        assert "  - `logic.txt`\n" not in boundary
         assert "  - `docs/logic-sidecar.md`\n" not in boundary
         assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in boundary
@@ -201,7 +202,7 @@ def main() -> int:
         assert expected_boundary_host_line in boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in checkpoint
         assert f"Latest tracked local head in the stack: `{head_sha}`" in checkpoint
-        assert f"Latest non-doc logic head in the local stack: `{logic_sha}`" in checkpoint
+        assert f"Latest non-doc logic head in the local stack: `{head_sha}`" in checkpoint
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in checkpoint
         assert f"1. `{logic_sha}` — `tests: add logic commit`" in checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in checkpoint
@@ -209,7 +210,7 @@ def main() -> int:
         assert f"tracked head is `{head_sha}`" in checkpoint
         assert "not fully committed" in checkpoint
         assert "uncommitted path(s)" in checkpoint
-        assert f"latest non-doc logic commit in that tip is `{logic_sha}`" in checkpoint
+        assert f"latest non-doc logic commit in that tip is `{head_sha}`" in checkpoint
         assert "publish-boundary maintenance bundle for visible-ref handoff" in checkpoint
         assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place." in checkpoint
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in checkpoint
@@ -270,8 +271,9 @@ def main() -> int:
 
         assert f"GitHub-visible branch head remains `{remote_sha}`" in refreshed_boundary
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in refreshed_boundary
-        assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in refreshed_boundary
-        assert "  - `logic.txt`\n" in refreshed_boundary
+        assert f"latest non-doc logic delta in that local stack is `{head_sha}` (`docs: trailing docs refresh`) in:" in refreshed_boundary
+        assert "  - `note.txt`\n" in refreshed_boundary
+        assert "  - `logic.txt`\n" not in refreshed_boundary
         assert "uncommitted publish-boundary maintenance path(s) beyond HEAD" in refreshed_boundary
         assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in refreshed_boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in refreshed_boundary
@@ -331,8 +333,9 @@ def main() -> int:
         stable_bundle_section = extract_bundle_section(stable_checkpoint)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in stable_boundary
-        assert f"latest non-doc logic delta in that local stack is `{logic_sha}` (`tests: add logic commit`) in:" in stable_boundary
-        assert "  - `logic.txt`\n" in stable_boundary
+        assert f"latest non-doc logic delta in that local stack is `{stable_head}` (`{stable_subject}`) in:" in stable_boundary
+        assert "  - `scratch.txt`\n" in stable_boundary
+        assert "  - `logic.txt`\n" not in stable_boundary
         assert "carries no additional uncommitted publish-boundary maintenance delta" in stable_boundary
         assert "- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place\n" in stable_boundary
         assert "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n" in stable_boundary

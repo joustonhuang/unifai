@@ -42,6 +42,7 @@ required = [
     ('current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")', "Refresh helper captures the checked-out branch-tip ahead count separately from the tracked publish head"),
     ('if tracked_ref != "HEAD":', "Refresh helper distinguishes doc-only checkpoint commits sitting on top of the tracked publish head"),
     ('doc-only checkpoint refresh commits are intentionally excluded from that comparison', "Refresh helper explains why a checked-out doc-only tip can differ from the tracked publish head"),
+    ('next((sha for sha, _subject in reversed(commits) if not is_checkpoint_doc_only_commit(sha)), tracked_head_short)', "Refresh helper derives the latest non-doc logic head from changed paths instead of commit-subject prefixes"),
     ('latest_non_doc_all_paths = [', "Refresh helper records the full path list for the latest non-doc commit before narrowing it"),
     ('path for path in latest_non_doc_all_paths if not path.startswith("docs/")', "Refresh helper drops doc paths from the non-doc delta file list when mixed commits touch both docs and scripts"),
     ('] or latest_non_doc_all_paths', "Refresh helper falls back to the full path list if filtering would leave the non-doc delta section empty"),

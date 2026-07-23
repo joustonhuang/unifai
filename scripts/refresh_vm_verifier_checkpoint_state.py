@@ -224,7 +224,7 @@ def main() -> int:
 
     raw_commits = git("log", "--reverse", "--format=%h\t%s", f"{upstream}..{tracked_ref}").splitlines()
     commits = [line.split("\t", 1) for line in raw_commits if line.strip()]
-    latest_non_doc = next((sha for sha, subject in reversed(commits) if not subject.startswith("docs:")), tracked_head_short)
+    latest_non_doc = next((sha for sha, _subject in reversed(commits) if not is_checkpoint_doc_only_commit(sha)), tracked_head_short)
     latest_non_doc_subject = next((subject for sha, subject in reversed(commits) if sha == latest_non_doc), tracked_head_subject)
     latest_non_doc_all_paths = [
         line.strip()
