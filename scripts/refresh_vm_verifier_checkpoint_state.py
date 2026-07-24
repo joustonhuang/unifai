@@ -215,6 +215,12 @@ def main() -> int:
     tracked_head_short = git("rev-parse", "--short", tracked_ref)
     tracked_head_subject = git("show", "-s", "--format=%s", tracked_ref)
     ahead_count = git("rev-list", "--count", f"{upstream}..{tracked_ref}")
+    # Keep handoff docs stable after publishing a doc-only checkpoint refresh commit:
+    # once the branch is fully aligned with GitHub, the meaningful publish boundary is
+    # still the tracked non-doc head rather than the latest doc-only tip.
+    visible_head_short = upstream_short
+    if tracked_ref != "HEAD" and current_head_ahead_count == "0":
+        visible_head_short = tracked_head_short
     if tracked_ref != "HEAD":
         commit_candidate_tip_line = (
             f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
@@ -285,7 +291,7 @@ def main() -> int:
     boundary_text = original_boundary_text
     boundary_text = re.sub(
         r"- GitHub-visible branch head remains `[^`]+`",
-        f"- GitHub-visible branch head remains `{upstream_short}`",
+        f"- GitHub-visible branch head remains `{visible_head_short}`",
         boundary_text,
         count=1,
     )
@@ -381,7 +387,7 @@ def main() -> int:
         )
     checkpoint_text = original_checkpoint_text
     checkpoint_text = re.sub(r"- Working branch: `[^`]+`", f"- Working branch: `{current_branch}`", checkpoint_text, count=1)
-    checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{upstream_short}`", checkpoint_text, count=1)
+    checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{visible_head_short}`", checkpoint_text, count=1)
     if tracked_ref == "HEAD":
         checkpoint_text = re.sub(
             r"- Current checked-out branch tip: `[^`]+`(?: \(`[^`]+`\))?\n?",

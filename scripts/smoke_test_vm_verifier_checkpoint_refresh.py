@@ -401,6 +401,19 @@ def main() -> int:
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in doc_only_commit_candidate
 
+        run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)
+        subprocess.check_call(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
+
+        aligned_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
+        aligned_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        aligned_status = run(["git", "status", "--short"], work)
+
+        assert "docs/BOOTSTRAP_VM_VERIFICATION.md" in aligned_status
+        assert "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md" in aligned_status
+        assert f"GitHub-visible branch head remains `{stable_head}`" in aligned_boundary
+        assert f"GitHub-visible branch head: `{stable_head}`" in aligned_checkpoint
+        assert f"Latest tracked local head in the stack: `{stable_head}`" in aligned_checkpoint
+
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:
             raise AssertionError("Could not load checkpoint refresh helper for no-gh smoke validation")
