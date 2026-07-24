@@ -125,9 +125,9 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
-- the local hardening stack is currently ahead of that public ref through `2f62117` (`scripts: surface doc-only verifier checkpoint tip state`), 3 commits ahead in total
+- the local hardening stack is currently ahead of that public ref through `2ee7536` (`scripts: avoid doc-only checkpoint self-refresh loop`), 5 commits ahead in total
 - the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
-- the latest non-doc logic delta in that local stack is `2f62117` (`scripts: surface doc-only verifier checkpoint tip state`) in:
+- the latest non-doc logic delta in that local stack is `2ee7536` (`scripts: avoid doc-only checkpoint self-refresh loop`) in:
   - `scripts/check_vm_verifier_checkpoint_freshness.py`
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
   - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
