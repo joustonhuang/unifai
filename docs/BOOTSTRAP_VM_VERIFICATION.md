@@ -124,8 +124,8 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
 
 Current known boundary on this branch family:
-- GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `b6a6ed4` (`scripts/docs: stabilize verifier checkpoint doc-only refresh`), 82 commits ahead in total
+- GitHub-visible branch head remains `bb5bf39`
+- the local hardening stack is currently ahead of that public ref through `b6a6ed4` (`scripts/docs: stabilize verifier checkpoint doc-only refresh`), 0 commits ahead in total
 - the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
 - the latest non-doc logic delta in that local stack is `b6a6ed4` (`scripts/docs: stabilize verifier checkpoint doc-only refresh`) in:
   - `scripts/refresh_vm_verifier_checkpoint_state.py`

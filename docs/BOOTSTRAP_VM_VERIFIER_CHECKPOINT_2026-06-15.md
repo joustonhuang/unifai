@@ -2,94 +2,13 @@
 
 ## Branch
 - Working branch: `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`
-- GitHub-visible branch head: `ccda045`
+- GitHub-visible branch head: `bb5bf39`
 - Latest tracked local head in the stack: `b6a6ed4`
 - Latest non-doc logic head in the local stack: `b6a6ed4`
-- Tracked local branch state at checkpoint: ahead by 82 commits over the GitHub-visible branch head
+- Tracked local branch state at checkpoint: ahead by 0 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
-1. `2c75337` — `scripts: check publish stack parity`
-2. `75577aa` — `tests: allow local cleanup branch preflight refs`
-3. `47c18d7` — `scripts/docs: refresh vm verifier checkpoint state`
-4. `5837f8c` — `tests: restore no-github-remote preflight smoke`
-5. `c867fa3` — `dev: harden verifier preflight remote boundary`
-6. `22b7bc9` — `scripts: harden verifier publish boundary`
-7. `d0488d4` — `tests: cover non-github check-gate refs`
-8. `de9b247` — `tests: cover secondary check-gate rate limits`
-9. `e26db83` — `scripts: compare publish branch histories`
-10. `d3b15a7` — `docs: refresh verifier checkpoint state`
-11. `a16bb5f` — `scripts: clarify checkpoint tip drift`
-12. `a6d8e52` — `docs: refresh verifier checkpoint stack`
-13. `4e233df` — `docs: record checkpoint doc-only tip`
-14. `05b564a` — `scripts: keep checkpoint docs stable`
-15. `9ff53af` — `docs: refresh verifier checkpoint state`
-16. `3e8eb9b` — `scripts: clarify doc-only publish boundary handoff`
-17. `1acded9` — `docs: refresh verifier checkpoint state`
-18. `e6c2390` — `scripts: clarify branch visibility recovery guidance`
-19. `1f167d8` — `docs: refresh verifier checkpoint state`
-20. `6b715c9` — `scripts/docs: track live checkpoint branch name`
-21. `da5438a` — `scripts: print explicit publish-history review buckets`
-22. `848004e` — `scripts: show publish-history review paths`
-23. `530c9d0` — `docs: capture publish branch review queue`
-24. `89c892d` — `docs: shrink publish branch review queue`
-25. `f5a023a` — `docs: trim publish branch mixed review queue`
-26. `09ffd8c` — `docs: reduce publish branch mixed review queue`
-27. `a2151e4` — `docs: finish mixed publish branch review queue`
-28. `0ba2ec4` — `docs: mark legacy publish docs as drop candidates`
-29. `e354075` — `scripts: clarify doc-only reconciliation end state`
-30. `8d1aace` — `scripts: suppress reviewed legacy publish history`
-31. `e771a87` — `scripts/docs: preserve publish-boundary maintenance bundle`
-32. `595bee8` — `docs: refresh verifier checkpoint after bundle commit`
-33. `3c159fe` — `scripts: respect tracked github visibility branch`
-34. `4a849b0` — `docs: refresh verifier checkpoint after visibility fix`
-35. `221a36f` — `scripts: report live branch state in checkpoint handoff`
-36. `cbd59c5` — `docs: refresh verifier checkpoint after handoff fix`
-37. `f497f07` — `scripts: detect stale verifier checkpoint handoff`
-38. `0370c0f` — `docs: refresh verifier checkpoint after freshness guard`
-39. `f0e7eae` — `scripts: gate preflight on checkpoint freshness`
-40. `8043d83` — `docs: refresh verifier checkpoint after preflight gate`
-41. `cb352cc` — `scripts/docs: refresh checkpoint state during preflight`
-42. `95d0b60` — `scripts: advertise checkpoint freshness gates`
-43. `eee71e3` — `scripts: fail preflight on dirty checkpoint refresh`
-44. `b653c45` — `docs: refresh verifier checkpoint after dirty-refresh gate`
-45. `04dff01` — `scripts: stop self-counting checkpoint refresh dirtiness`
-46. `73fc1cc` — `docs: refresh verifier boundary after dirty fix`
-47. `7f3558f` — `scripts: use gh auth for check gate API reads`
-48. `e190cce` — `docs: refresh verifier boundary after gh gate fix`
-49. `7731422` — `scripts: narrow vm host token warnings`
-50. `c83b8b4` — `docs: refresh verifier boundary after host readiness fix`
-51. `2731fd3` — `scripts: narrow checkpoint host readiness wording`
-52. `4a952af` — `docs: refresh verifier boundary after checkpoint wording fix`
-53. `48f669b` — `scripts: narrow checkpoint delta path listing`
-54. `ef01c81` — `docs: refresh verifier boundary after checkpoint delta fix`
-55. `7f16617` — `tests: harden verifier checkpoint freshness boundary`
-56. `1c2e7f3` — `docs: refresh verifier boundary after freshness hardening`
-57. `74186c7` — `tests: cover stale freshness boundary heading`
-58. `d24e8fe` — `docs: refresh verifier checkpoint boundary`
-59. `f9ad116` — `docs: clear verifier checkpoint delta`
-60. `a3c44f3` — `tests: guard stale verifier handoff lines`
-61. `8cb6a5a` — `docs: refresh verifier boundary after handoff guard`
-62. `a80c162` — `tests: cover stale verifier blocker lines`
-63. `d24f74c` — `docs: refresh verifier boundary after blocker coverage`
-64. `58bf2d5` — `tests: cover direct checkpoint blocker drift`
-65. `6450f03` — `docs: refresh verifier boundary after checkpoint drift coverage`
-66. `74ca334` — `tests: cover forbidden head tip line`
-67. `8ce0624` — `docs: refresh verifier boundary after head-tip coverage`
-68. `772ea55` — `tests: cover github branch visibility without remote`
-69. `b5151d9` — `docs: refresh verifier boundary after branch visibility coverage`
-70. `9c3ee07` — `tests: add github branch visibility contract`
-71. `511ae0f` — `docs: refresh verifier boundary after branch visibility contract`
-72. `fe4d2b9` — `docs: track branch visibility gate in verifier handoff`
-73. `4e0dae3` — `scripts: derive verifier logic head from paths`
-74. `5a41b93` — `docs: refresh verifier boundary after logic-head fix`
-75. `7c06e00` — `scripts: harden verifier preflight arg parsing`
-76. `692d8ed` — `docs: refresh verifier checkpoint after arg parsing`
-77. `73751a0` — `docs: settle verifier checkpoint handoff`
-78. `fcda76d` — `docs: refresh verifier boundary live tip state`
-79. `5928f75` — `docs: refresh verifier checkpoint publish head state`
-80. `3bfb187` — `scripts: refresh verifier checkpoint drift shapes`
-81. `a418c96` — `docs: refresh verifier boundary after drift fix`
-82. `b6a6ed4` — `scripts/docs: stabilize verifier checkpoint doc-only refresh`
+
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -125,7 +44,7 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `b6a6ed4`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, and the branch is `ahead 82` over `github/fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `b6a6ed4`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, and the branch is `ahead 0` over `github/fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
 - The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
