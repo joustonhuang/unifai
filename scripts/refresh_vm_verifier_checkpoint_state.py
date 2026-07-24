@@ -382,12 +382,20 @@ def main() -> int:
     checkpoint_text = original_checkpoint_text
     checkpoint_text = re.sub(r"- Working branch: `[^`]+`", f"- Working branch: `{current_branch}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{upstream_short}`", checkpoint_text, count=1)
-    checkpoint_text = re.sub(
-        r"- Current checked-out branch tip: `[^`]+`",
-        f"- Current checked-out branch tip: `{current_head_short}`",
-        checkpoint_text,
-        count=1,
-    )
+    if tracked_ref == "HEAD":
+        checkpoint_text = re.sub(
+            r"- Current checked-out branch tip: `[^`]+`(?: \(`[^`]+`\))?\n?",
+            f"- Current checked-out branch tip: `{current_head_short}`\n",
+            checkpoint_text,
+            count=1,
+        )
+    else:
+        checkpoint_text = re.sub(
+            r"- Current checked-out branch tip: `[^`]+`(?: \(`[^`]+`\))?\n?",
+            "",
+            checkpoint_text,
+            count=1,
+        )
     checkpoint_text = re.sub(r"- Latest (?:tracked )?local head in the stack: `[^`]+`", f"- Latest tracked local head in the stack: `{tracked_head_short}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- Latest non-doc logic head in the local stack: `[^`]+`", f"- Latest non-doc logic head in the local stack: `{latest_non_doc}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(
