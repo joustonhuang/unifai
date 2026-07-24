@@ -184,6 +184,24 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_RE
   exit 1
 fi
 
+DOUBLE_DASH_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" -- "$BRANCH")"
+printf '%s\n' "$DOUBLE_DASH_OUTPUT"
+
+if ! grep -q "Ref: $BRANCH" <<<"$DOUBLE_DASH_OUTPUT"; then
+  echo "[FAIL] Expected branch ref missing when passed after --."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH" <<<"$DOUBLE_DASH_OUTPUT"; then
+  echo "[FAIL] Expected branch visibility command missing when ref is passed after --."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$DOUBLE_DASH_OUTPUT"; then
+  echo "[FAIL] Expected check-gate command missing when ref is passed after --."
+  exit 1
+fi
+
 set +e
 UNKNOWN_OPTION_OUTPUT="$("$REAL_BASH" "$WRAPPER" --bogus 2>&1)"
 UNKNOWN_OPTION_STATUS=$?
@@ -197,6 +215,22 @@ fi
 
 if ! grep -q "Unknown option: --bogus" <<<"$UNKNOWN_OPTION_OUTPUT"; then
   echo "[FAIL] Expected unknown option failure message missing."
+  exit 1
+fi
+
+set +e
+EXTRA_ARG_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "$BRANCH" extra-arg 2>&1)"
+EXTRA_ARG_STATUS=$?
+set -e
+printf '%s\n' "$EXTRA_ARG_OUTPUT"
+
+if [ "$EXTRA_ARG_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected extra argument case to fail."
+  exit 1
+fi
+
+if ! grep -q "Unexpected extra argument: extra-arg" <<<"$EXTRA_ARG_OUTPUT"; then
+  echo "[FAIL] Expected extra argument failure message missing."
   exit 1
 fi
 

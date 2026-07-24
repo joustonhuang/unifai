@@ -124,6 +124,13 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "$#" -gt 0 ]; then
+  if [ -z "$ref" ]; then
+    ref="$1"
+    shift
+  fi
+fi
+
+if [ "$#" -gt 0 ]; then
   echo "[FAIL] Unexpected extra argument: $1" >&2
   usage >&2
   exit 1

@@ -59,6 +59,12 @@ smoke_required = [
     ('Expected check-gate command missing in default no-arg case.', "Wrapper smoke test checks the check-gate step in the default no-arg case"),
     ('"$WRAPPER" "$VISIBLE_REMOTE_REF"', "Wrapper smoke test exercises the wrapper with an explicit remote-tracking ref"),
     ('python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF', "Wrapper smoke test keeps the explicit remote-tracking ref intact for the check-gate step"),
+    ('"$WRAPPER" -- "$BRANCH"', "Wrapper smoke test exercises the -- separator path"),
+    ('Expected branch ref missing when passed after --.', "Wrapper smoke test explains the -- separator branch-ref expectation"),
+    ('Expected branch visibility command missing when ref is passed after --.', "Wrapper smoke test checks branch visibility when ref is passed after --"),
+    ('Expected check-gate command missing when ref is passed after --.', "Wrapper smoke test checks the check-gate step when ref is passed after --"),
+    ('"$WRAPPER" "$BRANCH" extra-arg', "Wrapper smoke test exercises the extra-argument failure path"),
+    ('Unexpected extra argument: extra-arg', "Wrapper smoke test expects the extra-argument parser failure message"),
 ]
 
 for needle, message in smoke_required:
