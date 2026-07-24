@@ -124,11 +124,15 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
 
 Current known boundary on this branch family:
-- GitHub-visible branch head remains `ba68d8a`
-- the local hardening stack is currently ahead of that public ref through `ba68d8a` (`scripts: stabilize checkpoint refresh after visible push`), 0 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
-- the latest non-doc logic delta in that local stack is `ba68d8a` (`scripts: stabilize checkpoint refresh after visible push`) in:
+- GitHub-visible branch head remains `6ac3793`
+- the local hardening stack is currently ahead of that public ref through `ffe0af2` (`scripts: normalize checkpoint upstream display`), 1 commits ahead in total
+- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the latest non-doc logic delta in that local stack is `ffe0af2` (`scripts: normalize checkpoint upstream display`) in:
+  - `scripts/check_vm_verifier_checkpoint_freshness.py`
+  - `scripts/check_vm_verifier_checkpoint_freshness_contract.py`
+  - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
+  - `scripts/smoke_test_vm_verifier_checkpoint_freshness.py`
   - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
