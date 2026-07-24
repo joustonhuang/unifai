@@ -125,12 +125,12 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `4e0dae3` (`scripts: derive verifier logic head from paths`), 73 commits ahead in total
-- the local sandbox currently also carries 5 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/check_vm_verifier_preflight_contract.py`, `scripts/run_vm_verifier_preflight.sh`, `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`)
-- the latest non-doc logic delta in that local stack is `4e0dae3` (`scripts: derive verifier logic head from paths`) in:
-  - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
-  - `scripts/refresh_vm_verifier_checkpoint_state.py`
-  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
+- the local hardening stack is currently ahead of that public ref through `7c06e00` (`scripts: harden verifier preflight arg parsing`), 75 commits ahead in total
+- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the latest non-doc logic delta in that local stack is `7c06e00` (`scripts: harden verifier preflight arg parsing`) in:
+  - `scripts/check_vm_verifier_preflight_contract.py`
+  - `scripts/run_vm_verifier_preflight.sh`
+  - `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
