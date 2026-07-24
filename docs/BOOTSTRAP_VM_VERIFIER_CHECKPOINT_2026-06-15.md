@@ -2,13 +2,13 @@
 
 ## Branch
 - Working branch: `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`
-- GitHub-visible branch head: `6ac3793`
+- GitHub-visible branch head: `ffe0af2`
 - Latest tracked local head in the stack: `ffe0af2`
 - Latest non-doc logic head in the local stack: `ffe0af2`
-- Tracked local branch state at checkpoint: ahead by 1 commits over the GitHub-visible branch head
+- Tracked local branch state at checkpoint: ahead by 0 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
-1. `ffe0af2` — `scripts: normalize checkpoint upstream display`
+
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -44,12 +44,10 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `ffe0af2`, that same commit is also the latest non-doc logic head, the sandbox currently carries 2 uncommitted publish-boundary maintenance updates, and the branch is `ahead 1` over `fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `ffe0af2`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, and the branch is `ahead 0` over `fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries 2 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
-  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
-  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
+- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
 - Fresh local verification at the current sandbox state is green again:
   - `python3 scripts/check_publish_stack_parity_contract.py`
   - `python3 scripts/check_compare_publish_branch_histories_contract.py`

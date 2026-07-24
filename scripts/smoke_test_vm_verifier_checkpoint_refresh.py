@@ -186,7 +186,8 @@ def main() -> int:
         checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         commit_candidate = read_commit_candidate(work)
         bundle_section = extract_bundle_section(checkpoint)
-        remote_sha = run(["git", "rev-parse", "--short", "fix/openclaw-config-path-and-local-mode"], work)
+        remote_ref = "origin/fix/openclaw-config-path-and-local-mode"
+        remote_sha = run(["git", "rev-parse", "--short", remote_ref], work)
 
         assert f"GitHub-visible branch head remains `{remote_sha}`" in boundary
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in boundary
@@ -329,7 +330,7 @@ def main() -> int:
         stable_commit_candidate = read_commit_candidate(work)
         stable_head = run(["git", "rev-parse", "--short", "HEAD"], work)
         stable_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
-        stable_ahead = run(["git", "rev-list", "--count", "fix/openclaw-config-path-and-local-mode..HEAD"], work)
+        stable_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
         stable_bundle_section = extract_bundle_section(stable_checkpoint)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in stable_boundary
@@ -379,7 +380,7 @@ def main() -> int:
         doc_only_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         doc_only_commit_candidate = read_commit_candidate(work)
-        doc_only_ahead = run(["git", "rev-list", "--count", "fix/openclaw-config-path-and-local-mode..HEAD"], work)
+        doc_only_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in doc_only_checkpoint
