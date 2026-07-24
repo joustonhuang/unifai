@@ -316,35 +316,15 @@ def main() -> int:
         boundary_text,
         count=1,
     )
-    boundary_tip_line = (
-        f"- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`), "
-        f"but the tracked publish-boundary head stays `{tracked_head_short}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
+    # Keep the tracked docs anchored to the publish-boundary head. The live checked-out
+    # doc-only tip belongs in commit-candidate.txt; putting it in the docs would make
+    # every checkpoint-refresh docs commit immediately stale again.
+    boundary_text = re.sub(
+        r"- the current checked-out branch tip is `[^`]+` \(`[^`]+`\), but the tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\n?",
+        "",
+        boundary_text,
+        count=1,
     )
-    if tracked_ref != "HEAD":
-        if re.search(
-            r"- the current checked-out branch tip is `[^`]+` \(`[^`]+`\), but the tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison",
-            boundary_text,
-        ):
-            boundary_text = re.sub(
-                r"- the current checked-out branch tip is `[^`]+` \(`[^`]+`\), but the tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison",
-                boundary_tip_line,
-                boundary_text,
-                count=1,
-            )
-        else:
-            boundary_text = re.sub(
-                r"(- the local hardening stack is currently ahead of that public ref through `[^`]+` \(`[^`]+`\), \d+ commits ahead in total\n)",
-                lambda m: m.group(1) + boundary_tip_line + "\n",
-                boundary_text,
-                count=1,
-            )
-    else:
-        boundary_text = re.sub(
-            r"- the current checked-out branch tip is `[^`]+` \(`[^`]+`\), but the tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\n?",
-            "",
-            boundary_text,
-            count=1,
-        )
     if re.search(r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)", boundary_text):
         boundary_text = re.sub(
             r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)",
@@ -416,35 +396,12 @@ def main() -> int:
     checkpoint_text = original_checkpoint_text
     checkpoint_text = re.sub(r"- Working branch: `[^`]+`", f"- Working branch: `{current_branch}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{visible_head_short}`", checkpoint_text, count=1)
-    checkpoint_tip_line = (
-        f"- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`); "
-        f"tracked publish-boundary head stays `{tracked_head_short}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
+    checkpoint_text = re.sub(
+        r"- Current checked-out branch tip: `[^`]+`(?: \(`[^`]+`\))?(?:; tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\.)?\n?",
+        "",
+        checkpoint_text,
+        count=1,
     )
-    if tracked_ref != "HEAD":
-        if re.search(
-            r"- Current checked-out branch tip: `[^`]+` \(`[^`]+`\); tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\.",
-            checkpoint_text,
-        ):
-            checkpoint_text = re.sub(
-                r"- Current checked-out branch tip: `[^`]+` \(`[^`]+`\); tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\.",
-                checkpoint_tip_line,
-                checkpoint_text,
-                count=1,
-            )
-        else:
-            checkpoint_text = re.sub(
-                r"(- GitHub-visible branch head: `[^`]+`\n)",
-                lambda m: m.group(1) + checkpoint_tip_line + "\n",
-                checkpoint_text,
-                count=1,
-            )
-    else:
-        checkpoint_text = re.sub(
-            r"- Current checked-out branch tip: `[^`]+`(?: \(`[^`]+`\))?(?:; tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\.)?\n?",
-            "",
-            checkpoint_text,
-            count=1,
-        )
     checkpoint_text = re.sub(r"- Latest (?:tracked )?local head in the stack: `[^`]+`", f"- Latest tracked local head in the stack: `{tracked_head_short}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- Latest non-doc logic head in the local stack: `[^`]+`", f"- Latest non-doc logic head in the local stack: `{latest_non_doc}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(

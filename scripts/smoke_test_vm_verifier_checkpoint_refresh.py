@@ -272,10 +272,6 @@ def main() -> int:
 
         assert f"GitHub-visible branch head remains `{remote_sha}`" in refreshed_boundary
         assert f"through `{head_sha}` (`docs: trailing docs refresh`), 2 commits ahead in total" in refreshed_boundary
-        assert (
-            f"the current checked-out branch tip is `{refreshed_tip}` (`{refreshed_tip_subject}`), "
-            f"but the tracked publish-boundary head stays `{head_sha}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
-        ) in refreshed_boundary
         assert f"latest non-doc logic delta in that local stack is `{head_sha}` (`docs: trailing docs refresh`) in:" in refreshed_boundary
         assert "  - `note.txt`\n" in refreshed_boundary
         assert "  - `logic.txt`\n" not in refreshed_boundary
@@ -285,10 +281,6 @@ def main() -> int:
         assert "that helper hardening" not in refreshed_boundary
         assert expected_boundary_host_line in refreshed_boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in refreshed_checkpoint
-        assert (
-            f"- Current checked-out branch tip: `{refreshed_tip}` (`{refreshed_tip_subject}`); "
-            f"tracked publish-boundary head stays `{head_sha}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
-        ) in refreshed_checkpoint
         assert f"Latest tracked local head in the stack: `{head_sha}`" in refreshed_checkpoint
         assert "Tracked local branch state at checkpoint: ahead by 2 commits over the GitHub-visible branch head" in refreshed_checkpoint
         assert f"2. `{head_sha}` — `docs: trailing docs refresh`" in refreshed_checkpoint
@@ -391,17 +383,11 @@ def main() -> int:
         doc_only_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
 
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
-        assert (
-            f"the current checked-out branch tip is `{doc_only_tip}` (`{doc_only_subject}`), "
-            f"but the tracked publish-boundary head stays `{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
-        ) in doc_only_boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in doc_only_checkpoint
-        assert (
-            f"- Current checked-out branch tip: `{doc_only_tip}` (`{doc_only_subject}`); "
-            f"tracked publish-boundary head stays `{stable_head}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
-        ) in doc_only_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in doc_only_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in doc_only_checkpoint
+        assert "the current checked-out branch tip is" not in doc_only_boundary
+        assert "- Current checked-out branch tip:" not in doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate

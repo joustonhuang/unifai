@@ -129,26 +129,10 @@ def main() -> int:
 
     tip_line = f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
     if tracked_ref != "HEAD":
-        status = require_contains(
-            boundary_text,
-            (
-                f"- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`), "
-                f"but the tracked publish-boundary head stays `{tracked_head_short}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison"
-            ),
-            "Boundary doc checked-out tip",
-        )
-        if status:
-            return status
-        status = require_contains(
-            checkpoint_text,
-            (
-                f"- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`); "
-                f"tracked publish-boundary head stays `{tracked_head_short}` because doc-only checkpoint refresh commits are intentionally excluded from that comparison."
-            ),
-            "Checkpoint doc checked-out tip",
-        )
-        if status:
-            return status
+        if "the current checked-out branch tip is `" in boundary_text:
+            return fail("boundary doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
+        if "- Current checked-out branch tip: `" in checkpoint_text:
+            return fail("checkpoint doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
         status = require_contains(commit_candidate_text, tip_line, "Commit-candidate checked-out tip")
         if status:
             return status
