@@ -289,9 +289,19 @@ def main() -> int:
         boundary_text,
         count=1,
     )
+    boundary_progress_line = (
+        f"- the local hardening stack is currently ahead of that public ref through `{tracked_head_short}` "
+        f"(`{tracked_head_subject}`), {ahead_count} commits ahead in total"
+    )
     boundary_text = re.sub(
-        r"- the local hardening stack is currently ahead of that public ref through `[^`]+` \(`[^`]+`\), \d+ commits ahead in total",
-        f"- the local hardening stack is currently ahead of that public ref through `{tracked_head_short}` (`{tracked_head_subject}`), {ahead_count} commits ahead in total",
+        (
+            r"- the local hardening stack is currently ahead of that public ref through `[^`]+` "
+            r"\(`[^`]+`\), \d+ commits ahead in total"
+            r"|"
+            r"- the checked-out sandbox tip is now `[^`]+` \(`[^`]+`\), while the latest non-doc logic checkpoint remains `[^`]+` "
+            r"\(`[^`]+`\)\n- the local hardening stack is currently \d+ commits ahead of that public ref"
+        ),
+        boundary_progress_line,
         boundary_text,
         count=1,
     )
@@ -372,9 +382,20 @@ def main() -> int:
     checkpoint_text = original_checkpoint_text
     checkpoint_text = re.sub(r"- Working branch: `[^`]+`", f"- Working branch: `{current_branch}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- GitHub-visible branch head: `[^`]+`", f"- GitHub-visible branch head: `{upstream_short}`", checkpoint_text, count=1)
+    checkpoint_text = re.sub(
+        r"- Current checked-out branch tip: `[^`]+`",
+        f"- Current checked-out branch tip: `{current_head_short}`",
+        checkpoint_text,
+        count=1,
+    )
     checkpoint_text = re.sub(r"- Latest (?:tracked )?local head in the stack: `[^`]+`", f"- Latest tracked local head in the stack: `{tracked_head_short}`", checkpoint_text, count=1)
     checkpoint_text = re.sub(r"- Latest non-doc logic head in the local stack: `[^`]+`", f"- Latest non-doc logic head in the local stack: `{latest_non_doc}`", checkpoint_text, count=1)
-    checkpoint_text = re.sub(r"- (?:Tracked local|Local) branch state at checkpoint: ahead by \d+ commits over the GitHub-visible branch head", f"- Tracked local branch state at checkpoint: ahead by {ahead_count} commits over the GitHub-visible branch head", checkpoint_text, count=1)
+    checkpoint_text = re.sub(
+        r"- (?:Tracked local|Local) branch state at checkpoint: (?:current tip is )?ahead by \d+ commits over the GitHub-visible branch head",
+        f"- Tracked local branch state at checkpoint: ahead by {ahead_count} commits over the GitHub-visible branch head",
+        checkpoint_text,
+        count=1,
+    )
     checkpoint_text = re.sub(
         r"- Current checked-out branch tip: `[^`]+` \(`[^`]+`\); tracked publish-boundary head stays `[^`]+` because doc-only checkpoint refresh commits are intentionally excluded from that comparison\.\n?",
         "",
