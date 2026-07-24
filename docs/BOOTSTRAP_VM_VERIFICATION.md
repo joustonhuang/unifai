@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
 - the local hardening stack is currently ahead of that public ref through `7c06e00` (`scripts: harden verifier preflight arg parsing`), 75 commits ahead in total
-- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
 - the latest non-doc logic delta in that local stack is `7c06e00` (`scripts: harden verifier preflight arg parsing`) in:
   - `scripts/check_vm_verifier_preflight_contract.py`
   - `scripts/run_vm_verifier_preflight.sh`
