@@ -66,10 +66,10 @@ required = [
     ('f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{upstream_short}`', "Refresh helper keeps the public blocker note tied to the live GitHub-visible head"),
     ('next_move_heading = "Next clean move once the branch tip is GitHub-visible:\\n"', "Refresh helper keeps the branch-tip visible-ref handoff heading for doc-only tip cases"),
     ('next_move_heading = "Next clean move before the real VM-proof path:\\n"', "Refresh helper keeps the direct visible-ref handoff heading when the tracked checkpoint is the current tip"),
-    ('f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\\n"', "Refresh helper targets the tracked upstream ref for direct visible-ref handoff"),
-    ('f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "', "Refresh helper targets the tracked upstream ref for doc-only tip visible-ref handoff"),
+    ('f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\\n"', "Refresh helper targets the tracked upstream ref for direct visible-ref handoff"),
+    ('f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "', "Refresh helper targets the tracked upstream ref for doc-only tip visible-ref handoff"),
     ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
-    ('current_branch_state = f"ahead {current_head_ahead_count} over {upstream}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
+    ('current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),
 ]
 

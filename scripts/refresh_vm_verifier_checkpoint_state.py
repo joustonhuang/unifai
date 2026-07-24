@@ -33,6 +33,10 @@ def git_optional(*args: str) -> str | None:
     return result.stdout.strip()
 
 
+def upstream_display_name(upstream: str) -> str:
+    return upstream.split("/", 1)[1] if "/" in upstream else upstream
+
+
 def is_checkpoint_doc_only_commit(ref: str) -> bool:
     changed_paths = {
         line.strip()
@@ -130,7 +134,7 @@ def replace_delta_and_bundle_sections(
 
 
 def describe_dirty_state(
-    dirty_paths: list[str], tracked_head_short: str, ahead_count: str, upstream: str
+    dirty_paths: list[str], tracked_head_short: str, ahead_count: str, upstream_display: str
 ) -> tuple[str, str, str, str, str, str]:
     dirty_bullets = "\n".join(f"  - `{path}`" for path in dirty_paths)
     if dirty_paths:
@@ -162,7 +166,7 @@ def describe_dirty_state(
             "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
             f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
             f"non-doc logic head, the sandbox currently carries {len(dirty_paths)} uncommitted publish-boundary maintenance "
-            f"{update_word}, and the branch is `ahead {ahead_count}` over `{upstream}`."
+            f"{update_word}, and the branch is `ahead {ahead_count}` over `{upstream_display}`."
         )
     else:
         preservation_line = (
@@ -180,7 +184,7 @@ def describe_dirty_state(
             "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
             f"GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
             f"non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, "
-            f"and the branch is `ahead {ahead_count}` over `{upstream}`."
+            f"and the branch is `ahead {ahead_count}` over `{upstream_display}`."
         )
     return (
         dirty_bullets,
@@ -204,6 +208,7 @@ def main() -> int:
         return fail(
             f"branch '{current_branch}' has no upstream; set a GitHub-visible upstream before refreshing the verifier publish-boundary checkpoint."
         )
+    upstream_display = upstream_display_name(upstream)
 
     upstream_short = git("rev-parse", "--short", upstream)
     current_head_short = git("rev-parse", "--short", "HEAD")
@@ -259,7 +264,7 @@ def main() -> int:
         boundary_dirty_line,
         current_delta_block,
         stack_progress_line,
-    ) = describe_dirty_state(dirty_paths, tracked_head_short, ahead_count, upstream)
+    ) = describe_dirty_state(dirty_paths, tracked_head_short, ahead_count, upstream_display)
     bundle_paths = collect_bundle_paths(upstream, dirty_paths)
     bundle_bullets = "\n".join(f"  - `{path}`" for path in bundle_paths)
     suggested_scope_line = (
@@ -523,7 +528,7 @@ def main() -> int:
     DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
 
-    current_branch_state = f"ahead {current_head_ahead_count} over {upstream}"
+    current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"
     verification_gates = (
         "Verification gates run:\n"
         "python3 scripts/check_publish_stack_parity_contract.py\n"
@@ -545,7 +550,7 @@ def main() -> int:
     if tracked_ref != "HEAD":
         next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
         next_move_line = (
-            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "
+            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
         )
         external_blocker_line = (
@@ -554,7 +559,7 @@ def main() -> int:
         )
     else:
         next_move_heading = "Next clean move before the real VM-proof path:\n"
-        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\n"
+        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n"
         external_blocker_line = (
             f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` to become GitHub-visible before the real VM-proof path can continue.\n"
         )

@@ -26,6 +26,10 @@ def git_optional(*args: str) -> str | None:
     return result.stdout.strip()
 
 
+def upstream_display_name(upstream: str) -> str:
+    return upstream.split("/", 1)[1] if "/" in upstream else upstream
+
+
 def fail(message: str) -> int:
     print(f"[FAIL] {message}")
     return 1
@@ -54,6 +58,7 @@ def main() -> int:
     upstream = git_optional("rev-parse", "--abbrev-ref", "--symbolic-full-name", f"{current_branch}@{{upstream}}")
     if not upstream:
         return fail(f"branch '{current_branch}' has no upstream; cannot verify checkpoint freshness.")
+    upstream_display = upstream_display_name(upstream)
 
     tracked_ref = "HEAD"
     while tracked_ref != upstream and is_checkpoint_doc_only_commit(tracked_ref):
@@ -107,7 +112,7 @@ def main() -> int:
         ),
         (
             commit_candidate_text,
-            f"Current branch state: ahead {current_head_ahead_count} over {upstream}\n",
+            f"Current branch state: ahead {current_head_ahead_count} over {upstream_display}\n",
             "Commit-candidate branch state",
         ),
     ]
@@ -140,7 +145,7 @@ def main() -> int:
         status = require_contains(
             commit_candidate_text,
             (
-                f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream}`; "
+                f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
                 f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
             ),
             "Commit-candidate next move",
@@ -162,7 +167,7 @@ def main() -> int:
             return status
         status = require_contains(
             commit_candidate_text,
-            f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream}`.\n",
+            f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n",
             "Commit-candidate next move",
         )
         if status:
