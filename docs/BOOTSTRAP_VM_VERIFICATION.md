@@ -125,9 +125,9 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `ccda045`
-- the local hardening stack is currently ahead of that public ref through `3bfb187` (`scripts: refresh verifier checkpoint drift shapes`), 80 commits ahead in total
-- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/refresh_vm_verifier_checkpoint_state.py`)
-- the latest non-doc logic delta in that local stack is `3bfb187` (`scripts: refresh verifier checkpoint drift shapes`) in:
+- the local hardening stack is currently ahead of that public ref through `b6a6ed4` (`scripts/docs: stabilize verifier checkpoint doc-only refresh`), 82 commits ahead in total
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
+- the latest non-doc logic delta in that local stack is `b6a6ed4` (`scripts/docs: stabilize verifier checkpoint doc-only refresh`) in:
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
