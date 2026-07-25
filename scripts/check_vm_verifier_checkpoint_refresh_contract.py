@@ -22,6 +22,7 @@ text = SCRIPT.read_text(encoding="utf-8")
 required = [
     ('DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"', "Refresh helper targets the boundary doc"),
     ('DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"', "Refresh helper targets the checkpoint doc"),
+    ('CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"', "Refresh helper targets the stable latest-checkpoint handoff artifact"),
     ('COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"', "Refresh helper targets the commit-candidate handoff artifact"),
     ('NON_LOGIC_PREFIXES = ("docs/", "ci-artifacts/")', "Refresh helper treats docs and ci-artifacts handoff files as non-logic paths"),
     ('def is_non_logic_path(path: str) -> bool:', "Refresh helper centralizes non-logic path classification"),
@@ -56,6 +57,7 @@ required = [
     ('original_checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")', "Refresh helper snapshots the checkpoint doc before rewriting it"),
     ('git("status", "--short")', "Refresh helper still reads git status to capture dirty working-tree state"),
     ('bundle_paths = collect_bundle_paths(upstream, dirty_paths)', "Refresh helper derives bundle paths from the real worktree dirty snapshot"),
+    ('CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")', "Refresh helper refreshes the stable latest-checkpoint handoff artifact alongside the dated checkpoint doc"),
     ('"python3 scripts/check_publish_stack_parity_contract.py\\n"', "Refresh helper keeps the publish-stack parity contract gate in the handoff artifact"),
     ('"python3 scripts/check_compare_publish_branch_histories_contract.py\\n"', "Refresh helper keeps the publish-branch-history contract gate in the handoff artifact"),
     ('"python3 scripts/check_github_branch_visibility_contract.py\\n"', "Refresh helper keeps the branch-visibility contract gate in the handoff artifact"),

@@ -10,6 +10,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
 DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
+CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
 COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
 CHECKPOINT_DOCS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
@@ -521,6 +522,8 @@ def main() -> int:
     )
     DOC_BOUNDARY.write_text(boundary_text, encoding="utf-8")
     DOC_CHECKPOINT.write_text(checkpoint_text, encoding="utf-8")
+    CHECKPOINT_LATEST.parent.mkdir(parents=True, exist_ok=True)
+    CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")
 
     current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"
     verification_gates = (

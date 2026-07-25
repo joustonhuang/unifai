@@ -25,6 +25,10 @@ def read_commit_candidate(work: Path) -> str:
     return (work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt").read_text(encoding="utf-8")
 
 
+def read_latest_checkpoint(work: Path) -> str:
+    return (work / "ci-artifacts" / "vm-verifier-checkpoint-latest.md").read_text(encoding="utf-8")
+
+
 def expect_fail(cmd: list[str], cwd: Path) -> str:
     result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
     if result.returncode == 0:
@@ -189,6 +193,7 @@ def main() -> int:
 
         boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        latest_checkpoint = read_latest_checkpoint(work)
         commit_candidate = read_commit_candidate(work)
         bundle_section = extract_bundle_section(checkpoint)
         remote_ref = "origin/fix/openclaw-config-path-and-local-mode"
@@ -251,6 +256,7 @@ def main() -> int:
         assert "`placeholder/file.txt`" not in bundle_section
         assert "\n- - Files in the bundle:" not in checkpoint
         assert f"Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ {docs_head_sha}\n" in commit_candidate
+        assert latest_checkpoint == checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in commit_candidate
         assert "Current branch state: ahead 3 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
         assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\nscratch.txt\n" in commit_candidate
@@ -275,6 +281,7 @@ def main() -> int:
 
         refreshed_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         refreshed_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        refreshed_latest_checkpoint = read_latest_checkpoint(work)
         refreshed_commit_candidate = read_commit_candidate(work)
         refreshed_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
         refreshed_tip_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
@@ -313,6 +320,7 @@ def main() -> int:
         assert "  - `note.txt`\n" in refreshed_bundle_section
         assert "  - `scratch.txt`\n" in refreshed_bundle_section
         assert "\n- - Files in the bundle:" not in refreshed_checkpoint
+        assert refreshed_latest_checkpoint == refreshed_checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in refreshed_commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in refreshed_commit_candidate
         assert "ci-artifacts/bootstrap-preflight/commit-candidate.txt" not in refreshed_commit_candidate.split("Working-tree files:\n", 1)[1].split("\n\n", 1)[0]
@@ -341,6 +349,7 @@ def main() -> int:
 
         stable_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         stable_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        stable_latest_checkpoint = read_latest_checkpoint(work)
         stable_commit_candidate = read_commit_candidate(work)
         stable_head = run(["git", "rev-parse", "--short", "HEAD"], work)
         stable_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
@@ -373,6 +382,7 @@ def main() -> int:
         assert "  - `note.txt`\n" in stable_bundle_section
         assert "  - `scratch.txt`\n" in stable_bundle_section
         assert "\n- - Files in the bundle:" not in stable_checkpoint
+        assert stable_latest_checkpoint == stable_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in stable_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
         assert "Working-tree files:\n(clean)\n" in stable_commit_candidate
@@ -393,6 +403,7 @@ def main() -> int:
 
         doc_only_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        doc_only_latest_checkpoint = read_latest_checkpoint(work)
         doc_only_commit_candidate = read_commit_candidate(work)
         doc_only_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
 
@@ -402,6 +413,7 @@ def main() -> int:
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in doc_only_checkpoint
         assert "the current checked-out branch tip is" not in doc_only_boundary
         assert "- Current checked-out branch tip:" not in doc_only_checkpoint
+        assert doc_only_latest_checkpoint == doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
@@ -421,6 +433,7 @@ def main() -> int:
 
         aligned_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         aligned_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
+        aligned_latest_checkpoint = read_latest_checkpoint(work)
         aligned_status = run(["git", "status", "--short"], work)
 
         assert "docs/BOOTSTRAP_VM_VERIFICATION.md" in aligned_status
@@ -428,6 +441,7 @@ def main() -> int:
         assert f"GitHub-visible branch head remains `{stable_head}`" in aligned_boundary
         assert f"GitHub-visible branch head: `{stable_head}`" in aligned_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in aligned_checkpoint
+        assert aligned_latest_checkpoint == aligned_checkpoint
 
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:
