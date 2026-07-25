@@ -1,12 +1,12 @@
-# Branch Reconcile Note — 2026-07-10 09:50 Asia/Taipei
+# Branch Reconcile Note — refreshed 2026-07-25 12:20 Asia/Taipei
 
 ## Current state
 
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
-- `fix/openclaw-config-path-and-local-mode` still carries extra local-only history and doc churn.
+- `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
-  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `22`
+  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `99`
 
 ## Transplant-only commits
 
@@ -70,6 +70,8 @@ f4232c5 docs: sync visible verifier boundary state
   - `8ee658e scripts: lock missing-remote preflight guidance`
   - `df91afa tests: allow local cleanup branch preflight refs`
 - Replay-safe code-only older commits still unique to `fix/...`: none.
+- Older mixed docs+code commits still needing conscious keep/drop review: none.
+- Older doc/checkpoint-only commits still needing conscious keep/drop review: none.
 
 ## Manual review queue
 
@@ -96,4 +98,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 ## Best next move
 
-Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely doc/checkpoint churn already marked as ready-to-drop non-replay noise, so the next manual block can move straight to preserving or pruning that history consciously instead of reopening reconciliation.
+Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
