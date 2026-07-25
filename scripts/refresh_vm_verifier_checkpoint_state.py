@@ -15,6 +15,7 @@ CHECKPOINT_DOCS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
     str(DOC_CHECKPOINT.relative_to(REPO_ROOT)),
 }
+NON_LOGIC_PREFIXES = ("docs/", "ci-artifacts/")
 
 
 def git(*args: str) -> str:
@@ -33,6 +34,10 @@ def git_optional(*args: str) -> str | None:
     return result.stdout.strip()
 
 
+def is_non_logic_path(path: str) -> bool:
+    return path.startswith(NON_LOGIC_PREFIXES)
+
+
 def upstream_display_name(upstream: str) -> str:
     return upstream.split("/", 1)[1] if "/" in upstream else upstream
 
@@ -43,7 +48,7 @@ def is_checkpoint_doc_only_commit(ref: str) -> bool:
         for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", ref).splitlines()
         if line.strip()
     }
-    return bool(changed_paths) and changed_paths.issubset(CHECKPOINT_DOCS)
+    return bool(changed_paths) and all(is_non_logic_path(path) for path in changed_paths)
 
 
 def command_succeeds(*args: str) -> bool:
@@ -243,7 +248,7 @@ def main() -> int:
         if line.strip()
     ]
     latest_non_doc_paths = [
-        path for path in latest_non_doc_all_paths if not path.startswith("docs/")
+        path for path in latest_non_doc_all_paths if not is_non_logic_path(path)
     ] or latest_non_doc_all_paths
     latest_non_doc_block = (
         f"- the latest non-doc logic delta in that local stack is `{latest_non_doc}` (`{latest_non_doc_subject}`) in:\n"

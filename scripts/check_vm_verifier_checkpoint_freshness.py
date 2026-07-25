@@ -13,6 +13,11 @@ CHECKPOINT_DOCS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
     str(DOC_CHECKPOINT.relative_to(REPO_ROOT)),
 }
+NON_LOGIC_PREFIXES = ("docs/", "ci-artifacts/")
+
+
+def is_non_logic_path(path: str) -> bool:
+    return path.startswith(NON_LOGIC_PREFIXES)
 
 
 def git(*args: str) -> str:
@@ -41,7 +46,7 @@ def is_checkpoint_doc_only_commit(ref: str) -> bool:
         for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", ref).splitlines()
         if line.strip()
     }
-    return bool(changed_paths) and changed_paths.issubset(CHECKPOINT_DOCS)
+    return bool(changed_paths) and all(is_non_logic_path(path) for path in changed_paths)
 
 
 def require_contains(text: str, needle: str, label: str) -> int:
@@ -77,7 +82,7 @@ def main() -> int:
         if line.strip()
     ]
     latest_non_doc_paths = [
-        path for path in latest_non_doc_all_paths if not path.startswith("docs/")
+        path for path in latest_non_doc_all_paths if not is_non_logic_path(path)
     ] or latest_non_doc_all_paths
 
     boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
