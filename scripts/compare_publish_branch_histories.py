@@ -59,6 +59,25 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
+def ref_exists(ref: str) -> bool:
+    result = run_git("rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False)
+    return result.returncode == 0
+
+
+def resolve_ref(ref: str) -> str:
+    candidates = [ref]
+    if not ref.startswith("refs/heads/"):
+        candidates.append(f"refs/heads/{ref}")
+    if not ref.startswith("refs/remotes/"):
+        candidates.append(f"refs/remotes/{ref}")
+    for candidate in candidates:
+        if ref_exists(candidate):
+            return candidate
+    fail(
+        f"Could not resolve ref '{ref}'. Tried: {', '.join(candidates)}"
+    )
+
+
 def commit_subject(commit: str) -> str:
     result = run_git("log", "--format=%s", "-n", "1", commit)
     subject = result.stdout.strip()
@@ -309,9 +328,12 @@ def main() -> None:
     parser.add_argument("cleaner_ref", help="Cleaner candidate branch/ref")
     args = parser.parse_args()
 
-    left_count, right_count = divergence_counts(args.older_ref, args.cleaner_ref)
-    cleaner_vs_older = cherry(args.older_ref, args.cleaner_ref)
-    older_vs_cleaner = cherry(args.cleaner_ref, args.older_ref)
+    resolved_older_ref = resolve_ref(args.older_ref)
+    resolved_cleaner_ref = resolve_ref(args.cleaner_ref)
+
+    left_count, right_count = divergence_counts(resolved_older_ref, resolved_cleaner_ref)
+    cleaner_vs_older = cherry(resolved_older_ref, resolved_cleaner_ref)
+    older_vs_cleaner = cherry(resolved_cleaner_ref, resolved_older_ref)
 
     print("[INFO] Publish branch history comparison")
     print(f"  older:   {args.older_ref}")
@@ -350,7 +372,7 @@ def main() -> None:
     absorbed_candidates = [
         commit
         for _, commit, _, paths in older_unique_rows
-        if is_code_only(paths) and commit_is_absorbed_by_ref(commit, args.cleaner_ref)
+        if is_code_only(paths) and commit_is_absorbed_by_ref(commit, resolved_cleaner_ref)
     ]
     replay_candidates = [
         commit

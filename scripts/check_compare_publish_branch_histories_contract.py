@@ -11,6 +11,12 @@ EXPECTATIONS = [
     ('REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {', "Branch-history helper tracks reviewed older commits that are already ready to drop for known branch pairs"),
     ('KNOWN_ABSORPTION_MARKERS: dict[str, dict[str, list[str]]] = {', "Branch-history helper carries known absorbed-commit markers for generalized coverage cases"),
     ('"scripts: stabilize verifier checkpoint refresh tracking"', "Branch-history helper recognizes the older checkpoint-refresh tracking commit as a known absorption case"),
+    ('def ref_exists(ref: str) -> bool:', "Branch-history helper can verify candidate refs before comparing histories"),
+    ('def resolve_ref(ref: str) -> str:', "Branch-history helper can normalize branch names to concrete local or remote-tracking refs"),
+    ('"--verify", "--quiet", f"{ref}^{{commit}}"', "Branch-history helper resolves refs through commit verification rather than trusting ambiguous short names"),
+    ('f"refs/heads/{ref}"', "Branch-history helper falls back to explicit local branch refs"),
+    ('f"refs/remotes/{ref}"', "Branch-history helper falls back to explicit remote-tracking refs"),
+    ('Could not resolve ref', "Branch-history helper fails closed when neither local nor remote-tracking refs exist"),
     ('def cherry(from_ref: str, to_ref: str)', "Branch-history helper defines a git cherry reader"),
     ('run_git("cherry", from_ref, to_ref)', "Branch-history helper shells out to git cherry"),
     ('def commit_paths(commit: str)', "Branch-history helper defines a changed-path reader"),
@@ -55,6 +61,11 @@ EXPECTATIONS = [
     ('# no older-only commits remain', "Branch-history helper can clear the final older-only summary once only absorbed churn remains"),
     ('parser.add_argument("older_ref"', "Branch-history helper accepts an older branch ref"),
     ('parser.add_argument("cleaner_ref"', "Branch-history helper accepts a cleaner branch ref"),
+    ('resolved_older_ref = resolve_ref(args.older_ref)', "Branch-history helper normalizes the older ref before git history math"),
+    ('resolved_cleaner_ref = resolve_ref(args.cleaner_ref)', "Branch-history helper normalizes the cleaner ref before git history math"),
+    ('divergence_counts(resolved_older_ref, resolved_cleaner_ref)', "Branch-history helper computes divergence counts on normalized refs"),
+    ('cherry(resolved_older_ref, resolved_cleaner_ref)', "Branch-history helper computes cleaner-vs-older cherry data on normalized refs"),
+    ('cherry(resolved_cleaner_ref, resolved_older_ref)', "Branch-history helper computes older-vs-cleaner cherry data on normalized refs"),
 ]
 
 

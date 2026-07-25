@@ -29,7 +29,7 @@ git add absorbed.txt
 git commit -q -m "base"
 git branch -M base
 
-git checkout -q -b older
+git checkout -q -b fix/older
 cat > app.py <<'EOF'
 print("patch-equivalent")
 EOF
@@ -74,7 +74,7 @@ git add docs/helper-notes.md
 git commit -q --amend -m "older mixed"
 
 git checkout -q base
-git checkout -q -b cleaner
+git checkout -q -b transplant/cleaner
 cat > app.py <<'EOF'
 print("patch-equivalent")
 EOF
@@ -99,10 +99,10 @@ EOF
 git add absorbed.txt
 git commit -q -m "cleaner absorbed via cleaner path"
 
-OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/compare_publish_branch_histories.py older cleaner")"
+OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/compare_publish_branch_histories.py fix/older transplant/cleaner")"
 printf '%s\n' "$OUTPUT"
 
-grep -q "Patch-equivalent commits already represented on cleaner:" <<<"$OUTPUT" || {
+grep -q "Patch-equivalent commits already represented on transplant/cleaner:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing duplicate section for cleaner branch."
   exit 1
 }
@@ -110,7 +110,7 @@ grep -q "older duplicate" <<<"$OUTPUT" || {
   echo "[FAIL] Expected older duplicate commit to be recognized."
   exit 1
 }
-grep -q "True branch-only commits on older:" <<<"$OUTPUT" || {
+grep -q "True branch-only commits on fix/older:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing unique-older section."
   exit 1
 }
@@ -122,7 +122,7 @@ grep -q "older unique 2" <<<"$OUTPUT" || {
   echo "[FAIL] Expected second older unique commit to be listed."
   exit 1
 }
-grep -q "Patch-equivalent commits already represented on older:" <<<"$OUTPUT" || {
+grep -q "Patch-equivalent commits already represented on fix/older:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing duplicate section for older branch."
   exit 1
 }
@@ -130,7 +130,7 @@ grep -q "cleaner duplicate" <<<"$OUTPUT" || {
   echo "[FAIL] Expected cleaner duplicate commit to be recognized."
   exit 1
 }
-grep -q "True branch-only commits on cleaner:" <<<"$OUTPUT" || {
+grep -q "True branch-only commits on transplant/cleaner:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing unique-cleaner section."
   exit 1
 }
@@ -150,11 +150,11 @@ grep -q "paths: clean_only.txt" <<<"$OUTPUT" || {
   echo "[FAIL] Expected touched paths for the cleaner unique commit."
   exit 1
 }
-grep -q "Code-only older commits already absorbed on cleaner:" <<<"$OUTPUT" || {
+grep -q "Code-only older commits already absorbed on transplant/cleaner:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing explicit absorbed older-commit section."
   exit 1
 }
-grep -q "Replay-safe code-only older commits still unique to older:" <<<"$OUTPUT" || {
+grep -q "Replay-safe code-only older commits still unique to fix/older:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing explicit replay-safe older-commit section."
   exit 1
 }
@@ -170,7 +170,7 @@ grep -q "Suggested next step:" <<<"$OUTPUT" || {
   echo "[FAIL] Missing suggested next-step section."
   exit 1
 }
-grep -q "git checkout cleaner" <<<"$OUTPUT" || {
+grep -q "git checkout transplant/cleaner" <<<"$OUTPUT" || {
   echo "[FAIL] Expected checkout guidance for the cleaner branch."
   exit 1
 }
@@ -208,7 +208,7 @@ grep -q "older-only doc/checkpoint commit(s) remain for manual review or drop" <
   echo "[FAIL] Expected explicit doc-only review guidance."
   exit 1
 }
-grep -q "code-only older commit(s) are already absorbed on cleaner and can stay out of replay" <<<"$OUTPUT" || {
+grep -q "code-only older commit(s) are already absorbed on transplant/cleaner and can stay out of replay" <<<"$OUTPUT" || {
   echo "[FAIL] Expected explicit absorbed-commit guidance."
   exit 1
 }
@@ -244,7 +244,7 @@ git add absorbed.txt
 git commit -q -m "base"
 git branch -M base
 
-git checkout -q -b older
+git checkout -q -b fix/older
 cat > absorbed.txt <<'EOF'
 absorbed from older
 EOF
@@ -252,7 +252,7 @@ git add absorbed.txt
 git commit -q -m "older absorbed"
 
 git checkout -q base
-git checkout -q -b cleaner
+git checkout -q -b transplant/cleaner
 cat > absorbed.txt <<'EOF'
 absorbed temp
 EOF
@@ -265,14 +265,14 @@ EOF
 git add absorbed.txt
 git commit -q -m "cleaner absorbed via cleaner path"
 
-ABSORB_OUTPUT="$("$REAL_BASH" -lc "cd '$ABSORB_WORKTREE' && python3 scripts/compare_publish_branch_histories.py older cleaner")"
+ABSORB_OUTPUT="$("$REAL_BASH" -lc "cd '$ABSORB_WORKTREE' && python3 scripts/compare_publish_branch_histories.py fix/older transplant/cleaner")"
 printf '%s\n' "$ABSORB_OUTPUT"
 
-grep -q "no code-only older commits remain to replay from older" <<<"$ABSORB_OUTPUT" || {
+grep -q "no code-only older commits remain to replay from fix/older" <<<"$ABSORB_OUTPUT" || {
   echo "[FAIL] Expected absorbed-only older history to skip replay guidance."
   exit 1
 }
-grep -q "code-only older commit(s) are already absorbed on cleaner and can stay out of replay" <<<"$ABSORB_OUTPUT" || {
+grep -q "code-only older commit(s) are already absorbed on transplant/cleaner and can stay out of replay" <<<"$ABSORB_OUTPUT" || {
   echo "[FAIL] Expected absorbed-only older history to report absorbed churn."
   exit 1
 }
@@ -306,6 +306,18 @@ grep -q "$older_docs_only older docs only" <<<"$OUTPUT" || {
 }
 grep -q "$older_docs_only older docs only"$'\n'"    paths: docs/checkpoint.md" <<<"$OUTPUT" || {
   echo "[FAIL] Expected doc-only older commit bucket to show touched paths."
+  exit 1
+}
+
+REFS_OUTPUT="$("$REAL_BASH" -lc "cd '$ABSORB_WORKTREE' && python3 scripts/compare_publish_branch_histories.py refs/heads/fix/older refs/heads/transplant/cleaner")"
+printf '%s\n' "$REFS_OUTPUT"
+
+grep -q "older:   refs/heads/fix/older" <<<"$REFS_OUTPUT" || {
+  echo "[FAIL] Expected explicit refs/heads older ref to remain visible in output."
+  exit 1
+}
+grep -q "cleaner: refs/heads/transplant/cleaner" <<<"$REFS_OUTPUT" || {
+  echo "[FAIL] Expected explicit refs/heads cleaner ref to remain visible in output."
   exit 1
 }
 
