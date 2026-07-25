@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `1e23487` (`scripts: ignore handoff-only verifier commits`), 12 commits ahead in total
-- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
 - the latest non-doc logic delta in that local stack is `1e23487` (`scripts: ignore handoff-only verifier commits`) in:
   - `scripts/check_vm_verifier_checkpoint_freshness.py`
   - `scripts/check_vm_verifier_checkpoint_freshness_contract.py`
