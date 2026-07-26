@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_SLUG="${REPO_SLUG:-joustonhuang/unifai}"
 INPUT_REF="${1:-main}"
+REPO_ROOT="${UNIFAI_VM_VERIFY_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 VM_NAME="${VM_NAME:-unifai-bootstrap-check}"
 if [ -n "${WORK_DIR:-}" ]; then
   WORK_DIR="$WORK_DIR"
@@ -29,14 +30,59 @@ REQUIRE_IF_PRESENT=(
 
 normalize_github_visible_ref() {
   local ref="$1"
+  local candidate=""
   case "$ref" in
     refs/heads/*)
       printf '%s\n' "${ref#refs/heads/}"
       ;;
     *)
-      printf '%s\n' "$ref"
+      candidate="$(github_remote_branch_candidate "$ref")"
+      if [ -n "$candidate" ]; then
+        printf '%s\n' "$candidate"
+      else
+        printf '%s\n' "$ref"
+      fi
       ;;
   esac
+}
+
+github_remote_branch_candidate() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+  local url=""
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      branch="${ref#refs/remotes/$remote/}"
+      ;;
+    refs/*)
+      return 0
+      ;;
+    */*)
+      remote="${ref%%/*}"
+      branch="${ref#*/}"
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  if [ -z "$remote" ] || [ -z "$branch" ] || [ "$branch" = "$ref" ]; then
+    return 0
+  fi
+
+  if ! url="$(git -C "$REPO_ROOT" remote get-url "$remote" 2>/dev/null)"; then
+    return 0
+  fi
+
+  if [[ "$url" != *github.com* ]] && [[ "$url" != git@github.com:* ]]; then
+    return 0
+  fi
+
+  printf '%s\n' "$branch"
 }
 
 REF="$(normalize_github_visible_ref "$INPUT_REF")"
