@@ -321,4 +321,35 @@ grep -q "cleaner: refs/heads/transplant/cleaner" <<<"$REFS_OUTPUT" || {
   exit 1
 }
 
+python3 - <<'PY'
+import importlib.util
+from pathlib import Path
+
+module_path = Path("/home/little7/.openclaw/workspace/tmp/unifai-autonomous/scripts/compare_publish_branch_histories.py")
+spec = importlib.util.spec_from_file_location("compare_publish_branch_histories", module_path)
+module = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+spec.loader.exec_module(module)
+
+expected = module.reviewed_drop_candidates(
+    "fix/openclaw-config-path-and-local-mode",
+    "transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+heads = module.reviewed_drop_candidates(
+    "refs/heads/fix/openclaw-config-path-and-local-mode",
+    "refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+remote = module.reviewed_drop_candidates(
+    "refs/remotes/github/fix/openclaw-config-path-and-local-mode",
+    "refs/remotes/github/transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+
+if not expected:
+    raise SystemExit("[FAIL] Expected known reviewed-drop candidates for the canonical branch pair.")
+if heads != expected:
+    raise SystemExit("[FAIL] refs/heads branch-pair lookup should match the canonical reviewed-drop candidate set.")
+if remote != expected:
+    raise SystemExit("[FAIL] refs/remotes branch-pair lookup should match the canonical reviewed-drop candidate set.")
+PY
+
 echo "[PASS] Compare publish branch histories behaves as expected."

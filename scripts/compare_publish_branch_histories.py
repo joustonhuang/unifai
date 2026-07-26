@@ -205,8 +205,24 @@ def commits_with_marker(rows: list[tuple[str, str, str, list[str]]], marker: str
     return [commit for row_marker, commit, _, _ in rows if row_marker == marker]
 
 
+def canonical_branch_pair_key(ref: str) -> str:
+    if ref.startswith("refs/heads/"):
+        return ref[len("refs/heads/") :]
+    if ref.startswith("refs/remotes/"):
+        parts = ref.split("/", 3)
+        if len(parts) == 4:
+            return parts[3]
+    return ref
+
+
 def reviewed_drop_candidates(older_ref: str, cleaner_ref: str) -> set[str]:
-    return REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR.get((older_ref, cleaner_ref), set())
+    return REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR.get(
+        (
+            canonical_branch_pair_key(older_ref),
+            canonical_branch_pair_key(cleaner_ref),
+        ),
+        set(),
+    )
 
 
 def is_doc_only(paths: list[str]) -> bool:
