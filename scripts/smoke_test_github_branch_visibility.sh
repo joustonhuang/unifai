@@ -53,6 +53,24 @@ if ! grep -q "\[PASS\] Local branch matches the GitHub-visible branch head." <<<
   exit 1
 fi
 
+REMOTE_REF_OUTPUT="$("$REAL_BASH" "$HELPER" "refs/remotes/github/fix/test-visibility")"
+printf '%s\n' "$REMOTE_REF_OUTPUT"
+
+if ! grep -q "Branch: transplant/test-visibility" <<<"$REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected helper to resolve explicit GitHub remote-tracking refs back to the tracked local branch."
+  exit 1
+fi
+
+if ! grep -q "Tracked upstream: github/fix/test-visibility" <<<"$REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit GitHub remote-tracking ref to keep the tracked upstream visible."
+  exit 1
+fi
+
+if ! grep -q "\[PASS\] Local branch matches the GitHub-visible branch head." <<<"$REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit GitHub remote-tracking ref to stay on the visible-branch path."
+  exit 1
+fi
+
 echo "beta" >> sample.txt
 git add sample.txt
 git commit -q -m "ahead locally"

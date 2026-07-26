@@ -13,6 +13,18 @@ Environment:
 EOF
 }
 
+is_github_remote_url() {
+  local url="$1"
+
+  case "$url" in
+    *github.com*|git@github.com:*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 detect_github_remote() {
   local branch="$1"
   local candidate=""
@@ -20,50 +32,102 @@ detect_github_remote() {
 
   if candidate="$(git rev-parse --abbrev-ref "$branch@{upstream}" 2>/dev/null)"; then
     candidate="${candidate%%/*}"
-    if [ -n "$candidate" ] && url="$(git remote get-url "$candidate" 2>/dev/null)"; then
-      case "$url" in
-        *github.com*|git@github.com:*)
-          printf '%s\n' "$candidate"
-          return 0
-          ;;
-      esac
+    if [ -n "$candidate" ] && url="$(git remote get-url "$candidate" 2>/dev/null)" && is_github_remote_url "$url"; then
+      printf '%s\n' "$candidate"
+      return 0
     fi
   fi
 
   for candidate in origin github; do
-    if url="$(git remote get-url "$candidate" 2>/dev/null)"; then
-      case "$url" in
-        *github.com*|git@github.com:*)
-          printf '%s\n' "$candidate"
-          return 0
-          ;;
-      esac
+    if url="$(git remote get-url "$candidate" 2>/dev/null)" && is_github_remote_url "$url"; then
+      printf '%s\n' "$candidate"
+      return 0
     fi
   done
 
   while IFS=$'\t' read -r candidate url; do
-    case "$url" in
-      *github.com*|git@github.com:*)
-        printf '%s\n' "$candidate"
-        return 0
-        ;;
-    esac
+    if is_github_remote_url "$url"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
   done < <(git remote -v | awk '$3 == "(fetch)" {print $1 "\t" $2}')
 
   return 1
 }
 
+github_remote_branch_parts() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+  local url=""
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      branch="${ref#refs/remotes/$remote/}"
+      ;;
+    refs/*)
+      return 0
+      ;;
+    */*)
+      remote="${ref%%/*}"
+      branch="${ref#*/}"
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  if [ -z "$remote" ] || [ -z "$branch" ] || [ "$branch" = "$ref" ]; then
+    return 0
+  fi
+
+  if ! url="$(git remote get-url "$remote" 2>/dev/null)"; then
+    return 0
+  fi
+
+  if ! is_github_remote_url "$url"; then
+    return 0
+  fi
+
+  printf '%s\t%s\n' "$remote" "$branch"
+}
+
 local_branch_name() {
   local ref="$1"
+  local branch=""
 
   case "$ref" in
     refs/heads/*)
       printf '%s\n' "${ref#refs/heads/}"
       ;;
     *)
-      printf '%s\n' "$ref"
+      branch="$(tracked_local_branch_for_ref "$ref")"
+      if [ -n "$branch" ]; then
+        printf '%s\n' "$branch"
+      else
+        printf '%s\n' "$ref"
+      fi
       ;;
   esac
+}
+
+tracked_local_branch_for_ref() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+
+  if ! IFS=$'\t' read -r remote branch < <(github_remote_branch_parts "$ref"); then
+    return 0
+  fi
+
+  if [ -z "$remote" ] || [ -z "$branch" ]; then
+    return 0
+  fi
+
+  git for-each-ref --format='%(refname:short)	%(upstream:short)' refs/heads |
+    awk -F '\t' -v upstream="$remote/$branch" '$2 == upstream {print $1; exit}'
 }
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
@@ -98,13 +162,10 @@ else
 fi
 
 remote_url="$(git remote get-url "$GITHUB_REMOTE")"
-case "$remote_url" in
-  *github.com*|git@github.com:*) ;;
-  *)
-    echo "[FAIL] Remote '$GITHUB_REMOTE' is not GitHub-backed: $remote_url" >&2
-    exit 1
-    ;;
-esac
+if ! is_github_remote_url "$remote_url"; then
+  echo "[FAIL] Remote '$GITHUB_REMOTE' is not GitHub-backed: $remote_url" >&2
+  exit 1
+fi
 
 if ! git show-ref --verify --quiet "refs/heads/$branch"; then
   echo "[FAIL] Local branch '$branch' does not exist." >&2
