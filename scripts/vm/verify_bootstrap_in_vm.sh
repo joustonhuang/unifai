@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_SLUG="${REPO_SLUG:-joustonhuang/unifai}"
-REF="${1:-main}"
+INPUT_REF="${1:-main}"
 VM_NAME="${VM_NAME:-unifai-bootstrap-check}"
 if [ -n "${WORK_DIR:-}" ]; then
   WORK_DIR="$WORK_DIR"
@@ -26,6 +26,25 @@ REQUIRE_IF_PRESENT=(
   "Core Modules & Exoskeleton E2E"
   "smoke-test"
 )
+
+normalize_github_visible_ref() {
+  local ref="$1"
+  case "$ref" in
+    refs/heads/*)
+      printf '%s\n' "${ref#refs/heads/}"
+      ;;
+    *)
+      printf '%s\n' "$ref"
+      ;;
+  esac
+}
+
+REF="$(normalize_github_visible_ref "$INPUT_REF")"
+
+echo "Target ref: $INPUT_REF"
+if [ "$REF" != "$INPUT_REF" ]; then
+  echo "Normalized ref: $REF"
+fi
 
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -70,19 +89,18 @@ mkdir -p "$WORK_DIR"
 cd "$WORK_DIR"
 
 if ! sha_json="$(github_api "repos/$REPO_SLUG/commits/$REF" 2>&1)"; then
-  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF" >&2
+  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$INPUT_REF" >&2
   echo "[INFO] The VM verifier only accepts refs GitHub can resolve for $REPO_SLUG." >&2
-  echo "[INFO] If '$REF' is a local-only commit, push it first or use a GitHub-visible branch/ref." >&2
+  echo "[INFO] If '$INPUT_REF' is a local-only commit, push it first or use a GitHub-visible branch/ref." >&2
   echo "[INFO] GitHub API error: $sha_json" >&2
   exit 1
 fi
 SHA="$(printf '%s' "$sha_json" | jq -r '.sha')"
 if [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
-  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$REF" >&2
-  echo "[INFO] GitHub returned no commit SHA for '$REF'; use a GitHub-visible branch/ref." >&2
+  echo "[FAIL] Could not resolve commit SHA for $REPO_SLUG@$INPUT_REF" >&2
+  echo "[INFO] GitHub returned no commit SHA for '$INPUT_REF'; use a GitHub-visible branch/ref." >&2
   exit 1
 fi
-echo "Target ref: $REF"
 echo "Resolved SHA: $SHA"
 
 echo "Checking required GitHub checks before VM boot..."

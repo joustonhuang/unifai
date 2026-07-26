@@ -14,12 +14,25 @@ mkdir -p "$BIN_DIR"
 
 cat > "$BIN_DIR/curl" <<'EOF'
 #!/usr/bin/env bash
-printf '{"sha":null}\n'
+printf '%s\n' "$*" > "$TMP_DIR/curl-args.log"
+case "$*" in
+  *"/commits/fix/visible-branch"*)
+    printf '{"sha":null}\n'
+    ;;
+  *"/commits/refs/heads/fix/visible-branch"*)
+    printf 'stale refs/heads input should have been normalized before GitHub lookup\n' >&2
+    exit 1
+    ;;
+  *)
+    printf 'unexpected curl args: %s\n' "$*" >&2
+    exit 1
+    ;;
+esac
 EOF
 chmod +x "$BIN_DIR/curl"
 
 STATUS=0
-OUTPUT="$(PATH="$BIN_DIR:/usr/bin:/bin" UNIFAI_VM_VERIFY_FORCE_NO_GH=1 WORK_DIR="$TMP_DIR/work" "$REAL_BASH" "$VERIFY_SCRIPT" 2>&1)" || STATUS=$?
+OUTPUT="$(TMP_DIR="$TMP_DIR" PATH="$BIN_DIR:/usr/bin:/bin" UNIFAI_VM_VERIFY_FORCE_NO_GH=1 WORK_DIR="$TMP_DIR/work" "$REAL_BASH" "$VERIFY_SCRIPT" refs/heads/fix/visible-branch 2>&1)" || STATUS=$?
 printf '%s\n' "$OUTPUT"
 
 if [ "$STATUS" -eq 0 ]; then
@@ -34,6 +47,21 @@ fi
 
 if ! grep -q "Could not resolve commit SHA" <<<"$OUTPUT"; then
   echo "[FAIL] Expected SHA resolution failure message missing."
+  exit 1
+fi
+
+if ! grep -q "Target ref: refs/heads/fix/visible-branch" <<<"$OUTPUT"; then
+  echo "[FAIL] Expected original refs/heads target-ref line missing."
+  exit 1
+fi
+
+if ! grep -q "Normalized ref: fix/visible-branch" <<<"$OUTPUT"; then
+  echo "[FAIL] Expected normalized refs/heads line missing."
+  exit 1
+fi
+
+if grep -q "refs/heads/fix/visible-branch" "$TMP_DIR/curl-args.log"; then
+  echo "[FAIL] GitHub lookup should not keep the refs/heads prefix after normalization."
   exit 1
 fi
 
