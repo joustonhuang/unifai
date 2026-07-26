@@ -40,6 +40,19 @@ if ! grep -q "GitHub branch: github/fix/test-visibility" <<<"$PASS_OUTPUT"; then
   exit 1
 fi
 
+HEADS_REF_OUTPUT="$("$REAL_BASH" "$HELPER" "refs/heads/transplant/test-visibility")"
+printf '%s\n' "$HEADS_REF_OUTPUT"
+
+if ! grep -q "Branch: transplant/test-visibility" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected helper to normalize explicit refs/heads local branch refs."
+  exit 1
+fi
+
+if ! grep -q "\[PASS\] Local branch matches the GitHub-visible branch head." <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit refs/heads local branch ref to stay on the visible-branch path."
+  exit 1
+fi
+
 echo "beta" >> sample.txt
 git add sample.txt
 git commit -q -m "ahead locally"

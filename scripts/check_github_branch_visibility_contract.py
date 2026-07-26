@@ -27,6 +27,8 @@ required = [
     ('Usage: bash scripts/check_github_branch_visibility.sh [branch]', "Branch-visibility helper documents its usage"),
     ('GITHUB_REMOTE   Remote name to force; otherwise auto-detected from upstream/origin', "Branch-visibility helper documents the GITHUB_REMOTE override"),
     ('detect_github_remote() {', "Branch-visibility helper defines GitHub-remote autodetection"),
+    ('local_branch_name() {', "Branch-visibility helper centralizes refs/heads normalization for local branch refs"),
+    ('printf \'%s\\n\' "${ref#refs/heads/}"', "Branch-visibility helper strips the refs/heads/ prefix before branch handling"),
     ('candidate="${candidate%%/*}"', "Branch-visibility helper derives the upstream remote name before validating it"),
     ('for candidate in origin github; do', "Branch-visibility helper tries common remote names before the full scan"),
     ("git remote -v | awk '$3 == \"(fetch)\" {print $1 \"\\t\" $2}'", "Branch-visibility helper scans fetch remotes for GitHub-backed URLs"),
@@ -56,6 +58,9 @@ for needle, message in required:
 
 smoke_required = [
     ('git branch --set-upstream-to=github/fix/test-visibility transplant/test-visibility >/dev/null', "Branch-visibility smoke test pins a tracked GitHub-visible upstream"),
+    ('"$HELPER" "refs/heads/transplant/test-visibility"', "Branch-visibility smoke test exercises the helper with an explicit refs/heads local branch ref"),
+    ('Expected helper to normalize explicit refs/heads local branch refs.', "Branch-visibility smoke test explains the explicit refs/heads branch-ref expectation"),
+    ('Expected explicit refs/heads local branch ref to stay on the visible-branch path.', "Branch-visibility smoke test keeps explicit refs/heads inputs on the branch-visibility path"),
     ('Expected helper to print the tracked GitHub branch when it differs from the local branch name.', "Branch-visibility smoke test explains the remote-tracking branch expectation"),
     ('Expected ahead-only push guidance to target the tracked GitHub branch after local divergence.', "Branch-visibility smoke test guards targeted push guidance"),
     ('Expected review guidance to reference the tracked GitHub branch after local divergence.', "Branch-visibility smoke test guards tracked-branch review guidance"),

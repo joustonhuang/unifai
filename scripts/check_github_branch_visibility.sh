@@ -53,12 +53,25 @@ detect_github_remote() {
   return 1
 }
 
+local_branch_name() {
+  local ref="$1"
+
+  case "$ref" in
+    refs/heads/*)
+      printf '%s\n' "${ref#refs/heads/}"
+      ;;
+    *)
+      printf '%s\n' "$ref"
+      ;;
+  esac
+}
+
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   usage
   exit 0
 fi
 
-branch="${1:-$(git rev-parse --abbrev-ref HEAD)}"
+branch="$(local_branch_name "${1:-$(git rev-parse --abbrev-ref HEAD)}")"
 
 if [ "$branch" = "HEAD" ]; then
   echo "[FAIL] Detached HEAD; switch to a branch before checking GitHub visibility." >&2
