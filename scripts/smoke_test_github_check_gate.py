@@ -82,6 +82,8 @@ def success_get(path: str):
 def remote_branch_get(path: str):
     if path == "repos/joustonhuang/unifai/commits/github%2Ffix%2Fvisible-branch":
         return None
+    if path == "repos/joustonhuang/unifai/commits/refs%2Fheads%2Ffix%2Fvisible-branch":
+        return None
     if path == "repos/joustonhuang/unifai/commits/refs%2Fremotes%2Fgithub%2Ffix%2Fvisible-branch":
         return None
     if path == "repos/joustonhuang/unifai/commits/refs%2Fremotes%2Forigin%2Ffix%2Fvisible-branch":
@@ -98,6 +100,8 @@ def remote_branch_get(path: str):
         return None
     if path == "repos/joustonhuang/unifai/git/ref/heads/origin/fix/visible-branch":
         return None
+    if path == "repos/joustonhuang/unifai/git/ref/heads/refs/heads/fix/visible-branch":
+        return None
     if path == "repos/joustonhuang/unifai/git/ref/heads/fix/visible-branch":
         return {"object": {"sha": "feed123", "type": "commit"}}
     if path == "repos/joustonhuang/unifai/git/ref/tags/refs/remotes/github/fix/visible-branch":
@@ -107,6 +111,8 @@ def remote_branch_get(path: str):
     if path == "repos/joustonhuang/unifai/git/ref/tags/github/fix/visible-branch":
         return None
     if path == "repos/joustonhuang/unifai/git/ref/tags/origin/fix/visible-branch":
+        return None
+    if path == "repos/joustonhuang/unifai/git/ref/tags/refs/heads/fix/visible-branch":
         return None
     if path == "repos/joustonhuang/unifai/git/ref/tags/fix/visible-branch":
         return None
@@ -280,6 +286,23 @@ if "Ref: refs/remotes/github/fix/visible-branch" not in stdout:
     raise SystemExit(1)
 if "SHA: feed123" not in stdout:
     print("[FAIL] Expected refs/remotes remote-tracking branch SHA resolution missing.")
+    raise SystemExit(1)
+
+code, stdout, stderr = run_case(
+    remote_branch_get,
+    [str(SCRIPT), "refs/heads/fix/visible-branch"],
+    fake_subprocess_run=fake_subprocess_run,
+)
+print(stdout, end="")
+print(stderr, end="")
+if code != 0:
+    print("[FAIL] Expected refs/heads local branch-ref case to return exit code 0.")
+    raise SystemExit(1)
+if "Ref: refs/heads/fix/visible-branch" not in stdout:
+    print("[FAIL] Expected refs/heads local branch-ref line missing.")
+    raise SystemExit(1)
+if "SHA: feed123" not in stdout:
+    print("[FAIL] Expected refs/heads local branch-ref SHA resolution missing.")
     raise SystemExit(1)
 
 old_subprocess_run = module.subprocess.run

@@ -207,6 +207,8 @@ def github_remote_branch_candidate(ref: str) -> str | None:
             branch = parts[3]
         else:
             return None
+    elif ref.startswith("refs/"):
+        return None
     elif "/" in ref:
         remote, branch = ref.split("/", 1)
     else:
@@ -229,9 +231,16 @@ def github_remote_branch_candidate(ref: str) -> str | None:
     return branch or None
 
 
+def local_branch_candidate(ref: str) -> str | None:
+    if ref.startswith("refs/heads/"):
+        branch = ref[len("refs/heads/") :]
+        return branch or None
+    return None
+
+
 def resolve_sha(repo: str, ref: str) -> str:
     candidates: list[str] = []
-    for candidate in [ref, github_remote_branch_candidate(ref)]:
+    for candidate in [ref, local_branch_candidate(ref), github_remote_branch_candidate(ref)]:
         if candidate and candidate not in candidates:
             candidates.append(candidate)
 
