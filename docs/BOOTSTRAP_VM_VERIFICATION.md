@@ -125,9 +125,9 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
-- the local hardening stack is currently ahead of that public ref through `b1dc091` (`scripts/docs: normalize publish history refs`), 17 commits ahead in total
-- the local sandbox currently also carries 3 uncommitted publish-boundary maintenance path(s) beyond HEAD (`scripts/check_compare_publish_branch_histories_contract.py`, `scripts/compare_publish_branch_histories.py`, `scripts/smoke_test_compare_publish_branch_histories.sh`)
-- the latest non-doc logic delta in that local stack is `b1dc091` (`scripts/docs: normalize publish history refs`) in:
+- the local hardening stack is currently ahead of that public ref through `07021dd` (`scripts/docs: normalize reviewed-drop ref forms`), 19 commits ahead in total
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
+- the latest non-doc logic delta in that local stack is `07021dd` (`scripts/docs: normalize reviewed-drop ref forms`) in:
   - `scripts/check_compare_publish_branch_histories_contract.py`
   - `scripts/compare_publish_branch_histories.py`
   - `scripts/smoke_test_compare_publish_branch_histories.sh`
