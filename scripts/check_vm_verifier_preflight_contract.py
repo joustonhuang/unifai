@@ -25,6 +25,8 @@ no_github_remote_smoke_text = NO_GITHUB_REMOTE_SMOKE.read_text(encoding="utf-8")
 
 required = [
     ('Usage: bash scripts/run_vm_verifier_preflight.sh [--dry-run] [github-visible-ref-or-sha]', "Wrapper usage documents the --dry-run flag"),
+    ('local_branch_name() {', "Wrapper centralizes refs/heads normalization for local branch refs"),
+    ('printf \'%s\\n\' "${ref#refs/heads/}"', "Wrapper strips the refs/heads/ prefix before local-branch handling"),
     ('dry_run="${UNIFAI_VM_PREFLIGHT_DRY_RUN:-0}"', "Wrapper derives dry-run mode from env by default"),
     ('--dry-run)', "Wrapper parses the --dry-run flag"),
     ('Unknown option: $1', "Wrapper fails clearly on unknown options"),
@@ -35,11 +37,12 @@ required = [
     ("Push the branch tip first, or use a GitHub-visible branch/ref before running VM verifier preflight.", "Wrapper explains how to recover from a local-only explicit SHA"),
     ("bash scripts/check_vm_host_readiness.sh", "Wrapper runs host readiness before deeper preflight checks"),
     ("bash scripts/bootstrap_installer_preflight.sh", "Wrapper runs bootstrap installer preflight after host readiness"),
-    ('git show-ref --verify --quiet "refs/heads/$ref"', "Wrapper distinguishes local branch names from explicit refs/SHAs"),
-    ('bash scripts/check_github_branch_visibility.sh "$ref"', "Wrapper checks GitHub branch visibility for local branches"),
+    ('git show-ref --verify --quiet "refs/heads/$local_branch_ref"', "Wrapper resolves refs/heads inputs before local-branch visibility checks"),
+    ('effective_ref="$(local_branch_name "$ref")"', "Wrapper normalizes local refs/heads inputs before downstream steps"),
+    ('bash scripts/check_github_branch_visibility.sh "$effective_ref"', "Wrapper checks GitHub branch visibility for normalized local branches"),
     ("skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA.", "Wrapper explains why branch visibility is skipped for explicit refs/SHAs"),
-    ('python3 scripts/check_github_check_gate.py "$ref"', "Wrapper runs GitHub check gate inspection on the chosen ref"),
-    ('Next: bash scripts/vm/verify_bootstrap_in_vm.sh $ref', "Wrapper points to the VM verifier as the next step"),
+    ('python3 scripts/check_github_check_gate.py "$effective_ref"', "Wrapper runs GitHub check gate inspection on the normalized chosen ref"),
+    ('Next: bash scripts/vm/verify_bootstrap_in_vm.sh $effective_ref', "Wrapper points to the VM verifier as the next step"),
 ]
 
 for needle, message in required:
@@ -59,6 +62,11 @@ smoke_required = [
     ('Expected check-gate command missing in default no-arg case.', "Wrapper smoke test checks the check-gate step in the default no-arg case"),
     ('"$WRAPPER" "$VISIBLE_REMOTE_REF"', "Wrapper smoke test exercises the wrapper with an explicit remote-tracking ref"),
     ('python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF', "Wrapper smoke test keeps the explicit remote-tracking ref intact for the check-gate step"),
+    ('"$WRAPPER" "refs/heads/$BRANCH"', "Wrapper smoke test exercises the wrapper with an explicit refs/heads local branch ref"),
+    ('Expected normalized branch ref missing in explicit refs/heads case.', "Wrapper smoke test explains the explicit refs/heads branch-ref expectation"),
+    ('Expected branch visibility command missing in explicit refs/heads case.', "Wrapper smoke test checks branch visibility in the explicit refs/heads case"),
+    ('Explicit refs/heads case should not skip branch visibility.', "Wrapper smoke test keeps explicit refs/heads inputs on the branch-visibility path"),
+    ('Expected normalized check-gate command missing in explicit refs/heads case.', "Wrapper smoke test checks the check-gate step in the explicit refs/heads case"),
     ('"$WRAPPER" -- "$BRANCH"', "Wrapper smoke test exercises the -- separator path"),
     ('Expected branch ref missing when passed after --.', "Wrapper smoke test explains the -- separator branch-ref expectation"),
     ('Expected branch visibility command missing when ref is passed after --.', "Wrapper smoke test checks branch visibility when ref is passed after --"),

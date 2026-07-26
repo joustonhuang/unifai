@@ -61,12 +61,28 @@ detect_github_remote() {
   return 1
 }
 
+local_branch_name() {
+  local ref="$1"
+
+  case "$ref" in
+    refs/heads/*)
+      printf '%s\n' "${ref#refs/heads/}"
+      ;;
+    *)
+      printf '%s\n' "$ref"
+      ;;
+  esac
+}
+
 ensure_ref_is_github_visible() {
   local ref="$1"
   local branch="$2"
   local remote=""
+  local local_branch_ref=""
 
-  if git show-ref --verify --quiet "refs/heads/$ref"; then
+  local_branch_ref="$(local_branch_name "$ref")"
+
+  if git show-ref --verify --quiet "refs/heads/$local_branch_ref"; then
     return 0
   fi
 
@@ -164,9 +180,11 @@ fi
 
 ensure_ref_is_github_visible "$ref" "$current_branch"
 
+effective_ref="$(local_branch_name "$ref")"
+
 echo "== VM verifier local preflight =="
 echo "Repo: $REPO_ROOT"
-echo "Ref: $ref"
+echo "Ref: $effective_ref"
 if [ "$dry_run" = "1" ]; then
   echo "Mode: dry-run"
 fi
@@ -180,18 +198,18 @@ echo "== Step 2/4: bootstrap installer preflight =="
 run_step bash scripts/bootstrap_installer_preflight.sh
 
 echo
-if git show-ref --verify --quiet "refs/heads/$ref"; then
+if git show-ref --verify --quiet "refs/heads/$effective_ref"; then
   echo "== Step 3/4: GitHub branch visibility =="
-  run_step bash scripts/check_github_branch_visibility.sh "$ref"
+  run_step bash scripts/check_github_branch_visibility.sh "$effective_ref"
 else
   echo "== Step 3/4: GitHub branch visibility =="
-  echo "[INFO] '$ref' is not a local branch name; skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA."
+  echo "[INFO] '$effective_ref' is not a local branch name; skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA."
 fi
 
 echo
 echo "== Step 4/4: GitHub check gate =="
-run_step python3 scripts/check_github_check_gate.py "$ref"
+run_step python3 scripts/check_github_check_gate.py "$effective_ref"
 
 echo
-echo "[PASS] VM verifier local preflight is green for $ref"
-echo "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $ref"
+echo "[PASS] VM verifier local preflight is green for $effective_ref"
+echo "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $effective_ref"

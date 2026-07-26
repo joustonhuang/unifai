@@ -184,6 +184,29 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_RE
   exit 1
 fi
 
+HEADS_REF_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "refs/heads/$BRANCH")"
+printf '%s\n' "$HEADS_REF_OUTPUT"
+
+if ! grep -q "Ref: $BRANCH" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected normalized branch ref missing in explicit refs/heads case."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected branch visibility command missing in explicit refs/heads case."
+  exit 1
+fi
+
+if grep -q "skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Explicit refs/heads case should not skip branch visibility."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected normalized check-gate command missing in explicit refs/heads case."
+  exit 1
+fi
+
 DOUBLE_DASH_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" -- "$BRANCH")"
 printf '%s\n' "$DOUBLE_DASH_OUTPUT"
 
