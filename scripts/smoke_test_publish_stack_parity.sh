@@ -62,10 +62,15 @@ git commit -q -m "candidate good"
 git branch -q -f local-checkpoint candidate-good
 git checkout -q expected
 git branch --set-upstream-to=origin/base expected >/dev/null 2>&1
+cat > docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md <<'EOF'
+expected checkpoint docs refresh
+EOF
+git add docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md
+git commit -q -m "docs only tip"
 cat > ci-artifacts/bootstrap-preflight/commit-candidate.txt <<'EOF'
 Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ deadbee
 Current local checkpoint: local-checkpoint
-Current checked-out branch tip: expected (expected)
+Current checked-out branch tip: expected (docs only tip)
 EOF
 
 PASS_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py base candidate-good expected")"
@@ -105,6 +110,10 @@ if ! grep -q "  expected: HEAD" <<<"$INFERRED_OUTPUT"; then
 fi
 if ! grep -q "\[PASS\] Candidate publish stack matches the expected functional tip." <<<"$INFERRED_OUTPUT"; then
   echo "[FAIL] Expected inferred-handoff parity pass verdict missing."
+  exit 1
+fi
+if ! grep -q "Checked expected functional paths: 1" <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred-handoff parity run to ignore the doc-only tip delta."
   exit 1
 fi
 
