@@ -18,6 +18,7 @@ def ok(message: str) -> None:
 
 
 text = SCRIPT.read_text(encoding="utf-8")
+smoke_text = (REPO_ROOT / "scripts" / "smoke_test_vm_verifier_checkpoint_refresh.py").read_text(encoding="utf-8")
 
 required = [
     ('DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"', "Refresh helper targets the boundary doc"),
@@ -89,3 +90,19 @@ for needle, message in required:
     ok(message)
 
 print("[PASS] VM verifier checkpoint refresh contract looks sane")
+
+smoke_required = [
+    ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Refresh smoke test exercises the already-visible doc-only tip handoff"),
+    ('assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref branch-state line"),
+    ('assert "Working-tree files:\\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref dirty-doc handoff shape"),
+    ('f"- The exact branch tip `{doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
+    ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\\n"', "Refresh smoke test pins the aligned visible-ref next move"),
+    ('assert "Next clean move before the real VM-proof path:\\n" in aligned_commit_candidate', "Refresh smoke test keeps the aligned case on the visible-ref rerun path"),
+]
+
+for needle, message in smoke_required:
+    if needle not in smoke_text:
+        fail(message)
+    ok(message)
+
+print("[PASS] VM verifier checkpoint refresh smoke contract looks sane")
