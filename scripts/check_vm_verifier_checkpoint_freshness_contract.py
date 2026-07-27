@@ -18,6 +18,7 @@ def ok(message: str) -> None:
 
 
 text = SCRIPT.read_text(encoding="utf-8")
+smoke_text = (REPO_ROOT / "scripts" / "smoke_test_vm_verifier_checkpoint_freshness.py").read_text(encoding="utf-8")
 
 required = [
     ('DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"', "Freshness checker targets the boundary doc"),
@@ -62,3 +63,20 @@ for needle, message in required:
     ok(message)
 
 print("[PASS] VM verifier checkpoint freshness contract looks sane")
+
+smoke_required = [
+    ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Freshness smoke test exercises the already-visible doc-only tip handoff"),
+    ('assert "[PASS] VM verifier checkpoint artifacts match current repo state" in aligned_fresh_output', "Freshness smoke test requires the aligned visible-ref case to pass cleanly"),
+    ('commit_candidate_text.replace(', "Freshness smoke test mutates the aligned handoff artifact fail-closed"),
+    ('"- The exact branch tip `",', "Freshness smoke test covers stale aligned visible-ref blocker wording"),
+    ('"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `",', "Freshness smoke test covers stale aligned visible-ref next-move wording"),
+    ('assert "Commit-candidate external blocker is stale; expected to find:" in aligned_doc_only_blocker_output', "Freshness smoke test fails closed on stale aligned visible-ref blocker text"),
+    ('assert "Commit-candidate next move is stale; expected to find:" in aligned_doc_only_move_output', "Freshness smoke test fails closed on stale aligned visible-ref next-move text"),
+]
+
+for needle, message in smoke_required:
+    if needle not in smoke_text:
+        fail(message)
+    ok(message)
+
+print("[PASS] VM verifier checkpoint freshness smoke contract looks sane")
