@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
 DEFAULT_ALLOWED_PATHS = [
     "docs/BOOTSTRAP_VM_VERIFICATION.md",
     "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md",
@@ -27,6 +29,13 @@ def run_git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
 def fail(message: str) -> None:
     print(f"[FAIL] {message}")
     sys.exit(1)
+
+
+def git_output(*args: str) -> str | None:
+    result = run_git(*args, check=False)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
 
 
 def changed_paths(base_ref: str, tip_ref: str) -> list[str]:
@@ -85,6 +94,34 @@ def path_matches_expected_delta(
     return not (expected_removed - candidate_removed or expected_added - candidate_added)
 
 
+def infer_current_handoff_refs() -> tuple[str, str, str]:
+    if not COMMIT_CANDIDATE.exists():
+        fail(f"Could not infer refs: missing handoff artifact {COMMIT_CANDIDATE}.")
+
+    commit_candidate_text = COMMIT_CANDIDATE.read_text(encoding="utf-8")
+    checkpoint_match = re.search(r"^Current local checkpoint:\s+(\S+)$", commit_candidate_text, re.M)
+    if not checkpoint_match:
+        fail("Could not infer refs: commit-candidate handoff is missing the local checkpoint line.")
+    candidate_ref = checkpoint_match.group(1)
+
+    current_branch = git_output("branch", "--show-current")
+    if not current_branch:
+        fail(
+            "Could not infer refs: detached HEAD does not provide a stable expected ref; "
+            "pass explicit refs instead."
+        )
+
+    base_ref = git_output("rev-parse", "--abbrev-ref", "--symbolic-full-name", f"{current_branch}@{{upstream}}")
+    if not base_ref:
+        fail(
+            f"Could not infer refs: branch '{current_branch}' has no upstream; "
+            "pass explicit refs instead."
+        )
+
+    expected_ref = "HEAD"
+    return base_ref, candidate_ref, expected_ref
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -92,9 +129,21 @@ def main() -> None:
             "while allowing explicitly noisy checkpoint/doc paths to differ."
         )
     )
-    parser.add_argument("base_ref", help="Shared base ref before the publish stack starts")
-    parser.add_argument("candidate_ref", help="Candidate cleaned branch/ref to verify")
-    parser.add_argument("expected_ref", help="Expected functional tip to match")
+    parser.add_argument(
+        "base_ref",
+        nargs="?",
+        help="Shared base ref before the publish stack starts",
+    )
+    parser.add_argument(
+        "candidate_ref",
+        nargs="?",
+        help="Candidate cleaned branch/ref to verify",
+    )
+    parser.add_argument(
+        "expected_ref",
+        nargs="?",
+        help="Expected functional tip to match",
+    )
     parser.add_argument(
         "--allow-path",
         action="append",
@@ -107,6 +156,16 @@ def main() -> None:
         help="Do not auto-allow the current verifier checkpoint docs",
     )
     args = parser.parse_args()
+
+    provided_refs = [args.base_ref, args.candidate_ref, args.expected_ref]
+    if any(ref is None for ref in provided_refs):
+        if any(ref is not None for ref in provided_refs):
+            parser.error("pass either all three refs or none to infer the current publish-boundary handoff")
+        args.base_ref, args.candidate_ref, args.expected_ref = infer_current_handoff_refs()
+        print("[INFO] Inferred refs from current publish-boundary handoff:")
+        print(f"  base: {args.base_ref}")
+        print(f"  candidate: {args.candidate_ref}")
+        print(f"  expected: {args.expected_ref}")
 
     default_allowed = [] if args.no_default_allow_paths else DEFAULT_ALLOWED_PATHS
     allowed_paths = set(default_allowed + args.allow_path)

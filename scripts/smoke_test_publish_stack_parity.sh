@@ -12,6 +12,7 @@ WORKTREE="$TMP_DIR/repo"
 mkdir -p "$WORKTREE/docs" "$WORKTREE/scripts"
 cp "$REPO_ROOT/scripts/check_publish_stack_parity.py" "$WORKTREE/scripts/check_publish_stack_parity.py"
 chmod +x "$WORKTREE/scripts/check_publish_stack_parity.py"
+mkdir -p "$WORKTREE/ci-artifacts/bootstrap-preflight"
 
 cd "$WORKTREE"
 git init -q
@@ -27,6 +28,8 @@ EOF
 git add app.py docs/BOOTSTRAP_VM_VERIFICATION.md
 git commit -q -m "base"
 git branch -M base
+git remote add origin https://github.com/example/unifai.git
+git update-ref refs/remotes/origin/base "$(git rev-parse base)"
 
 git checkout -q -b expected
 cat > app.py <<'EOF'
@@ -56,6 +59,15 @@ git add app.py docs/BOOTSTRAP_VM_VERIFICATION.md
 git add candidate_extra.py
 git commit -q -m "candidate good"
 
+git branch -q -f local-checkpoint candidate-good
+git checkout -q expected
+git branch --set-upstream-to=origin/base expected >/dev/null 2>&1
+cat > ci-artifacts/bootstrap-preflight/commit-candidate.txt <<'EOF'
+Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ deadbee
+Current local checkpoint: local-checkpoint
+Current checked-out branch tip: expected (expected)
+EOF
+
 PASS_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py base candidate-good expected")"
 printf '%s\n' "$PASS_OUTPUT"
 
@@ -69,6 +81,30 @@ if ! grep -q "Ignored candidate-only paths:" <<<"$PASS_OUTPUT"; then
 fi
 if ! grep -q "candidate_extra.py" <<<"$PASS_OUTPUT"; then
   echo "[FAIL] Expected candidate-only helper path to be reported and ignored."
+  exit 1
+fi
+
+INFERRED_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py")"
+printf '%s\n' "$INFERRED_OUTPUT"
+
+if ! grep -q "\[INFO\] Inferred refs from current publish-boundary handoff:" <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred-handoff banner missing from parity output."
+  exit 1
+fi
+if ! grep -q "  base: origin/base" <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred base ref missing from parity output."
+  exit 1
+fi
+if ! grep -q "  candidate: local-checkpoint" <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred candidate ref missing from parity output."
+  exit 1
+fi
+if ! grep -q "  expected: HEAD" <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred expected ref missing from parity output."
+  exit 1
+fi
+if ! grep -q "\[PASS\] Candidate publish stack matches the expected functional tip." <<<"$INFERRED_OUTPUT"; then
+  echo "[FAIL] Expected inferred-handoff parity pass verdict missing."
   exit 1
 fi
 
