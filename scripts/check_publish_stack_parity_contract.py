@@ -6,6 +6,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "check_publish_stack_parity.py"
+SMOKE = REPO_ROOT / "scripts" / "smoke_test_publish_stack_parity.sh"
 
 
 def fail(message: str) -> None:
@@ -18,6 +19,7 @@ def ok(message: str) -> None:
 
 
 text = SCRIPT.read_text(encoding="utf-8")
+smoke_text = SMOKE.read_text(encoding="utf-8")
 
 required = [
     ('from collections import Counter', "Publish stack parity checker imports Counter for per-path delta accounting"),
@@ -57,6 +59,20 @@ required = [
 
 for needle, message in required:
     if needle not in text:
+        fail(message)
+    ok(message)
+
+smoke_required = [
+    ('git branch -q -f local-checkpoint candidate-good', "Publish stack parity smoke test pins a tracked local checkpoint ref for inferred-handoff mode"),
+    ('git commit -q -m "docs only tip"', "Publish stack parity smoke test creates a doc-only checked-out tip above the tracked checkpoint"),
+    ('Current checked-out branch tip: expected (docs only tip)', "Publish stack parity smoke test records the doc-only checked-out tip in the handoff artifact"),
+    ('python3 scripts/check_publish_stack_parity.py"', "Publish stack parity smoke test exercises inferred-handoff mode with omitted refs"),
+    ('Checked expected functional paths: 1', "Publish stack parity smoke test asserts inferred-handoff mode ignores the doc-only tip delta"),
+    ('Expected inferred-handoff parity run to ignore the doc-only tip delta.', "Publish stack parity smoke test fails clearly when doc-only-tip parity regresses"),
+]
+
+for needle, message in smoke_required:
+    if needle not in smoke_text:
         fail(message)
     ok(message)
 
