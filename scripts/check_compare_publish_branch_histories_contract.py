@@ -6,6 +6,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TARGET = REPO_ROOT / "scripts" / "compare_publish_branch_histories.py"
+SMOKE = REPO_ROOT / "scripts" / "smoke_test_compare_publish_branch_histories.sh"
 
 EXPECTATIONS = [
     ('REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {', "Branch-history helper tracks reviewed older commits that are already ready to drop for known branch pairs"),
@@ -78,9 +79,24 @@ def fail(message: str) -> None:
 
 
 text = TARGET.read_text()
+smoke_text = SMOKE.read_text()
 
 for needle, message in EXPECTATIONS:
     if needle not in text:
+        fail(message)
+    print(f"[PASS] {message}")
+
+SMOKE_EXPECTATIONS = [
+    ('python3 scripts/compare_publish_branch_histories.py fix/older transplant/cleaner', "Branch-history smoke test exercises the main older-vs-cleaner comparison flow"),
+    ('older mixed docs+code commit(s) remain for manual review before replay', "Branch-history smoke test asserts mixed older commits stay out of replay guidance"),
+    ('older-only doc/checkpoint commit(s) remain for manual review or drop', "Branch-history smoke test asserts doc-only older churn stays out of replay guidance"),
+    ('code-only older commit(s) are already absorbed on transplant/cleaner and can stay out of replay', "Branch-history smoke test asserts absorbed older code-only churn is recognized explicitly"),
+    ('older branch still has 4 older-only commit(s) to review/drop consciously', "Branch-history smoke test pins the unresolved older-only summary after excluding absorbed churn"),
+    ('grep -q "no older-only commits remain" <<<"$ABSORB_OUTPUT"', "Branch-history smoke test covers the fully absorbed terminal reconciliation state"),
+]
+
+for needle, message in SMOKE_EXPECTATIONS:
+    if needle not in smoke_text:
         fail(message)
     print(f"[PASS] {message}")
 
