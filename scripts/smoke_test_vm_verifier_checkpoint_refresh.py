@@ -434,6 +434,7 @@ def main() -> int:
         aligned_boundary = (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").read_text(encoding="utf-8")
         aligned_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         aligned_latest_checkpoint = read_latest_checkpoint(work)
+        aligned_commit_candidate = read_commit_candidate(work)
         aligned_status = run(["git", "status", "--short"], work)
 
         assert "docs/BOOTSTRAP_VM_VERIFICATION.md" in aligned_status
@@ -442,6 +443,20 @@ def main() -> int:
         assert f"GitHub-visible branch head: `{stable_head}`" in aligned_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in aligned_checkpoint
         assert aligned_latest_checkpoint == aligned_checkpoint
+        assert f"Current local checkpoint: {stable_head}\n" in aligned_commit_candidate
+        assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in aligned_commit_candidate
+        assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n" in aligned_commit_candidate
+        assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in aligned_commit_candidate
+        assert f"  - `{stable_head}` (`{stable_subject}`)\n" in aligned_commit_candidate
+        assert (
+            f"- The exact branch tip `{doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"the tracked publish-boundary checkpoint remains `{stable_head}` because the tip-only delta is doc-only.\n"
+        ) in aligned_commit_candidate
+        assert (
+            f"- The exact branch tip `{doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\n"
+        ) in aligned_commit_candidate
+        assert "Next clean move before the real VM-proof path:\n" in aligned_commit_candidate
 
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:

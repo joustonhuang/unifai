@@ -260,6 +260,8 @@ def main() -> int:
     original_boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     original_checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
     checkpoint_chain_bullets = "\n".join(f"  - `{sha}` (`{subject}`)" for sha, subject in commits)
+    if tracked_ref != "HEAD" and current_head_ahead_count == "0" and not checkpoint_chain_bullets:
+        checkpoint_chain_bullets = f"  - `{tracked_head_short}` (`{tracked_head_subject}`)"
     commit_lines = "\n".join(
         f"{idx}. `{sha}` — `{subject}`" for idx, (sha, subject) in enumerate(commits, start=1)
     )
@@ -544,7 +546,7 @@ def main() -> int:
         working_tree_block = "Working-tree files:\n" + "\n".join(dirty_paths)
     else:
         working_tree_block = "Working-tree files:\n(clean)"
-    if tracked_ref != "HEAD":
+    if tracked_ref != "HEAD" and current_head_ahead_count != "0":
         next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
         next_move_line = (
             f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
@@ -553,6 +555,16 @@ def main() -> int:
         external_blocker_line = (
             f"- The branch still needs the current branch tip `{current_head_short}` GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
+        )
+    elif tracked_ref != "HEAD":
+        next_move_heading = "Next clean move before the real VM-proof path:\n"
+        next_move_line = (
+            f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+            f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\n"
+        )
+        external_blocker_line = (
+            f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` because the tip-only delta is doc-only.\n"
         )
     else:
         next_move_heading = "Next clean move before the real VM-proof path:\n"

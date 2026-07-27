@@ -133,7 +133,7 @@ def main() -> int:
             return status
 
     tip_line = f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
-    if tracked_ref != "HEAD":
+    if tracked_ref != "HEAD" and current_head_ahead_count != "0":
         if "the current checked-out branch tip is `" in boundary_text:
             return fail("boundary doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
         if "- Current checked-out branch tip: `" in checkpoint_text:
@@ -156,6 +156,34 @@ def main() -> int:
             (
                 f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
                 f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
+            ),
+            "Commit-candidate next move",
+        )
+        if status:
+            return status
+    elif tracked_ref != "HEAD":
+        if "the current checked-out branch tip is `" in boundary_text:
+            return fail("boundary doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible.")
+        if "- Current checked-out branch tip: `" in checkpoint_text:
+            return fail("checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible.")
+        status = require_contains(commit_candidate_text, tip_line, "Commit-candidate checked-out tip")
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` because the tip-only delta is doc-only.\n"
+            ),
+            "Commit-candidate external blocker",
+        )
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+                f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\n"
             ),
             "Commit-candidate next move",
         )

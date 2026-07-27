@@ -76,6 +76,8 @@ required = [
     ('next_move_heading = "Next clean move before the real VM-proof path:\\n"', "Refresh helper keeps the direct visible-ref handoff heading when the tracked checkpoint is the current tip"),
     ('f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\\n"', "Refresh helper targets the tracked upstream ref for direct visible-ref handoff"),
     ('f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "', "Refresh helper targets the tracked upstream ref for doc-only tip visible-ref handoff"),
+    ('f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "', "Refresh helper reports when a doc-only checked-out tip is already GitHub-visible"),
+    ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\\n"', "Refresh helper points the aligned doc-only visible-ref case back at the visible preflight rerun"),
     ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
     ('current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),

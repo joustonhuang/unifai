@@ -248,6 +248,36 @@ def main() -> int:
         boundary_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in boundary_fresh_output
 
+        run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        aligned_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in aligned_fresh_output
+
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "- The exact branch tip `",
+                "- The stale exact branch tip `",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        aligned_doc_only_blocker_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate external blocker is stale; expected to find:" in aligned_doc_only_blocker_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                "rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `",
+                "rerun stale visible-ref work while the tracked publish-boundary checkpoint remains `",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        aligned_doc_only_move_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate next move is stale; expected to find:" in aligned_doc_only_move_output
+
     print("[PASS] VM verifier checkpoint freshness smoke test passed")
     return 0
 
