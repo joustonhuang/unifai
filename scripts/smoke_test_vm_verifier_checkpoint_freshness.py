@@ -166,6 +166,20 @@ def main() -> int:
         doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in doc_only_fresh_output
 
+        doc_only_ahead = run(["git", "rev-list", "--count", "origin/fix/openclaw-config-path-and-local-mode..HEAD"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
+                f"Current branch state: ahead {doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n",
+                "Current branch state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_doc_only_branch_state_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate branch state is stale; expected to find:" in stale_doc_only_branch_state_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
