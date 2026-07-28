@@ -1,13 +1,13 @@
-# Branch Reconcile Note — refreshed 2026-07-25 16:22 Asia/Taipei
+# Branch Reconcile Note — refreshed 2026-07-28 18:21 Asia/Taipei
 
 ## Current state
 
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
 - `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The checked-out branch tip is now `89ea230`, while the last non-doc tracked publish-boundary checkpoint remains `1e23487` until the current doc-only tip becomes GitHub-visible.
+- The checked-out branch tip is now `2b10140`, while the last non-doc tracked publish-boundary checkpoint remains `864b681` until the current doc-only tip becomes GitHub-visible.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
-  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `103`
+  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `136`
 
 ## Transplant-only commits
 
@@ -100,3 +100,5 @@ f4232c5 docs: sync visible verifier boundary state
 ## Best next move
 
 Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
+
+As of `2b10140`, the local doc-only checkpoint handoff is back in sync with the tree after a full local `bootstrap_installer_preflight.sh` rerun passed cleanly.
