@@ -74,6 +74,8 @@ smoke_required = [
     ('checkpoint_text + f"\\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\\n"', "Freshness smoke test injects a checked-out tip leak into the aligned checkpoint doc"),
     ('assert "checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_checkpoint_tip_output', "Freshness smoke test fails closed when the aligned checkpoint doc tracks the checked-out tip"),
     ('commit_candidate_text.replace(', "Freshness smoke test mutates the aligned handoff artifact fail-closed"),
+    ('"Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n",', "Freshness smoke test covers stale aligned visible-ref branch-state wording"),
+    ('assert "Commit-candidate branch state is stale; expected to find:" in aligned_doc_only_branch_state_output', "Freshness smoke test fails closed on stale aligned visible-ref branch-state text"),
     ('"- The exact branch tip `",', "Freshness smoke test covers stale aligned visible-ref blocker wording"),
     ('"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `",', "Freshness smoke test covers stale aligned visible-ref next-move wording"),
     ('assert "Commit-candidate external blocker is stale; expected to find:" in aligned_doc_only_blocker_output', "Freshness smoke test fails closed on stale aligned visible-ref blocker text"),

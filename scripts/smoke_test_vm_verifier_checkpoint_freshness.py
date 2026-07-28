@@ -311,6 +311,19 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
+                "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
+                "Current branch state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        aligned_doc_only_branch_state_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Commit-candidate branch state is stale; expected to find:" in aligned_doc_only_branch_state_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
+        commit_candidate.write_text(
+            commit_candidate_text.replace(
                 "- The exact branch tip `",
                 "- The stale exact branch tip `",
                 1,
