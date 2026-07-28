@@ -267,6 +267,27 @@ def main() -> int:
         aligned_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in aligned_fresh_output
 
+        boundary_text = boundary_doc.read_text(encoding="utf-8")
+        boundary_doc.write_text(
+            boundary_text + f"\n- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`)\n",
+            encoding="utf-8",
+        )
+        aligned_boundary_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "boundary doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_boundary_tip_output
+
+        boundary_doc.write_text(boundary_text, encoding="utf-8")
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
+        checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        checkpoint_doc.write_text(
+            checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
+            encoding="utf-8",
+        )
+        aligned_checkpoint_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_checkpoint_tip_output
+
+        checkpoint_doc.write_text(checkpoint_text, encoding="utf-8")
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(

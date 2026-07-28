@@ -67,6 +67,10 @@ print("[PASS] VM verifier checkpoint freshness contract looks sane")
 smoke_required = [
     ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Freshness smoke test exercises the already-visible doc-only tip handoff"),
     ('assert "[PASS] VM verifier checkpoint artifacts match current repo state" in aligned_fresh_output', "Freshness smoke test requires the aligned visible-ref case to pass cleanly"),
+    ('boundary_text + f"\\n- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`)\\n"', "Freshness smoke test injects a checked-out tip leak into the aligned boundary doc"),
+    ('assert "boundary doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_boundary_tip_output', "Freshness smoke test fails closed when the aligned boundary doc tracks the checked-out tip"),
+    ('checkpoint_text + f"\\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\\n"', "Freshness smoke test injects a checked-out tip leak into the aligned checkpoint doc"),
+    ('assert "checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_checkpoint_tip_output', "Freshness smoke test fails closed when the aligned checkpoint doc tracks the checked-out tip"),
     ('commit_candidate_text.replace(', "Freshness smoke test mutates the aligned handoff artifact fail-closed"),
     ('"- The exact branch tip `",', "Freshness smoke test covers stale aligned visible-ref blocker wording"),
     ('"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `",', "Freshness smoke test covers stale aligned visible-ref next-move wording"),
