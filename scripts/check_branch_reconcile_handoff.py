@@ -104,7 +104,19 @@ def tracked_publish_checkpoint_ref(upstream: str) -> str:
     return ref
 
 
-def expected_checkpoint_line(tracked_head_short: str, current_head_ahead_count: str) -> str:
+def expected_checkpoint_line(
+    tracked_head_short: str, current_head_ahead_count: str, tracked_ref_is_head: bool
+) -> str:
+    if tracked_ref_is_head:
+        if current_head_ahead_count != "0":
+            return (
+                f"- The current branch tip is already the tracked non-doc publish-boundary checkpoint: `{tracked_head_short}`. "
+                "It still needs to become GitHub-visible."
+            )
+        return (
+            f"- The current branch tip is already the tracked non-doc publish-boundary checkpoint: `{tracked_head_short}`, "
+            "and it is already GitHub-visible."
+        )
     if current_head_ahead_count != "0":
         return (
             f"- The last non-doc tracked publish-boundary checkpoint remains `{tracked_head_short}` "
@@ -174,6 +186,7 @@ def main() -> None:
     latest_handoff_short = git("rev-parse", "--short", latest_handoff_ref)
     tracked_checkpoint_ref = tracked_publish_checkpoint_ref(upstream)
     tracked_checkpoint_short = git("rev-parse", "--short", tracked_checkpoint_ref)
+    tracked_ref_is_head = tracked_checkpoint_ref == "HEAD"
     resolved_older_ref = resolve_ref(args.older_ref)
     older_count, cleaner_count = git(
         "rev-list",
@@ -198,7 +211,11 @@ def main() -> None:
     )
     require_contains(
         note_text,
-        expected_checkpoint_line(tracked_checkpoint_short, current_head_ahead_count),
+        expected_checkpoint_line(
+            tracked_checkpoint_short,
+            current_head_ahead_count,
+            tracked_ref_is_head,
+        ),
         "Branch-reconcile note tracked checkpoint line",
     )
     require_contains(

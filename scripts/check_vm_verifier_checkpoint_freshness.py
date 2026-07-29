@@ -8,6 +8,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
 DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
+CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
 COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
 CHECKPOINT_DOCS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
@@ -55,6 +56,38 @@ def require_contains(text: str, needle: str, label: str) -> int:
     return 0
 
 
+def effective_dirty_paths(dirty_paths: list[str], tracked_ref: str) -> list[str]:
+    if tracked_ref != "HEAD":
+        return [path for path in dirty_paths if path not in CHECKPOINT_DOCS]
+    return dirty_paths
+
+
+def dirty_bundle_lines(dirty_paths: list[str]) -> tuple[str, str]:
+    if dirty_paths:
+        shown = ", ".join(f"`{path}`" for path in dirty_paths[:5])
+        if len(dirty_paths) > 5:
+            shown += f", and {len(dirty_paths) - 5} more"
+        update_word = "update" if len(dirty_paths) == 1 else "updates"
+        boundary_line = (
+            f"- the local sandbox currently also carries {len(dirty_paths)} uncommitted "
+            f"publish-boundary maintenance path(s) beyond HEAD ({shown})"
+        )
+        checkpoint_line = (
+            "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
+            f"GitHub-visible branch: the latest tracked commit is now `{{tracked_head_short}}`, that same commit is also the latest "
+            f"non-doc logic head, the sandbox currently carries {len(dirty_paths)} uncommitted publish-boundary maintenance "
+            f"{update_word}, and the branch is `ahead {{ahead_count}}` over `{{upstream_display}}`."
+        )
+        return boundary_line, checkpoint_line
+    return (
+        "- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta",
+        "- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the "
+        "GitHub-visible branch: the latest tracked commit is now `{tracked_head_short}`, that same commit is also the latest "
+        "non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, "
+        "and the branch is `ahead {ahead_count}` over `{upstream_display}`.",
+    )
+
+
 def main() -> int:
     current_branch = git_optional("branch", "--show-current")
     if not current_branch:
@@ -84,9 +117,16 @@ def main() -> int:
     latest_non_doc_paths = [
         path for path in latest_non_doc_all_paths if not is_non_logic_path(path)
     ] or latest_non_doc_all_paths
+    status_lines = git("status", "--short").splitlines()
+    dirty_paths = effective_dirty_paths(
+        [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2],
+        tracked_ref,
+    )
+    boundary_dirty_line, checkpoint_dirty_line = dirty_bundle_lines(dirty_paths)
 
     boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
+    checkpoint_latest_text = CHECKPOINT_LATEST.read_text(encoding="utf-8")
     commit_candidate_text = COMMIT_CANDIDATE.read_text(encoding="utf-8")
 
     checks = [
@@ -101,14 +141,38 @@ def main() -> int:
             "Boundary doc latest non-doc head",
         ),
         (
+            boundary_text,
+            boundary_dirty_line,
+            "Boundary doc dirty bundle summary",
+        ),
+        (
             checkpoint_text,
             f"Latest tracked local head in the stack: `{tracked_head_short}`",
             "Checkpoint doc tracked head",
         ),
         (
+            checkpoint_latest_text,
+            f"Latest tracked local head in the stack: `{tracked_head_short}`",
+            "Checkpoint latest tracked head",
+        ),
+        (
             checkpoint_text,
             f"Tracked local branch state at checkpoint: ahead by {ahead_count} commits over the GitHub-visible branch head",
             "Checkpoint doc ahead count",
+        ),
+        (
+            checkpoint_text,
+            checkpoint_dirty_line.format(
+                tracked_head_short=tracked_head_short,
+                ahead_count=ahead_count,
+                upstream_display=upstream_display,
+            ),
+            "Checkpoint doc dirty bundle summary",
+        ),
+        (
+            checkpoint_latest_text,
+            f"Tracked local branch state at checkpoint: ahead by {ahead_count} commits over the GitHub-visible branch head",
+            "Checkpoint latest ahead count",
         ),
         (
             commit_candidate_text,
@@ -127,10 +191,19 @@ def main() -> int:
         if status:
             return status
 
+    if checkpoint_latest_text != checkpoint_text:
+        return fail("Checkpoint latest handoff artifact diverges from the dated checkpoint doc.")
+
     for path in latest_non_doc_paths:
         status = require_contains(boundary_text, f"  - `{path}`", "Boundary doc latest non-doc paths")
         if status:
             return status
+
+    if "Current uncommitted delta on top:\n" in checkpoint_text:
+        for path in dirty_paths:
+            status = require_contains(checkpoint_text, f"  - `{path}`", "Checkpoint doc dirty bundle paths")
+            if status:
+                return status
 
     tip_line = f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
     if tracked_ref != "HEAD" and current_head_ahead_count != "0":

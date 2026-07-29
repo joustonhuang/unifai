@@ -94,17 +94,16 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `b291fb1`, that same commit is also the latest non-doc logic head, the sandbox currently carries 11 uncommitted publish-boundary maintenance updates, and the branch is `ahead 51` over `fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `b291fb1`, that same commit is also the latest non-doc logic head, the sandbox currently carries 10 uncommitted publish-boundary maintenance updates, and the branch is `ahead 51` over `fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries 11 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
+- The current local sandbox now carries 10 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
   - `ci-artifacts/branch-reconcile-2026-07-10.md`
-  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
-  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
   - `scripts/check_branch_reconcile_handoff.py`
   - `scripts/check_branch_reconcile_handoff_contract.py`
   - `scripts/check_vm_verifier_checkpoint_freshness.py`
   - `scripts/check_vm_verifier_checkpoint_freshness_contract.py`
+  - `scripts/check_vm_verifier_checkpoint_refresh_contract.py`
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
   - `scripts/smoke_test_branch_reconcile_handoff.sh`
   - `scripts/smoke_test_vm_verifier_checkpoint_freshness.py`

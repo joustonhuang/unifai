@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `b291fb1` (`scripts: wire branch reconcile handoff into preflight`), 51 commits ahead in total
-- the local sandbox currently also carries 11 uncommitted publish-boundary maintenance path(s) beyond HEAD (`ci-artifacts/branch-reconcile-2026-07-10.md`, `docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/check_branch_reconcile_handoff.py`, `scripts/check_branch_reconcile_handoff_contract.py`, and 6 more)
+- the local sandbox currently also carries 10 uncommitted publish-boundary maintenance path(s) beyond HEAD (`ci-artifacts/branch-reconcile-2026-07-10.md`, `scripts/check_branch_reconcile_handoff.py`, `scripts/check_branch_reconcile_handoff_contract.py`, `scripts/check_vm_verifier_checkpoint_freshness.py`, `scripts/check_vm_verifier_checkpoint_freshness_contract.py`, and 5 more)
 - the latest non-doc logic delta in that local stack is `b291fb1` (`scripts: wire branch reconcile handoff into preflight`) in:
   - `scripts/bootstrap_installer_preflight.sh`
   - `scripts/check_bootstrap_preflight_contract.py`

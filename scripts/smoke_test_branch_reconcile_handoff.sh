@@ -107,4 +107,38 @@ grep -q "cleaner divergence count is stale" <<<"$STALE_COUNT_OUTPUT" || {
   exit 1
 }
 
+cat > logic.py <<'EOF'
+print("second logic change")
+EOF
+git add logic.py
+git commit -q -m "scripts: advance publish-boundary logic tip"
+non_doc_head_sha="$(git rev-parse --short HEAD)"
+older_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $1}')"
+cleaner_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $2}')"
+
+cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
+# Branch Reconcile Note — refreshed 2026-07-29 08:20 Asia/Taipei
+
+## Current state
+
+- \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` is the cleaner publish candidate.
+- \`fix/openclaw-config-path-and-local-mode\` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
+- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The current branch tip is already the tracked non-doc publish-boundary checkpoint: \`${non_doc_head_sha}\`. It still needs to become GitHub-visible.
+- Divergence count from \`git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`:
+  - \`fix/openclaw-config-path-and-local-mode\`: \`${older_count}\`
+  - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`: \`${cleaner_count}\`
+
+## Best next move
+
+Use \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun \`Bootstrap Installer Preflight\` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
+EOF
+
+NON_DOC_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py")"
+printf '%s\n' "$NON_DOC_OUTPUT"
+grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary state" <<<"$NON_DOC_OUTPUT" || {
+  echo "[FAIL] Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is the current branch tip."
+  exit 1
+}
+
 echo "[PASS] Branch-reconcile handoff smoke test passed"

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 import subprocess
-from os import access, environ, W_OK
+from os import W_OK, access, environ
 from pathlib import Path
 
 
@@ -12,6 +12,7 @@ DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
 DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
 CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
 COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+STABILIZED_ENV = "UNIFAI_VM_CHECKPOINT_REFRESH_STABILIZED"
 CHECKPOINT_DOCS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
     str(DOC_CHECKPOINT.relative_to(REPO_ROOT)),
@@ -41,6 +42,20 @@ def is_non_logic_path(path: str) -> bool:
 
 def upstream_display_name(upstream: str) -> str:
     return upstream.split("/", 1)[1] if "/" in upstream else upstream
+
+
+def tracked_dirty_paths() -> list[str]:
+    status_lines = git("status", "--short").splitlines()
+    return [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2]
+
+
+def effective_dirty_paths(dirty_paths: list[str], tracked_ref: str) -> list[str]:
+    # Once HEAD is only a doc-only tip above the tracked publish-boundary commit,
+    # keep the tracked docs anchored to the underlying handoff instead of treating
+    # their own refreshed text as new uncommitted bundle delta.
+    if tracked_ref != "HEAD":
+        return [path for path in dirty_paths if path not in CHECKPOINT_DOCS]
+    return dirty_paths
 
 
 def is_checkpoint_doc_only_commit(ref: str) -> bool:
@@ -255,8 +270,7 @@ def main() -> int:
         f"- the latest non-doc logic delta in that local stack is `{latest_non_doc}` (`{latest_non_doc_subject}`) in:\n"
         + "\n".join(f"  - `{path}`" for path in latest_non_doc_paths)
     )
-    status_lines = git("status", "--short").splitlines()
-    dirty_paths = [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2]
+    dirty_paths = effective_dirty_paths(tracked_dirty_paths(), tracked_ref)
     original_boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     original_checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
     checkpoint_chain_bullets = "\n".join(f"  - `{sha}` (`{subject}`)" for sha, subject in commits)
@@ -598,6 +612,17 @@ def main() -> int:
     )
     COMMIT_CANDIDATE.parent.mkdir(parents=True, exist_ok=True)
     COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")
+
+    final_dirty_paths = effective_dirty_paths(tracked_dirty_paths(), tracked_ref)
+    if final_dirty_paths != dirty_paths and not environ.get(STABILIZED_ENV):
+        rerun_env = dict(environ)
+        rerun_env[STABILIZED_ENV] = "1"
+        return subprocess.run(
+            ["python3", str(Path(__file__).resolve())],
+            cwd=REPO_ROOT,
+            env=rerun_env,
+            check=False,
+        ).returncode
     return 0
 
 

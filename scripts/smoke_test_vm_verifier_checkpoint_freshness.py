@@ -36,6 +36,7 @@ def seed_repo(work: Path) -> None:
     (work / "docs").mkdir(parents=True)
     (work / "scripts").mkdir(parents=True)
     (work / "ci-artifacts" / "bootstrap-preflight").mkdir(parents=True)
+    (work / "ci-artifacts").mkdir(parents=True, exist_ok=True)
     shutil.copy2(REFRESH_HELPER, work / "scripts" / REFRESH_HELPER.name)
     shutil.copy2(FRESHNESS_CHECKER, work / "scripts" / FRESHNESS_CHECKER.name)
     (work / ".gitignore").write_text("ci-artifacts/\n", encoding="utf-8")
@@ -48,6 +49,24 @@ def seed_repo(work: Path) -> None:
         encoding="utf-8",
     )
     (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").write_text(
+        (
+            "# Bootstrap VM Verifier Checkpoint — 2026-06-15\n\n"
+            "## Branch\n"
+            "- Working branch: `fix/openclaw-config-path-and-local-mode`\n"
+            "- GitHub-visible branch head: `oldhead`\n"
+            "- Latest local head in the stack: `oldsha`\n"
+            "- Latest non-doc logic head in the local stack: `oldlogic`\n"
+            "- Local branch state at checkpoint: ahead by 0 commits over the GitHub-visible branch head\n\n"
+            "## Local commit stack after `oldhead`\n"
+            "1. `oldsha` — `old subject`\n\n"
+            "## What is now true locally\n"
+            "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n"
+            "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.\n"
+            "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n"
+        ),
+        encoding="utf-8",
+    )
+    (work / "ci-artifacts" / "vm-verifier-checkpoint-latest.md").write_text(
         (
             "# Bootstrap VM Verifier Checkpoint — 2026-06-15\n\n"
             "## Branch\n"
@@ -102,8 +121,41 @@ def main() -> int:
         fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in fresh_output
 
+        latest_checkpoint = work / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
+        latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
+        latest_checkpoint.write_text(
+            latest_checkpoint_text.replace(
+                "- Latest tracked local head in the stack: `",
+                "- Latest tracked local head in the stack: `stale-",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_latest_checkpoint_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Checkpoint latest tracked head is stale; expected to find:" in stale_latest_checkpoint_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
         boundary_text = boundary_doc.read_text(encoding="utf-8")
+        boundary_doc.write_text(
+            boundary_text.replace(
+                "- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD",
+                "- the local sandbox currently also carries 9 uncommitted publish-boundary maintenance path(s) beyond HEAD",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_dirty_boundary_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Boundary doc dirty bundle summary is stale; expected to find:" in stale_dirty_boundary_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        boundary_text = boundary_doc.read_text(encoding="utf-8")
+        latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
+        latest_checkpoint.write_text(latest_checkpoint_text + "\nextra drift\n", encoding="utf-8")
+        stale_latest_checkpoint_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Checkpoint latest handoff artifact diverges from the dated checkpoint doc." in stale_latest_checkpoint_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc.write_text(
             boundary_text + f"\n- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`)\n",
             encoding="utf-8",
@@ -114,14 +166,20 @@ def main() -> int:
         boundary_doc.write_text(boundary_text, encoding="utf-8")
         checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         checkpoint_doc.write_text(
             checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
+            encoding="utf-8",
+        )
+        latest_checkpoint.write_text(
+            latest_checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
             encoding="utf-8",
         )
         unexpected_head_checkpoint_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "checkpoint doc checked-out tip line should not be present when the tracked checkpoint is HEAD." in unexpected_head_checkpoint_tip_output
 
         checkpoint_doc.write_text(checkpoint_text, encoding="utf-8")
+        latest_checkpoint.write_text(latest_checkpoint_text, encoding="utf-8")
         commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
@@ -180,7 +238,7 @@ def main() -> int:
         run(["git", "commit", "-m", "docs: refresh visible verifier boundary state"], work)
 
         stale_doc_only_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Commit-candidate branch state is stale; expected to find:" in stale_doc_only_output
+        assert "is stale; expected to find:" in stale_doc_only_output
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         doc_only_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
@@ -299,14 +357,20 @@ def main() -> int:
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         checkpoint_doc.write_text(
             checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
+            encoding="utf-8",
+        )
+        latest_checkpoint.write_text(
+            latest_checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
             encoding="utf-8",
         )
         aligned_checkpoint_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_checkpoint_tip_output
 
         checkpoint_doc.write_text(checkpoint_text, encoding="utf-8")
+        latest_checkpoint.write_text(latest_checkpoint_text, encoding="utf-8")
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
