@@ -28,6 +28,7 @@ required = [
     ('require_file "$REPO_ROOT/scripts/check_bootstrap_workflow_contract_contract.py"', 'Preflight requires the workflow contract checker contract'),
     ('require_file "$REPO_ROOT/scripts/check_github_check_gate.py"', 'Preflight requires the GitHub check-gate inspector'),
     ('require_file "$REPO_ROOT/scripts/check_github_check_gate_contract.py"', 'Preflight requires the GitHub check-gate contract checker'),
+    ('require_file "$REPO_ROOT/scripts/check_github_branch_visibility.sh"', 'Preflight requires the GitHub branch-visibility helper'),
     ('require_file "$REPO_ROOT/scripts/check_github_branch_visibility_contract.py"', 'Preflight requires the GitHub branch-visibility contract checker'),
     ('require_file "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"', 'Preflight requires the VM verifier checkpoint refresh helper'),
     ('require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"', 'Preflight requires the VM verifier checkpoint freshness checker'),
