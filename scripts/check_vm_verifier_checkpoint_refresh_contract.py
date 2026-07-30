@@ -61,6 +61,7 @@ required = [
     ('CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")', "Refresh helper refreshes the stable latest-checkpoint handoff artifact alongside the dated checkpoint doc"),
     ('"python3 scripts/check_publish_stack_parity_contract.py\\n"', "Refresh helper keeps the publish-stack parity contract gate in the handoff artifact"),
     ('"python3 scripts/check_compare_publish_branch_histories_contract.py\\n"', "Refresh helper keeps the publish-branch-history contract gate in the handoff artifact"),
+    ('"  - `python3 scripts/check_github_branch_visibility_contract.py`\\n"', "Refresh helper keeps the branch-visibility contract gate in the generated checkpoint verification block"),
     ('"python3 scripts/check_github_branch_visibility_contract.py\\n"', "Refresh helper keeps the branch-visibility contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\\n"', "Refresh helper keeps the checkpoint-freshness contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\\n"', "Refresh helper keeps its own contract gate in the handoff artifact"),

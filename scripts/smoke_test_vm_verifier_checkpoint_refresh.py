@@ -306,6 +306,7 @@ def main() -> int:
         assert "Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place." in refreshed_checkpoint
         assert "`ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff." in refreshed_checkpoint
         assert expected_checkpoint_host_line in refreshed_checkpoint
+        assert "  - `python3 scripts/check_github_branch_visibility_contract.py`\n" in refreshed_checkpoint
         assert "the sandbox currently carries 1 uncommitted publish-boundary maintenance update, and the branch is `ahead 2` over `fix/openclaw-config-path-and-local-mode`." in refreshed_checkpoint
         assert "- The current local sandbox now carries one small publish-boundary maintenance delta beyond the tracked local stack:\n" in refreshed_checkpoint
         assert f"  - `{logic_sha}` (`tests: add logic commit`)\n" in refreshed_checkpoint
