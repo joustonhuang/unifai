@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `22b67ed` (`scripts: harden verifier checkpoint handoff refresh`), 53 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
+- the local sandbox currently also carries 1 uncommitted publish-boundary maintenance path(s) beyond HEAD (`scripts/smoke_test_vm_host_readiness.sh`)
 - the latest non-doc logic delta in that local stack is `22b67ed` (`scripts: harden verifier checkpoint handoff refresh`) in:
   - `scripts/check_branch_reconcile_handoff.py`
   - `scripts/check_branch_reconcile_handoff_contract.py`

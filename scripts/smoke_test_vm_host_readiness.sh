@@ -169,6 +169,34 @@ if ! grep -q 'Authenticate gh on this host before the first GitHub-visible VM pr
   exit 1
 fi
 
+run_case 1 github_token unauth-github-token
+UNAUTH_GITHUB_TOKEN_OUTPUT="$(cat "$TMP_DIR/output-unauth-github-token.txt")"
+
+if ! grep -Eq 'Summary: 9 pass, [12] warn, 0 fail' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+  echo "[FAIL] Expected GITHUB_TOKEN-backed synthetic readiness summary missing or drifted."
+  exit 1
+fi
+
+if ! grep -q '\[PASS\] GitHub token env is present for curl fallback' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+  echo "[FAIL] Expected GITHUB_TOKEN-present pass missing."
+  exit 1
+fi
+
+if grep -q '\[WARN\] No GH_TOKEN/GITHUB_TOKEN in environment; public API fallback may rate-limit or fail closed' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+  echo "[FAIL] GITHUB_TOKEN-present case should not warn about missing GitHub token env."
+  exit 1
+fi
+
+if grep -q 'Export GH_TOKEN or GITHUB_TOKEN if you want curl fallback to avoid unauthenticated GitHub API limits.' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+  echo "[FAIL] GITHUB_TOKEN-present case should not print token-export guidance."
+  exit 1
+fi
+
+if ! grep -q 'Authenticate gh on this host before the first GitHub-visible VM proof' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+  echo "[FAIL] Unauthenticated gh recovery guidance should still appear when only GITHUB_TOKEN fallback is present."
+  exit 1
+fi
+
 run_case missing none missing
 MISSING_GH_OUTPUT="$(cat "$TMP_DIR/output-missing.txt")"
 
