@@ -131,7 +131,7 @@ Current known boundary on this branch family:
   - `scripts/check_bootstrap_preflight_contract_contract.py`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
-- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current tracked checkpoint state in place
+- a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
 - `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.
 - first real VM proof should wait for the current local head to become GitHub-visible and for `Bootstrap Installer Preflight` to rerun green on that exact visible ref
 - on the current host, `/dev/kvm` is present but not writable, `gh` is installed and authenticated, and no `GH_TOKEN`/`GITHUB_TOKEN` is exported, so the first live run should expect TCG fallback, while normal GitHub API reads should flow through authenticated `gh` unless the host state changes
