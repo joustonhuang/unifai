@@ -1,18 +1,27 @@
-# Branch Reconcile Note — refreshed 2026-07-30 16:20 Asia/Taipei
+# Branch Reconcile Note — refreshed 2026-07-31 08:23 Asia/Taipei
 
 ## Current state
 
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
 - `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is `9c32439`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
-- The last non-doc tracked publish-boundary checkpoint remains `0160eb0` until the current doc-only tip becomes GitHub-visible.
+- The latest non-handoff branch tip captured by this note is `60a2219`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The last non-doc tracked publish-boundary checkpoint remains `93c2da9` until the current doc-only tip becomes GitHub-visible.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
-  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `151`
+  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `160`
 
 ## Transplant-only commits
 
 ```text
+60a2219 docs: settle verifier checkpoint handoff wording
+696b1ab docs: refresh verifier checkpoint handoff
+93c2da9 tests: pin checkpoint freshness preflight coverage
+fbbc5b8 tests: pin github check gate preflight coverage
+659999f tests: pin branch visibility preflight coverage
+5c50083 docs: settle checkpoint verification gates
+cda64f0 docs: refresh checkpoint verification gates
+acea8e8 scripts: track branch-visibility checkpoint gate
+bd61860 docs: refresh branch reconcile handoff
 9c32439 docs: settle host readiness contract coverage handoff
 0160eb0 tests: harden vm host readiness contract coverage
 32c0dc1 docs: settle token coverage handoff
@@ -112,4 +121,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
 
-As of `9c32439`, the local branch-reconcile handoff is back in sync with the tree after the host-readiness contract coverage hardening landed on top of tracked non-doc checkpoint `0160eb0`, and this note now treats its own refresh commits as handoff-only bookkeeping rather than live branch-tip state.
+As of `60a2219`, the local branch-reconcile handoff is back in sync with the tree after the checkpoint-verification and preflight-coverage hardening landed on top of tracked non-doc checkpoint `93c2da9`, and this note now treats its own refresh commits as handoff-only bookkeeping rather than live branch-tip state.
