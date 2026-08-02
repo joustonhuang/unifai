@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`
 - GitHub-visible branch head: `56aefc5`
-- Latest tracked local head in the stack: `93c2da9`
-- Latest non-doc logic head in the local stack: `93c2da9`
-- Tracked local branch state at checkpoint: ahead by 69 commits over the GitHub-visible branch head
+- Latest tracked local head in the stack: `e29a900`
+- Latest non-doc logic head in the local stack: `e29a900`
+- Tracked local branch state at checkpoint: ahead by 73 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `38a2e61` — `tests: align checkpoint refresh smoke with upstream ref`
@@ -77,6 +77,10 @@
 67. `659999f` — `tests: pin branch visibility preflight coverage`
 68. `fbbc5b8` — `tests: pin github check gate preflight coverage`
 69. `93c2da9` — `tests: pin checkpoint freshness preflight coverage`
+70. `696b1ab` — `docs: refresh verifier checkpoint handoff`
+71. `60a2219` — `docs: settle verifier checkpoint handoff wording`
+72. `3f02079` — `docs: refresh branch reconcile handoff`
+73. `e29a900` — `scripts: guard preflight checkpoint handoff dirtiness`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -112,24 +116,13 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `93c2da9`, that same commit is also the latest non-doc logic head, the sandbox currently carries 14 uncommitted publish-boundary maintenance updates, and the branch is `ahead 69` over `fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `e29a900`, that same commit is also the latest non-doc logic head, the sandbox currently carries 3 uncommitted publish-boundary maintenance updates, and the branch is `ahead 73` over `fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries 14 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
-  - `scripts/bootstrap_installer_preflight.sh`
-  - `scripts/check_bootstrap_preflight_contract.py`
-  - `scripts/check_bootstrap_preflight_contract_contract.py`
-  - `scripts/check_vm_verifier_checkpoint_freshness.py`
-  - `scripts/check_vm_verifier_checkpoint_freshness_contract.py`
-  - `scripts/check_vm_verifier_preflight_contract.py`
+- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
+  - `docs/BOOTSTRAP_VM_VERIFICATION.md`
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
-  - `scripts/smoke_test_vm_verifier_checkpoint_freshness.py`
-  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
-  - `scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh`
-  - `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`
-  - `scripts/check_checkpoint_handoff_dirty_state.sh`
-  - `scripts/check_vm_verifier_preflight_contract_contract.py`
-  - `scripts/smoke_test_checkpoint_handoff_dirty_state.sh`
 - Fresh local verification at the current sandbox state is green again:
   - `python3 scripts/check_publish_stack_parity_contract.py`
   - `python3 scripts/check_compare_publish_branch_histories_contract.py`

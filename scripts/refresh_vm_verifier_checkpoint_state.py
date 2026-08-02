@@ -179,6 +179,12 @@ def replace_delta_and_bundle_sections(
         count=1,
         flags=re.S,
     )
+    checkpoint_text = re.sub(
+        r"(- Bootstrap preflight now locks that installer-failure path.*\n)(?:  - `[^\n]+`\n)+(?=- The current local sandbox now carries)",
+        r"\1",
+        checkpoint_text,
+        count=1,
+    )
     return checkpoint_text
 
 
