@@ -126,10 +126,11 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `93c2da9` (`tests: pin checkpoint freshness preflight coverage`), 69 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta beyond that tracked checkpoint state
+- the local sandbox currently also carries 14 uncommitted publish-boundary maintenance path(s) beyond HEAD (`scripts/bootstrap_installer_preflight.sh`, `scripts/check_bootstrap_preflight_contract.py`, `scripts/check_bootstrap_preflight_contract_contract.py`, `scripts/check_vm_verifier_checkpoint_freshness.py`, `scripts/check_vm_verifier_checkpoint_freshness_contract.py`, and 9 more)
 - the latest non-doc logic delta in that local stack is `93c2da9` (`tests: pin checkpoint freshness preflight coverage`) in:
   - `scripts/check_bootstrap_preflight_contract_contract.py`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
+- the wrapper smoke path now also fails with explicit diagnostics if the repo cannot auto-detect any GitHub-backed remote or cannot derive any GitHub-visible remote-tracking ref for coverage, instead of disappearing behind an early `set -e` exit
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
 - `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.

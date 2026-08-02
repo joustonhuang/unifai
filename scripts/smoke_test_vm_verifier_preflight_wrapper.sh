@@ -7,6 +7,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WRAPPER="$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 REAL_BASH="$(command -v bash)"
 BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
+DETACHED_WORKTREE_DIR="$(mktemp -d -t unifai-vm-preflight-detached-XXXXXX)"
+cleanup() {
+  git -C "$REPO_ROOT" worktree remove --force "$DETACHED_WORKTREE_DIR" >/dev/null 2>&1 || true
+  rm -rf "$DETACHED_WORKTREE_DIR"
+}
+trap cleanup EXIT
+
 detect_github_remote() {
   local candidate=""
   local url=""
@@ -89,8 +96,19 @@ LOCAL_ONLY_SHA="$(
     2>/dev/null
 )"
 GITHUB_REMOTE="$(detect_github_remote)"
+if [ -z "$GITHUB_REMOTE" ]; then
+  echo "[FAIL] Could not find a GitHub-backed remote for wrapper smoke coverage."
+  exit 1
+fi
+
 VISIBLE_REMOTE_REF="$(resolve_visible_remote_ref "$GITHUB_REMOTE")"
+if [ -z "$VISIBLE_REMOTE_REF" ]; then
+  echo "[FAIL] Could not resolve a GitHub-visible remote ref for wrapper smoke coverage."
+  exit 1
+fi
+
 VISIBLE_SHA="$(git -C "$REPO_ROOT" rev-parse "$VISIBLE_REMOTE_REF")"
+git -C "$REPO_ROOT" worktree add --detach "$DETACHED_WORKTREE_DIR" HEAD >/dev/null
 
 BRANCH_OUTPUT="$("$REAL_BASH" "$WRAPPER" --dry-run "$BRANCH")"
 printf '%s\n' "$BRANCH_OUTPUT"
@@ -181,6 +199,32 @@ fi
 
 if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF" <<<"$VISIBLE_REMOTE_REF_OUTPUT"; then
   echo "[FAIL] Expected check-gate command missing in explicit remote-tracking ref case."
+  exit 1
+fi
+
+DETACHED_VISIBLE_SHA_OUTPUT="$(
+  cd "$DETACHED_WORKTREE_DIR" &&
+  UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "$VISIBLE_SHA"
+)"
+printf '%s\n' "$DETACHED_VISIBLE_SHA_OUTPUT"
+
+if ! grep -q "Ref: $VISIBLE_SHA" <<<"$DETACHED_VISIBLE_SHA_OUTPUT"; then
+  echo "[FAIL] Expected explicit visible SHA to be preserved in detached-HEAD case."
+  exit 1
+fi
+
+if ! grep -q "skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA" <<<"$DETACHED_VISIBLE_SHA_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD visible-SHA case to skip branch visibility."
+  exit 1
+fi
+
+if grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh" <<<"$DETACHED_VISIBLE_SHA_OUTPUT"; then
+  echo "[FAIL] Detached-HEAD visible-SHA case should not run branch visibility."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_SHA" <<<"$DETACHED_VISIBLE_SHA_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD visible-SHA case to plan the check-gate command."
   exit 1
 fi
 

@@ -56,6 +56,48 @@ def require_contains(text: str, needle: str, label: str) -> int:
     return 0
 
 
+def require_exact_line(text: str, needle: str, label: str) -> int:
+    lines = text.splitlines()
+    if needle not in lines:
+        return fail(f"{label} is stale; expected exact line: {needle}")
+    return 0
+
+
+def require_exact_block(text: str, needle: str, label: str) -> int:
+    if needle not in text:
+        return fail(f"{label} is stale; expected exact block:\n{needle}")
+    return 0
+
+
+def require_unique_line_prefix(text: str, prefix: str, label: str) -> int:
+    matches = [line for line in text.splitlines() if line.startswith(prefix)]
+    if len(matches) != 1:
+        return fail(f"{label} is stale; expected exactly one line starting with: {prefix}")
+    return 0
+
+
+def require_no_prefixed_lines_between_prefixes(
+    text: str, start_prefix: str, end_prefix: str, forbidden_prefix: str, label: str
+) -> int:
+    lines = text.splitlines()
+    try:
+        start_index = next(idx for idx, line in enumerate(lines) if line.startswith(start_prefix))
+        end_index = next(
+            idx for idx, line in enumerate(lines[start_index + 1 :], start=start_index + 1) if line.startswith(end_prefix)
+        )
+    except StopIteration:
+        return fail(
+            f"{label} is stale; expected section bounded by {start_prefix!r} and {end_prefix!r}."
+        )
+
+    offending = [line for line in lines[start_index + 1 : end_index] if line.startswith(forbidden_prefix)]
+    if offending:
+        return fail(
+            f"{label} is stale; unexpected lines before the current-delta block:\n" + "\n".join(offending)
+        )
+    return 0
+
+
 def effective_dirty_paths(dirty_paths: list[str], tracked_ref: str) -> list[str]:
     if tracked_ref != "HEAD":
         return [path for path in dirty_paths if path not in CHECKPOINT_DOCS]
@@ -86,6 +128,17 @@ def dirty_bundle_lines(dirty_paths: list[str]) -> tuple[str, str]:
         "non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, "
         "and the branch is `ahead {ahead_count}` over `{upstream_display}`.",
     )
+
+
+def current_delta_block(dirty_paths: list[str]) -> str:
+    if dirty_paths:
+        dirty_bullets = "\n".join(f"  - `{path}`" for path in dirty_paths)
+        delta_label = "one small publish-boundary maintenance delta" if len(dirty_paths) == 1 else f"{len(dirty_paths)} uncommitted publish-boundary maintenance updates"
+        return (
+            f"- The current local sandbox now carries {delta_label} beyond the tracked local stack:\n"
+            + dirty_bullets
+        )
+    return "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack."
 
 
 def main() -> int:
@@ -123,6 +176,12 @@ def main() -> int:
         tracked_ref,
     )
     boundary_dirty_line, checkpoint_dirty_line = dirty_bundle_lines(dirty_paths)
+    checkpoint_delta_block = current_delta_block(dirty_paths)
+    working_tree_block = (
+        "Working-tree files:\n" + "\n".join(dirty_paths)
+        if dirty_paths
+        else "Working-tree files:\n(clean)"
+    )
 
     boundary_text = DOC_BOUNDARY.read_text(encoding="utf-8")
     checkpoint_text = DOC_CHECKPOINT.read_text(encoding="utf-8")
@@ -139,11 +198,6 @@ def main() -> int:
             boundary_text,
             f"- the latest non-doc logic delta in that local stack is `{tracked_head_short}` (`{tracked_head_subject}`) in:",
             "Boundary doc latest non-doc head",
-        ),
-        (
-            boundary_text,
-            boundary_dirty_line,
-            "Boundary doc dirty bundle summary",
         ),
         (
             checkpoint_text,
@@ -191,6 +245,44 @@ def main() -> int:
         if status:
             return status
 
+    status = require_exact_line(boundary_text, boundary_dirty_line, "Boundary doc dirty bundle summary")
+    if status:
+        return status
+
+    status = require_exact_block(
+        commit_candidate_text,
+        working_tree_block,
+        "Commit-candidate working-tree block",
+    )
+    if status:
+        return status
+
+    status = require_unique_line_prefix(
+        checkpoint_text,
+        "- The current local sandbox now carries",
+        "Checkpoint doc current-delta block",
+    )
+    if status:
+        return status
+
+    status = require_exact_block(
+        checkpoint_text,
+        checkpoint_delta_block,
+        "Checkpoint doc current-delta block",
+    )
+    if status:
+        return status
+
+    status = require_no_prefixed_lines_between_prefixes(
+        checkpoint_text,
+        "- Bootstrap preflight now locks that installer-failure path",
+        "- The current local sandbox now carries",
+        "  - `",
+        "Checkpoint doc pre-delta bullet drift",
+    )
+    if status:
+        return status
+
     if checkpoint_latest_text != checkpoint_text:
         return fail("Checkpoint latest handoff artifact diverges from the dated checkpoint doc.")
 
@@ -206,12 +298,22 @@ def main() -> int:
                 return status
 
     tip_line = f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
+    tip_delta_line = ""
+    if tracked_ref != "HEAD":
+        tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")
+        tip_delta_label = "commit" if tip_delta_count == "1" else "commits"
+        tip_delta_line = (
+            f"Checked-out tip delta beyond tracked checkpoint: {tip_delta_count} doc-only {tip_delta_label}\n"
+        )
     if tracked_ref != "HEAD" and current_head_ahead_count != "0":
         if "the current checked-out branch tip is `" in boundary_text:
             return fail("boundary doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
         if "- Current checked-out branch tip: `" in checkpoint_text:
             return fail("checkpoint doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
         status = require_contains(commit_candidate_text, tip_line, "Commit-candidate checked-out tip")
+        if status:
+            return status
+        status = require_contains(commit_candidate_text, tip_delta_line, "Commit-candidate tip delta")
         if status:
             return status
         status = require_contains(
@@ -242,6 +344,9 @@ def main() -> int:
         status = require_contains(commit_candidate_text, tip_line, "Commit-candidate checked-out tip")
         if status:
             return status
+        status = require_contains(commit_candidate_text, tip_delta_line, "Commit-candidate tip delta")
+        if status:
+            return status
         status = require_contains(
             commit_candidate_text,
             (
@@ -269,6 +374,8 @@ def main() -> int:
             return fail("checkpoint doc checked-out tip line should not be present when the tracked checkpoint is HEAD.")
         if tip_line in commit_candidate_text:
             return fail("commit-candidate tip line should not be present when the tracked checkpoint is HEAD.")
+        if tip_delta_line and tip_delta_line in commit_candidate_text:
+            return fail("commit-candidate tip delta line should not be present when the tracked checkpoint is HEAD.")
         status = require_contains(
             commit_candidate_text,
             (

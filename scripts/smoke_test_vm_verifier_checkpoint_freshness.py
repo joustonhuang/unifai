@@ -61,6 +61,8 @@ def seed_repo(work: Path) -> None:
             "1. `oldsha` — `old subject`\n\n"
             "## What is now true locally\n"
             "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n"
+            "- The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.\n"
+            "- Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.\n"
             "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.\n"
             "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n"
         ),
@@ -79,6 +81,8 @@ def seed_repo(work: Path) -> None:
             "1. `oldsha` — `old subject`\n\n"
             "## What is now true locally\n"
             "- The current local hardening stack is preserved as clean commits through `oldsha`, rather than as an uncommitted sandbox delta.\n"
+            "- The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.\n"
+            "- Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.\n"
             "- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.\n"
             "- `ci-artifacts/bootstrap-preflight/commit-candidate.txt` now captures the current local checkpoint, host-readiness snapshot, verification gates, and the exact next visible-ref move as a one-file handoff.\n"
         ),
@@ -122,6 +126,7 @@ def main() -> int:
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in fresh_output
 
         latest_checkpoint = work / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
+        commit_candidate_doc = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
         latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         latest_checkpoint.write_text(
             latest_checkpoint_text.replace(
@@ -136,6 +141,7 @@ def main() -> int:
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
+        checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
         boundary_text = boundary_doc.read_text(encoding="utf-8")
         boundary_doc.write_text(
             boundary_text.replace(
@@ -146,7 +152,63 @@ def main() -> int:
             encoding="utf-8",
         )
         stale_dirty_boundary_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Boundary doc dirty bundle summary is stale; expected to find:" in stale_dirty_boundary_output
+        assert "Boundary doc dirty bundle summary is stale; expected exact line:" in stale_dirty_boundary_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        boundary_text = boundary_doc.read_text(encoding="utf-8")
+        boundary_dirty_line = next(
+            line for line in boundary_text.splitlines() if line.startswith("- the local sandbox currently")
+        )
+        boundary_doc.write_text(
+            boundary_text.replace(
+                boundary_dirty_line,
+                boundary_dirty_line + " beyond that tracked checkpoint state",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_dirty_boundary_suffix_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Boundary doc dirty bundle summary is stale; expected exact line:" in stale_dirty_boundary_suffix_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        stale_checkpoint_duplicate_delta = (
+            "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n"
+        )
+        checkpoint_doc.write_text(checkpoint_text + stale_checkpoint_duplicate_delta, encoding="utf-8")
+        stale_checkpoint_duplicate_delta_output = expect_fail(
+            ["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work
+        )
+        assert "Checkpoint doc current-delta block is stale; expected exactly one line starting with:" in stale_checkpoint_duplicate_delta_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        checkpoint_lines = checkpoint_text.splitlines()
+        delta_index = checkpoint_lines.index(
+            "- The current local sandbox now carries 2 uncommitted publish-boundary maintenance updates beyond the tracked local stack:"
+        )
+        duplicated_bullets = checkpoint_lines[delta_index + 1 : delta_index + 3]
+        checkpoint_lines[delta_index:delta_index] = duplicated_bullets
+        checkpoint_doc.write_text("\n".join(checkpoint_lines) + "\n", encoding="utf-8")
+        stale_checkpoint_delta_section_output = expect_fail(
+            ["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work
+        )
+        assert "Checkpoint doc pre-delta bullet drift is stale; unexpected lines before the current-delta block:" in stale_checkpoint_delta_section_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        commit_candidate_text = commit_candidate_doc.read_text(encoding="utf-8")
+        commit_candidate_lines = commit_candidate_text.splitlines()
+        worktree_start = commit_candidate_lines.index("Working-tree files:") + 1
+        worktree_end = commit_candidate_lines.index("", worktree_start)
+        replacement_line = "docs/BOOTSTRAP_VM_VERIFICATION.md"
+        if commit_candidate_lines[worktree_start] == replacement_line:
+            replacement_line = "scripts/not-real-drift.py"
+        commit_candidate_lines[worktree_start] = replacement_line
+        commit_candidate_doc.write_text("\n".join(commit_candidate_lines) + "\n", encoding="utf-8")
+        stale_commit_candidate_worktree_output = expect_fail(
+            ["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work
+        )
+        assert "Commit-candidate working-tree block is stale; expected exact block:" in stale_commit_candidate_worktree_output
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_text = boundary_doc.read_text(encoding="utf-8")
@@ -164,7 +226,6 @@ def main() -> int:
         assert "boundary doc checked-out tip line should not be present when the tracked checkpoint is HEAD." in unexpected_head_boundary_tip_output
 
         boundary_doc.write_text(boundary_text, encoding="utf-8")
-        checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
         latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         checkpoint_doc.write_text(
@@ -180,7 +241,7 @@ def main() -> int:
 
         checkpoint_doc.write_text(checkpoint_text, encoding="utf-8")
         latest_checkpoint.write_text(latest_checkpoint_text, encoding="utf-8")
-        commit_candidate = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+        commit_candidate = commit_candidate_doc
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(

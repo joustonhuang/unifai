@@ -231,6 +231,7 @@ def main() -> int:
         assert "the sandbox currently carries 1 uncommitted publish-boundary maintenance update, and the branch is `ahead 2` over `fix/openclaw-config-path-and-local-mode`." in checkpoint
         assert "remote-detection hardening bundle" not in checkpoint
         assert "- The current local sandbox now carries one small publish-boundary maintenance delta beyond the tracked local stack:\n" in checkpoint
+        assert "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n" not in checkpoint
         assert "  - `scratch.txt`\n" in checkpoint
         assert "`placeholder/helper.py`" not in checkpoint
         assert "  - `python3 scripts/check_publish_stack_parity_contract.py`\n" in checkpoint
@@ -257,6 +258,7 @@ def main() -> int:
         assert latest_checkpoint == checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in commit_candidate
         assert "Current branch state: ahead 3 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in commit_candidate
         assert "Current host-readiness snapshot:\n" in commit_candidate
@@ -309,6 +311,7 @@ def main() -> int:
         assert "  - `python3 scripts/check_github_branch_visibility_contract.py`\n" in refreshed_checkpoint
         assert "the sandbox currently carries 1 uncommitted publish-boundary maintenance update, and the branch is `ahead 2` over `fix/openclaw-config-path-and-local-mode`." in refreshed_checkpoint
         assert "- The current local sandbox now carries one small publish-boundary maintenance delta beyond the tracked local stack:\n" in refreshed_checkpoint
+        assert "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n" not in refreshed_checkpoint
         assert f"  - `{logic_sha}` (`tests: add logic commit`)\n" in refreshed_checkpoint
         assert f"  - `{docs_head_sha}` (`docs: trailing docs refresh`)\n" in refreshed_checkpoint
         assert f"  - `{head_sha}` (`docs: refresh branch reconcile publish handoff`)\n" not in refreshed_checkpoint
@@ -321,6 +324,7 @@ def main() -> int:
         assert "\n- - Files in the bundle:" not in refreshed_checkpoint
         assert refreshed_latest_checkpoint == refreshed_checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in refreshed_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in refreshed_commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in refreshed_commit_candidate
         assert "ci-artifacts/bootstrap-preflight/commit-candidate.txt" not in refreshed_commit_candidate.split("Working-tree files:\n", 1)[1].split("\n\n", 1)[0]
         assert "Current host-readiness snapshot:\n" in refreshed_commit_candidate
@@ -376,6 +380,7 @@ def main() -> int:
         assert "- The current local sandbox now carries " in stable_checkpoint
         assert "publish-boundary maintenance " in stable_checkpoint
         assert "beyond the tracked local stack:\n" in stable_checkpoint
+        assert "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n" not in stable_checkpoint
         assert f"  - `{logic_sha}` (`tests: add logic commit`)\n" in stable_checkpoint
         assert f"  - `{stable_head}` (`{stable_subject}`)\n" in stable_checkpoint
         assert "Current uncommitted delta on top:\n  - `docs/BOOTSTRAP_VM_VERIFICATION.md`\n  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`\n" in stable_checkpoint
@@ -386,6 +391,7 @@ def main() -> int:
         assert stable_latest_checkpoint == stable_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in stable_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint:" not in stable_commit_candidate
         assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in stable_commit_candidate
         assert "Current host-readiness snapshot:\n" in stable_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in stable_commit_candidate
@@ -418,6 +424,7 @@ def main() -> int:
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
         assert f"Current branch state: ahead {doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
         assert (
@@ -447,6 +454,7 @@ def main() -> int:
         assert f"Current local checkpoint: {stable_head}\n" in aligned_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in aligned_commit_candidate
         assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n" in aligned_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in aligned_commit_candidate
         assert "Working-tree files:\n(clean)\n" in aligned_commit_candidate
         assert f"  - `{stable_head}` (`{stable_subject}`)\n" in aligned_commit_candidate
         assert (

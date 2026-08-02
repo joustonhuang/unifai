@@ -49,4 +49,25 @@ if grep -q "scripts/check_vm_host_readiness.sh" <<<"$OUTPUT"; then
   exit 1
 fi
 
+git checkout -q --detach
+
+DETACHED_STATUS=0
+DETACHED_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh 2>&1)" || DETACHED_STATUS=$?
+printf '%s\n' "$DETACHED_OUTPUT"
+
+if [ "$DETACHED_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected no-arg detached-HEAD case to fail."
+  exit 1
+fi
+
+if ! grep -q "Detached HEAD; pass an explicit GitHub-visible ref." <<<"$DETACHED_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD failure message missing."
+  exit 1
+fi
+
+if grep -q "scripts/check_vm_host_readiness.sh" <<<"$DETACHED_OUTPUT"; then
+  echo "[FAIL] Detached-HEAD case should fail before any preflight steps are planned."
+  exit 1
+fi
+
 echo "[PASS] VM verifier preflight fails clearly without a GitHub remote."

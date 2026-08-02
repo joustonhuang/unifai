@@ -39,6 +39,8 @@ required = [
     ("bash scripts/bootstrap_installer_preflight.sh", "Wrapper runs bootstrap installer preflight after host readiness"),
     ('git show-ref --verify --quiet "refs/heads/$local_branch_ref"', "Wrapper resolves refs/heads inputs before local-branch visibility checks"),
     ('effective_ref="$(local_branch_name "$ref")"', "Wrapper normalizes local refs/heads inputs before downstream steps"),
+    ('Detached HEAD; pass an explicit GitHub-visible ref.', "Wrapper fails clearly when no ref is provided from a detached HEAD"),
+    ('current_branch="$ref"', "Wrapper reuses the explicit ref when HEAD is detached but a ref was passed"),
     ('bash scripts/check_github_branch_visibility.sh "$effective_ref"', "Wrapper checks GitHub branch visibility for normalized local branches"),
     ("skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA.", "Wrapper explains why branch visibility is skipped for explicit refs/SHAs"),
     ('python3 scripts/check_github_check_gate.py "$effective_ref"', "Wrapper runs GitHub check gate inspection on the normalized chosen ref"),
@@ -51,15 +53,25 @@ for needle, message in required:
     ok(message)
 
 smoke_required = [
+    ('DETACHED_WORKTREE_DIR="$(mktemp -d -t unifai-vm-preflight-detached-XXXXXX)"', "Wrapper smoke test creates a detached worktree for detached-HEAD coverage"),
+    ('git -C "$REPO_ROOT" worktree add --detach "$DETACHED_WORKTREE_DIR" HEAD >/dev/null', "Wrapper smoke test enters a real detached-HEAD repo state without disturbing the main worktree"),
     ('detect_github_remote()', "Wrapper smoke test derives the GitHub-backed remote dynamically"),
     ('GITHUB_REMOTE="$(detect_github_remote)"', "Wrapper smoke test resolves the GitHub-backed remote before building a visible SHA"),
+    ('Could not find a GitHub-backed remote for wrapper smoke coverage.', "Wrapper smoke test fails clearly when no GitHub-backed remote can be found for visible-ref coverage"),
     ('resolve_visible_remote_ref() {', "Wrapper smoke test provides a helper to pick a GitHub-visible remote ref"),
     ('VISIBLE_REMOTE_REF="$(resolve_visible_remote_ref "$GITHUB_REMOTE")"', "Wrapper smoke test resolves an explicit GitHub-visible remote-tracking ref"),
+    ('Could not resolve a GitHub-visible remote ref for wrapper smoke coverage.', "Wrapper smoke test fails clearly when it cannot derive a visible remote ref"),
     ('VISIBLE_SHA="$(git -C "$REPO_ROOT" rev-parse "$VISIBLE_REMOTE_REF")"', "Wrapper smoke test derives the visible SHA from the resolved remote-tracking ref"),
+    ('cd "$DETACHED_WORKTREE_DIR" &&', "Wrapper smoke test runs detached-HEAD coverage from the detached worktree"),
     ('DEFAULT_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER")"', "Wrapper smoke test exercises the no-argument default-branch path"),
     ('Expected current branch to be used when no ref is provided.', "Wrapper smoke test explains the default-branch expectation"),
     ('Expected branch visibility command missing in default no-arg case.', "Wrapper smoke test checks branch visibility in the default no-arg case"),
     ('Expected check-gate command missing in default no-arg case.', "Wrapper smoke test checks the check-gate step in the default no-arg case"),
+    ('DETACHED_VISIBLE_SHA_OUTPUT="$(', "Wrapper smoke test captures detached-HEAD output for an explicit visible SHA"),
+    ('Expected explicit visible SHA to be preserved in detached-HEAD case.', "Wrapper smoke test explains the detached-HEAD explicit-SHA expectation"),
+    ('Expected detached-HEAD visible-SHA case to skip branch visibility.', "Wrapper smoke test explains the detached-HEAD branch-visibility skip expectation"),
+    ('Detached-HEAD visible-SHA case should not run branch visibility.', "Wrapper smoke test guards that detached-HEAD explicit-SHA flow skips branch visibility"),
+    ('Expected detached-HEAD visible-SHA case to plan the check-gate command.', "Wrapper smoke test explains the detached-HEAD check-gate expectation"),
     ('"$WRAPPER" "$VISIBLE_REMOTE_REF"', "Wrapper smoke test exercises the wrapper with an explicit remote-tracking ref"),
     ('python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF', "Wrapper smoke test keeps the explicit remote-tracking ref intact for the check-gate step"),
     ('"$WRAPPER" "refs/heads/$BRANCH"', "Wrapper smoke test exercises the wrapper with an explicit refs/heads local branch ref"),
@@ -86,6 +98,11 @@ no_github_remote_required = [
     ('Set a GitHub upstream or add a GitHub remote such as origin before using local commit SHAs here.', "No-GitHub-remote smoke test expects actionable missing-remote recovery guidance"),
     ('scripts/check_vm_host_readiness.sh', "No-GitHub-remote smoke test guards that failure happens before host-readiness planning appears"),
     ('Expected explicit local SHA case to fail when no GitHub remote exists.', "No-GitHub-remote smoke test explains the explicit-SHA fail-closed expectation"),
+    ('git checkout -q --detach', "No-GitHub-remote smoke test forces a detached-HEAD repo state"),
+    ('UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh 2>&1', "No-GitHub-remote smoke test exercises the no-arg detached-HEAD path"),
+    ('Detached HEAD; pass an explicit GitHub-visible ref.', "No-GitHub-remote smoke test expects the detached-HEAD failure message"),
+    ('Expected no-arg detached-HEAD case to fail.', "No-GitHub-remote smoke test explains the detached-HEAD fail-closed expectation"),
+    ('Detached-HEAD case should fail before any preflight steps are planned.', "No-GitHub-remote smoke test guards that detached-HEAD failure happens before step planning"),
 ]
 
 for needle, message in no_github_remote_required:

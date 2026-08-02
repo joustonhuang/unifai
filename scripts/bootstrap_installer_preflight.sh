@@ -41,6 +41,21 @@ checkpoint_handoff_dirty_paths() {
     sed -E 's/^.. //'
 }
 
+collect_checkpoint_handoff_dirty_paths() {
+  local __target_var="$1"
+  mapfile -t "$__target_var" < <(checkpoint_handoff_dirty_paths)
+}
+
+check_checkpoint_handoff_dirty_state() {
+  local pre_refresh_paths
+  local refreshed_paths
+  pre_refresh_paths="$(printf '%s\n' "$@")"
+  refreshed_paths="$UNIFAI_PREFLIGHT_REFRESHED_HANDOFF_PATHS"
+  UNIFAI_PREFLIGHT_PRE_REFRESH_HANDOFF_PATHS="$pre_refresh_paths" \
+    UNIFAI_PREFLIGHT_REFRESHED_HANDOFF_PATHS="$refreshed_paths" \
+    bash "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"
+}
+
 echo "== Bootstrap installer preflight =="
 echo "Repo root: $REPO_ROOT"
 echo "Report: $REPORT_FILE"
@@ -66,6 +81,8 @@ require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract
 require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"
+require_file "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 require_file "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
@@ -81,6 +98,7 @@ require_file "$REPO_ROOT/scripts/smoke_test_branch_reconcile_handoff.sh"
 require_file "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"
 require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
+require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"
 require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"
 require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"
@@ -160,8 +178,14 @@ pass "GitHub check gate smoke script passes py_compile"
 bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"
 pass "VM host readiness helper passes bash -n"
 
+bash -n "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"
+pass "Checkpoint handoff dirty-state helper passes bash -n"
+
 python3 -m py_compile "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"
 pass "VM host readiness contract checker passes py_compile"
+
+bash -n "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"
+pass "Checkpoint handoff dirty-state smoke script passes bash -n"
 
 bash -n "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 pass "VM host readiness smoke script passes bash -n"
@@ -205,6 +229,9 @@ pass "VM verifier contract checker passes py_compile"
 python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
 pass "VM verifier preflight wrapper contract checker passes py_compile"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"
+pass "VM verifier preflight wrapper contract checker contract passes py_compile"
+
 python3 "$REPO_ROOT/scripts/check_stage50_openclaw_config.py"
 pass "Stage 50 OpenClaw config contract check passed"
 
@@ -226,17 +253,18 @@ pass "GitHub check gate contract check passed"
 python3 "$REPO_ROOT/scripts/check_github_branch_visibility_contract.py"
 pass "GitHub branch visibility contract check passed"
 
+collect_checkpoint_handoff_dirty_paths pre_refresh_handoff_paths
+
 python3 "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"
 pass "VM verifier checkpoint state refreshed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"
 pass "VM verifier checkpoint freshness check passed"
 
-mapfile -t refreshed_handoff_paths < <(checkpoint_handoff_dirty_paths)
+collect_checkpoint_handoff_dirty_paths refreshed_handoff_paths
 if [ "${#refreshed_handoff_paths[@]}" -gt 0 ]; then
-  printf '[FAIL] Bootstrap preflight refreshed checkpoint handoff artifacts but they are not committed yet:\n'
-  printf '  - %s\n' "${refreshed_handoff_paths[@]}"
-  echo "[INFO] Review/add/commit the refreshed verifier checkpoint handoff before treating this ref as preflight-green."
+  UNIFAI_PREFLIGHT_REFRESHED_HANDOFF_PATHS="$(printf '%s\n' "${refreshed_handoff_paths[@]}")"
+  check_checkpoint_handoff_dirty_state "${pre_refresh_handoff_paths[@]}"
   exit 1
 fi
 pass "Checkpoint handoff artifacts already match the current tracked state"
@@ -267,6 +295,9 @@ pass "VM verifier contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"
 pass "VM verifier preflight wrapper contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"
+pass "VM verifier preflight wrapper contract checker contract check passed"
 
 bash -n "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"
 pass "VM verifier script passes bash -n"
@@ -321,6 +352,9 @@ pass "GitHub branch visibility no-GitHub-remote smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"
 pass "VM host readiness smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"
+pass "Checkpoint handoff dirty-state smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
 pass "Publish stack parity smoke test passed"

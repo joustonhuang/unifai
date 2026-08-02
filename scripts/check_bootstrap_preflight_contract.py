@@ -6,6 +6,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PREFLIGHT = REPO_ROOT / "scripts" / "bootstrap_installer_preflight.sh"
+DIRTY_STATE_HELPER = REPO_ROOT / "scripts" / "check_checkpoint_handoff_dirty_state.sh"
 
 
 def fail(message: str) -> None:
@@ -18,6 +19,7 @@ def ok(message: str) -> None:
 
 
 text = PREFLIGHT.read_text(encoding="utf-8")
+helper_text = DIRTY_STATE_HELPER.read_text(encoding="utf-8")
 
 required = [
     ('require_file "$REPO_ROOT/little7-installer/config/supervisor-secretvault.lock"', 'Preflight requires the SecretVault lock contract file'),
@@ -36,6 +38,8 @@ required = [
     ('require_file "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"', 'Preflight requires the VM verifier checkpoint refresh contract checker'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"', 'Preflight requires the VM verifier checkpoint freshness smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"', 'Preflight requires the VM verifier checkpoint refresh smoke test'),
+    ('require_file "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"', 'Preflight requires the checkpoint handoff dirty-state helper'),
+    ('require_file "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"', 'Preflight requires the checkpoint handoff dirty-state smoke test'),
     ('require_file "$REPO_ROOT/scripts/check_vm_host_readiness.sh"', 'Preflight requires the VM host readiness helper'),
     ('require_file "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"', 'Preflight requires the VM host readiness contract checker'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"', 'Preflight requires the VM host readiness smoke test'),
@@ -51,6 +55,7 @@ required = [
     ('require_file "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"', 'Preflight requires the VM verifier preflight wrapper'),
     ('require_file "$REPO_ROOT/scripts/check_vm_verifier_contract.py"', 'Preflight requires the VM verifier contract checker'),
     ('require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"', 'Preflight requires the VM verifier preflight wrapper contract checker'),
+    ('require_file "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"', 'Preflight requires the VM verifier preflight wrapper contract checker contract'),
     ('require_file "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"', 'Preflight requires the VM verifier script'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"', 'Preflight requires the GitHub branch-visibility smoke test'),
     ('require_file "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"', 'Preflight requires the GitHub branch-visibility no-GitHub-remote smoke test'),
@@ -85,7 +90,9 @@ required = [
     ('python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_freshness.py"', 'Preflight syntax-checks the VM verifier checkpoint freshness smoke test'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_vm_verifier_checkpoint_refresh.py"', 'Preflight syntax-checks the VM verifier checkpoint refresh smoke test'),
     ('bash -n "$REPO_ROOT/scripts/check_vm_host_readiness.sh"', 'Preflight syntax-checks the VM host readiness helper'),
+    ('bash -n "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"', 'Preflight syntax-checks the checkpoint handoff dirty-state helper'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"', 'Preflight syntax-checks the VM host readiness contract checker'),
+    ('bash -n "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"', 'Preflight syntax-checks the checkpoint handoff dirty-state smoke test'),
     ('bash -n "$REPO_ROOT/scripts/check_github_branch_visibility.sh"', 'Preflight syntax-checks the GitHub branch-visibility helper'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"', 'Preflight syntax-checks the VM host readiness smoke test'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_publish_stack_parity.py"', 'Preflight syntax-checks the publish stack parity checker'),
@@ -100,6 +107,7 @@ required = [
     ('bash -n "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh"', 'Preflight syntax-checks the VM verifier preflight wrapper'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_contract.py"', 'Preflight syntax-checks the VM verifier contract checker'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"', 'Preflight syntax-checks the VM verifier preflight wrapper contract checker'),
+    ('python3 -m py_compile "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"', 'Preflight syntax-checks the VM verifier preflight wrapper contract checker contract'),
     ('python3 -m py_compile "$REPO_ROOT/scripts/smoke_test_github_check_gate.py"', 'Preflight syntax-checks the GitHub check-gate smoke test'),
     ('bash -n "$REPO_ROOT/scripts/vm/verify_bootstrap_in_vm.sh"', 'Preflight syntax-checks the VM verifier script'),
     ('bash -n "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"', 'Preflight syntax-checks the GitHub branch-visibility smoke script'),
@@ -126,19 +134,26 @@ required = [
     ('python3 "$REPO_ROOT/scripts/refresh_vm_verifier_checkpoint_state.py"', 'Preflight refreshes the VM verifier checkpoint state before freshness validation'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness.py"', 'Preflight runs the VM verifier checkpoint freshness checker against the refreshed state'),
     ('CHECKPOINT_HANDOFF_PATHS=(', 'Preflight tracks the verifier checkpoint handoff artifact set explicitly'),
-    ('git -C "$REPO_ROOT" status --porcelain --untracked-files=all -- "${CHECKPOINT_HANDOFF_PATHS[@]}" |', 'Preflight inspects the checkpoint handoff artifact set for refresh-induced dirtiness'),
-    ("[FAIL] Bootstrap preflight refreshed checkpoint handoff artifacts but they are not committed yet:", 'Preflight fails closed when its checkpoint refresh leaves the handoff artifacts dirty'),
-    ('Review/add/commit the refreshed verifier checkpoint handoff before treating this ref as preflight-green.', 'Preflight explains how to recover from a refresh-induced dirty handoff'),
+    ('collect_checkpoint_handoff_dirty_paths() {', 'Preflight centralizes checkpoint handoff dirtiness collection'),
+    ('check_checkpoint_handoff_dirty_state() {', 'Preflight centralizes checkpoint handoff dirty-state classification'),
+    ('UNIFAI_PREFLIGHT_PRE_REFRESH_HANDOFF_PATHS="$pre_refresh_paths" \\', 'Preflight passes pre-refresh handoff paths into the dirty-state helper'),
+    ('UNIFAI_PREFLIGHT_REFRESHED_HANDOFF_PATHS="$refreshed_paths" \\', 'Preflight passes refreshed handoff paths into the dirty-state helper'),
+    ('bash "$REPO_ROOT/scripts/check_checkpoint_handoff_dirty_state.sh"', 'Preflight delegates dirty-state classification to the helper'),
+    ('collect_checkpoint_handoff_dirty_paths pre_refresh_handoff_paths', 'Preflight snapshots checkpoint handoff dirtiness before refresh'),
+    ('collect_checkpoint_handoff_dirty_paths refreshed_handoff_paths', 'Preflight re-checks checkpoint handoff dirtiness after refresh'),
+    ('UNIFAI_PREFLIGHT_REFRESHED_HANDOFF_PATHS="$(printf \'%s\\n\' "${refreshed_handoff_paths[@]}")"', 'Preflight serializes refreshed handoff paths for the dirty-state helper'),
     ('pass "Checkpoint handoff artifacts already match the current tracked state"', 'Preflight reports when the checkpoint handoff artifacts are already current'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_freshness_contract.py"', 'Preflight runs the VM verifier checkpoint freshness contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_checkpoint_refresh_contract.py"', 'Preflight runs the VM verifier checkpoint refresh contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_host_readiness_contract.py"', 'Preflight runs the VM host readiness contract checker'),
+    ('bash "$REPO_ROOT/scripts/smoke_test_checkpoint_handoff_dirty_state.sh"', 'Preflight runs the checkpoint handoff dirty-state smoke test'),
     ('python3 "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"', 'Preflight runs the publish stack parity contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"', 'Preflight runs the publish branch history contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_branch_reconcile_handoff.py"', 'Preflight runs the branch-reconcile handoff checker'),
     ('python3 "$REPO_ROOT/scripts/check_branch_reconcile_handoff_contract.py"', 'Preflight runs the branch-reconcile handoff contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_contract.py"', 'Preflight runs the VM verifier contract checker'),
     ('python3 "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract.py"', 'Preflight runs the VM verifier preflight wrapper contract checker'),
+    ('python3 "$REPO_ROOT/scripts/check_vm_verifier_preflight_contract_contract.py"', 'Preflight runs the VM verifier preflight wrapper contract checker contract'),
     ('bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility.sh"', 'Preflight runs the GitHub branch-visibility smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_github_branch_visibility_no_github_remote.sh"', 'Preflight runs the GitHub branch-visibility no-GitHub-remote smoke test'),
     ('bash "$REPO_ROOT/scripts/smoke_test_vm_host_readiness.sh"', 'Preflight runs the VM host readiness smoke test'),
@@ -170,6 +185,19 @@ required = [
 
 for needle, message in required:
     if needle not in text:
+        fail(message)
+    ok(message)
+
+helper_required = [
+    ('[FAIL] Bootstrap preflight refreshed checkpoint handoff artifacts but they are not committed yet:', 'Dirty-state helper fails closed when refresh leaves handoff artifacts dirty'),
+    ('[INFO] Checkpoint handoff artifacts that were already dirty before this rerun and still need review:', 'Dirty-state helper reports pre-existing handoff dirtiness alongside refreshed paths'),
+    ('Review/add/commit the refreshed verifier checkpoint handoff before treating this ref as preflight-green.', 'Dirty-state helper explains how to recover from refresh-induced handoff dirtiness'),
+    ('[FAIL] Bootstrap preflight checkpoint handoff artifacts were already dirty before refresh and are still not committed:', 'Dirty-state helper fails closed clearly when handoff artifacts were already dirty before refresh'),
+    ('Review/add/commit the existing verifier checkpoint handoff dirtiness before treating this ref as preflight-green.', 'Dirty-state helper explains how to recover from pre-existing handoff dirtiness'),
+]
+
+for needle, message in helper_required:
+    if needle not in helper_text:
         fail(message)
     ok(message)
 

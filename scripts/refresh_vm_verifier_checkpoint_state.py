@@ -127,13 +127,41 @@ def replace_delta_and_bundle_sections(
     dirty_bullets: str,
     bundle_bullets: str,
 ) -> str:
+    if dirty_bullets and current_delta_block in checkpoint_text:
+        prefix, suffix = checkpoint_text.split(current_delta_block, 1)
+        checkpoint_text = prefix.replace(dirty_bullets + "\n", "") + current_delta_block + suffix
     checkpoint_text = re.sub(
-        r"- The current local sandbox .*?\n- Fresh local verification at the current sandbox state is green again:\n(?:  - [^\n]*\n)+",
+        r"- The current local sandbox .*?(?=- Fresh local verification at the current (?:sandbox|tracked checkpoint) state is green again:\n(?:  - [^\n]*\n)+)",
+        "",
+        checkpoint_text,
+        count=1,
+        flags=re.S,
+    )
+    updated_checkpoint_text = re.sub(
+        r"- Fresh local verification at the current (?:sandbox|tracked checkpoint) state is green again:\n(?:  - [^\n]*\n)+",
         current_delta_block + "\n" + verification_block + "\n",
         checkpoint_text,
         count=1,
         flags=re.S,
     )
+    if updated_checkpoint_text == checkpoint_text:
+        updated_checkpoint_text = re.sub(
+            r"(- `ci-artifacts/bootstrap-preflight/commit-candidate\.txt` now captures .*?\n)",
+            lambda m: m.group(1) + current_delta_block + "\n" + verification_block + "\n",
+            checkpoint_text,
+            count=1,
+        )
+    if updated_checkpoint_text == checkpoint_text:
+        updated_checkpoint_text = re.sub(
+            r"(- Fresh local `bash scripts/bootstrap_installer_preflight\.sh` reruns are green[^\n]*\n)",
+            lambda m: m.group(1) + current_delta_block + "\n" + verification_block + "\n",
+            checkpoint_text,
+            count=1,
+        )
+    checkpoint_text = updated_checkpoint_text
+    if dirty_bullets and current_delta_block in checkpoint_text:
+        prefix, suffix = checkpoint_text.split(current_delta_block, 1)
+        checkpoint_text = prefix.replace(dirty_bullets + "\n", "") + current_delta_block + suffix
     if dirty_bullets:
         replacement = "- Current uncommitted delta on top:\n" + dirty_bullets + "\n- Files in the bundle:"
     else:
@@ -348,9 +376,12 @@ def main() -> int:
         boundary_text,
         count=1,
     )
-    if re.search(r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)", boundary_text):
+    if re.search(
+        r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)[^\n]*|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta[^\n]*)",
+        boundary_text,
+    ):
         boundary_text = re.sub(
-            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta)",
+            r"- the local sandbox currently (?:also carries \d+ uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) path\(s\) beyond HEAD \([^\n]+\)[^\n]*|carries no additional uncommitted (?:verifier-hardening|checkpoint-refresh helper/doc|publish-boundary maintenance) delta[^\n]*)",
             boundary_dirty_line,
             boundary_text,
             count=1,
@@ -473,6 +504,12 @@ def main() -> int:
             checkpoint_text,
             count=1,
         )
+    checkpoint_text = re.sub(
+        r"(- `ci-artifacts/bootstrap-preflight/commit-candidate\.txt` now captures .*?\n)(?:  - `[^\n]+`\n)+",
+        r"\1",
+        checkpoint_text,
+        count=1,
+    )
     updated_checkpoint_text = re.sub(
         r"- Live host-readiness has improved since the older missing-QEMU note: .*",
         checkpoint_host_line,
@@ -518,12 +555,24 @@ def main() -> int:
         checkpoint_text,
         count=1,
     )
+    checkpoint_text = re.sub(
+        r"- The current local sandbox (?:(?:now|also) carries .*? beyond the tracked (?:local stack|doc commits)|also carries .*? checkpoint-refresh helper/doc delta beyond the tracked doc commits)[^\n]*(?::\n(?:  - `[^\n]+`\n)+|\n)?",
+        "",
+        checkpoint_text,
+        flags=re.S,
+    )
     checkpoint_text = replace_delta_and_bundle_sections(
         checkpoint_text,
         current_delta_block,
         verification_block,
         dirty_bullets,
         bundle_bullets,
+    )
+    checkpoint_text = re.sub(
+        r"(- `ci-artifacts/bootstrap-preflight/commit-candidate\.txt` now captures .*?\n)(?:  - `[^\n]+`\n)+(?=- The current local sandbox now carries|- Fresh local verification at the current (?:sandbox|tracked checkpoint) state is green again:)",
+        r"\1",
+        checkpoint_text,
+        count=1,
     )
     checkpoint_text = re.sub(
         r"1\. Make the current local branch tip GitHub-visible \(the latest non-doc logic commit in that tip is `[^`]+`\)\.",
@@ -543,6 +592,13 @@ def main() -> int:
     CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")
 
     current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"
+    tip_delta_line = ""
+    if tracked_ref != "HEAD":
+        tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")
+        tip_delta_label = "commit" if tip_delta_count == "1" else "commits"
+        tip_delta_line = (
+            f"Checked-out tip delta beyond tracked checkpoint: {tip_delta_count} doc-only {tip_delta_label}\n"
+        )
     verification_gates = (
         "Verification gates run:\n"
         "python3 scripts/check_publish_stack_parity_contract.py\n"
@@ -593,6 +649,7 @@ def main() -> int:
         f"Current local checkpoint: {tracked_head_short}\n"
         f"{commit_candidate_tip_line}"
         f"Current branch state: {current_branch_state}\n\n"
+        f"{tip_delta_line}"
         f"{working_tree_block}\n\n"
         f"{verification_gates}\n\n"
         "Current host-readiness snapshot:\n"
