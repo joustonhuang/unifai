@@ -125,23 +125,10 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
-- the local hardening stack is currently ahead of that public ref through `e29a900` (`scripts: guard preflight checkpoint handoff dirtiness`), 73 commits ahead in total
-- the local sandbox currently also carries 3 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`, `scripts/refresh_vm_verifier_checkpoint_state.py`)
-- the latest non-doc logic delta in that local stack is `e29a900` (`scripts: guard preflight checkpoint handoff dirtiness`) in:
-  - `scripts/bootstrap_installer_preflight.sh`
-  - `scripts/check_bootstrap_preflight_contract.py`
-  - `scripts/check_bootstrap_preflight_contract_contract.py`
-  - `scripts/check_checkpoint_handoff_dirty_state.sh`
-  - `scripts/check_vm_verifier_checkpoint_freshness.py`
-  - `scripts/check_vm_verifier_checkpoint_freshness_contract.py`
-  - `scripts/check_vm_verifier_preflight_contract.py`
-  - `scripts/check_vm_verifier_preflight_contract_contract.py`
+- the local hardening stack is currently ahead of that public ref through `e7f1f12` (`docs: refresh verifier checkpoint after dirty-state guard`), 74 commits ahead in total
+- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the latest non-doc logic delta in that local stack is `e7f1f12` (`docs: refresh verifier checkpoint after dirty-state guard`) in:
   - `scripts/refresh_vm_verifier_checkpoint_state.py`
-  - `scripts/smoke_test_checkpoint_handoff_dirty_state.sh`
-  - `scripts/smoke_test_vm_verifier_checkpoint_freshness.py`
-  - `scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
-  - `scripts/smoke_test_vm_verifier_preflight_no_github_remote.sh`
-  - `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - the wrapper smoke path now also fails with explicit diagnostics if the repo cannot auto-detect any GitHub-backed remote or cannot derive any GitHub-visible remote-tracking ref for coverage, instead of disappearing behind an early `set -e` exit
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
