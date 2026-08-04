@@ -125,11 +125,12 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
-- the local hardening stack is currently ahead of that public ref through `ef14bee` (`tests: pin visible branch-reconcile handoff state`), 82 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
-- the latest non-doc logic delta in that local stack is `ef14bee` (`tests: pin visible branch-reconcile handoff state`) in:
-  - `scripts/check_branch_reconcile_handoff_contract.py`
-  - `scripts/smoke_test_branch_reconcile_handoff.sh`
+- the local hardening stack is currently ahead of that public ref through `98b2160` (`scripts: ignore branch-reconcile handoff in publish parity`), 86 commits ahead in total
+- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD (`docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the latest non-doc logic delta in that local stack is `98b2160` (`scripts: ignore branch-reconcile handoff in publish parity`) in:
+  - `scripts/check_publish_stack_parity.py`
+  - `scripts/check_publish_stack_parity_contract.py`
+  - `scripts/smoke_test_publish_stack_parity.sh`
 - the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
 - the wrapper smoke path now also fails with explicit diagnostics if the repo cannot auto-detect any GitHub-backed remote or cannot derive any GitHub-visible remote-tracking ref for coverage, instead of disappearing behind an early `set -e` exit
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
