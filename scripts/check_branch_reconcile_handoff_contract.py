@@ -63,6 +63,10 @@ smoke_required = [
     ('docs: refresh branch reconcile publish handoff', "Branch-reconcile smoke test creates a handoff-only bookkeeping commit at HEAD"),
     ('The latest non-handoff branch tip captured by this note is', "Branch-reconcile smoke test writes a synthetic handoff note with a captured non-handoff tip"),
     ('Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is the current branch tip.', "Branch-reconcile smoke test covers the non-doc HEAD checkpoint state"),
+    ('git push origin HEAD:fix/openclaw-config-path-and-local-mode >/dev/null', "Branch-reconcile smoke test aligns the synthetic remote before visible-ref coverage"),
+    ('and it is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned GitHub-visible checkpoint wording"),
+    ('should stay focused on the visible publish boundary: rerun \\`Bootstrap Installer Preflight\\` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.', "Branch-reconcile smoke test covers the aligned visible-ref next move"),
+    ('Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned visible checkpoint state"),
     ('Expected branch-reconcile checker to reject a note that captures the bookkeeping HEAD tip.', "Branch-reconcile smoke test fail-closes on self-stale captured-tip wording"),
     ('Expected branch-reconcile checker to reject stale divergence counts.', "Branch-reconcile smoke test fail-closes on stale divergence counts"),
 ]

@@ -141,4 +141,34 @@ grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary
   exit 1
 }
 
+git push origin HEAD:fix/openclaw-config-path-and-local-mode >/dev/null
+
+older_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $1}')"
+cleaner_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $2}')"
+
+cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
+# Branch Reconcile Note — refreshed 2026-07-29 09:10 Asia/Taipei
+
+## Current state
+
+- \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` is the cleaner publish candidate.
+- \`fix/openclaw-config-path-and-local-mode\` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
+- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The current branch tip is already the tracked non-doc publish-boundary checkpoint: \`${non_doc_head_sha}\`, and it is already GitHub-visible.
+- Divergence count from \`git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`:
+  - \`fix/openclaw-config-path-and-local-mode\`: \`${older_count}\`
+  - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`: \`${cleaner_count}\`
+
+## Best next move
+
+Use \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the visible publish boundary: rerun \`Bootstrap Installer Preflight\` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
+EOF
+
+VISIBLE_HEAD_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py")"
+printf '%s\n' "$VISIBLE_HEAD_OUTPUT"
+grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary state" <<<"$VISIBLE_HEAD_OUTPUT" || {
+  echo "[FAIL] Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is already GitHub-visible."
+  exit 1
+}
+
 echo "[PASS] Branch-reconcile handoff smoke test passed"
