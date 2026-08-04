@@ -71,6 +71,12 @@ smoke_required = [
     ('python3 scripts/check_publish_stack_parity.py"', "Publish stack parity smoke test exercises inferred-handoff mode with omitted refs"),
     ('Checked expected functional paths: 1', "Publish stack parity smoke test asserts inferred-handoff mode ignores the doc-only tip delta"),
     ('Expected inferred-handoff parity run to ignore the doc-only tip delta.', "Publish stack parity smoke test fails clearly when doc-only-tip parity regresses"),
+    ('NO_UPSTREAM_DIR="$TMP_DIR/no-upstream"', "Publish stack parity smoke test creates an isolated repo without an upstream for inferred-handoff failure coverage"),
+    ("Expected inferred-handoff parity run to fail without an upstream.", "Publish stack parity smoke test fails clearly when the no-upstream fail-closed path regresses"),
+    ("Could not infer refs: branch 'no-upstream' has no upstream; pass explicit refs instead.", "Publish stack parity smoke test asserts the no-upstream inferred-handoff failure guidance"),
+    ('DETACHED_DIR="$TMP_DIR/detached"', "Publish stack parity smoke test creates an isolated detached-HEAD repo for inferred-handoff failure coverage"),
+    ("Expected inferred-handoff parity run to fail from detached HEAD.", "Publish stack parity smoke test fails clearly when the detached-HEAD fail-closed path regresses"),
+    ("Could not infer refs: detached HEAD does not provide a stable expected ref; pass explicit refs instead.", "Publish stack parity smoke test asserts the detached-HEAD inferred-handoff failure guidance"),
 ]
 
 for needle, message in smoke_required:

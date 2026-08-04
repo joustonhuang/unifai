@@ -125,6 +125,82 @@ if ! grep -q "Checked expected functional paths: 1" <<<"$INFERRED_OUTPUT"; then
   exit 1
 fi
 
+NO_UPSTREAM_DIR="$TMP_DIR/no-upstream"
+cp -R "$WORKTREE" "$NO_UPSTREAM_DIR"
+python3 - <<'PY' "$NO_UPSTREAM_DIR"
+from pathlib import Path
+import shutil
+import sys
+
+root = Path(sys.argv[1])
+for path in root.rglob('.git'):
+    if path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+PY
+
+cd "$NO_UPSTREAM_DIR"
+git init -q
+git config user.name "UnifAI Smoke"
+git config user.email "smoke@unifai.invalid"
+git add .
+git commit -q -m "snapshot"
+git checkout -q -b no-upstream
+
+STATUS=0
+NO_UPSTREAM_OUTPUT="$("$REAL_BASH" -lc "cd '$NO_UPSTREAM_DIR' && python3 scripts/check_publish_stack_parity.py" 2>&1)" || STATUS=$?
+printf '%s\n' "$NO_UPSTREAM_OUTPUT"
+
+if [ "$STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected inferred-handoff parity run to fail without an upstream."
+  exit 1
+fi
+if ! grep -q "Could not infer refs: branch 'no-upstream' has no upstream; pass explicit refs instead." <<<"$NO_UPSTREAM_OUTPUT"; then
+  echo "[FAIL] Expected no-upstream inferred-handoff failure message."
+  exit 1
+fi
+
+DETACHED_DIR="$TMP_DIR/detached"
+cp -R "$WORKTREE" "$DETACHED_DIR"
+python3 - <<'PY' "$DETACHED_DIR"
+from pathlib import Path
+import shutil
+import sys
+
+root = Path(sys.argv[1])
+for path in root.rglob('.git'):
+    if path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+PY
+
+cd "$DETACHED_DIR"
+git init -q
+git config user.name "UnifAI Smoke"
+git config user.email "smoke@unifai.invalid"
+git add .
+git commit -q -m "snapshot"
+git remote add origin https://github.com/example/unifai.git
+git update-ref refs/remotes/origin/base "$(git rev-parse HEAD)"
+git checkout -q --detach
+
+STATUS=0
+DETACHED_OUTPUT="$("$REAL_BASH" -lc "cd '$DETACHED_DIR' && python3 scripts/check_publish_stack_parity.py" 2>&1)" || STATUS=$?
+printf '%s\n' "$DETACHED_OUTPUT"
+
+if [ "$STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected inferred-handoff parity run to fail from detached HEAD."
+  exit 1
+fi
+if ! grep -q "Could not infer refs: detached HEAD does not provide a stable expected ref; pass explicit refs instead." <<<"$DETACHED_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD inferred-handoff failure message."
+  exit 1
+fi
+
+cd "$WORKTREE"
+
 git checkout -q base
 git checkout -q -b candidate-bad
 cat > app.py <<'EOF'
