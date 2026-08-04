@@ -1,14 +1,14 @@
-# Branch Reconcile Note — refreshed 2026-08-04 15:52 Asia/Taipei
+# Branch Reconcile Note — refreshed 2026-08-04 19:51 Asia/Taipei
 
 ## Current state
 
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
 - `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is `60d9723`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
-- The last non-doc tracked publish-boundary checkpoint remains `98b2160` until the current doc-only tip becomes GitHub-visible.
+- The latest non-handoff branch tip captured by this note is `0a42ae1`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The current branch tip is already the tracked non-doc publish-boundary checkpoint: `0a42ae1`. It still needs to become GitHub-visible.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
-  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `177`
+  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `179`
 
 ## Transplant-only commits
 
@@ -121,4 +121,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
 
-As of `60d9723`, the local branch-reconcile handoff is back in sync with the tree after the dirty-state guard, wrapper-meta-contract checkpoint settling, visible-handoff coverage, publish-parity handoff hardening, and follow-up checkpoint refresh/settle commits landed on top of tracked non-doc checkpoint `98b2160`, and this note now treats its own refresh commits as handoff-only bookkeeping rather than live branch-tip state.
+As of `0a42ae1`, the local branch-reconcile handoff is back in sync with the tree after the dirty-state guard, wrapper-meta-contract checkpoint settling, visible-handoff coverage, publish-parity handoff hardening, the later tip-handoff test pin, and follow-up checkpoint refresh commits, and this note now treats its own refresh commits as handoff-only bookkeeping rather than live branch-tip state.
