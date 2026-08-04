@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `74d075e` (`tests: cover publish parity inferred-ref failures`), 94 commits ahead in total
-- the local sandbox currently also carries 3 uncommitted publish-boundary maintenance path(s) beyond HEAD (`ci-artifacts/branch-reconcile-2026-07-10.md`, `docs/BOOTSTRAP_VM_VERIFICATION.md`, `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`)
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
 - the latest non-doc logic delta in that local stack is `74d075e` (`tests: cover publish parity inferred-ref failures`) in:
   - `scripts/check_publish_stack_parity_contract.py`
   - `scripts/smoke_test_publish_stack_parity.sh`
