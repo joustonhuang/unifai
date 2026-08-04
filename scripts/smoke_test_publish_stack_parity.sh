@@ -13,6 +13,7 @@ mkdir -p "$WORKTREE/docs" "$WORKTREE/scripts"
 cp "$REPO_ROOT/scripts/check_publish_stack_parity.py" "$WORKTREE/scripts/check_publish_stack_parity.py"
 chmod +x "$WORKTREE/scripts/check_publish_stack_parity.py"
 mkdir -p "$WORKTREE/ci-artifacts/bootstrap-preflight"
+mkdir -p "$WORKTREE/ci-artifacts"
 
 cd "$WORKTREE"
 git init -q
@@ -72,6 +73,13 @@ Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ 
 Current local checkpoint: local-checkpoint
 Current checked-out branch tip: expected (docs only tip)
 EOF
+cat > ci-artifacts/branch-reconcile-2026-07-10.md <<'EOF'
+# Branch Reconcile Note — synthetic
+
+- differs only as checked-in handoff bookkeeping
+EOF
+git add ci-artifacts/branch-reconcile-2026-07-10.md
+git commit -q -m "checked-in handoff note"
 
 PASS_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py base candidate-good expected")"
 printf '%s\n' "$PASS_OUTPUT"
