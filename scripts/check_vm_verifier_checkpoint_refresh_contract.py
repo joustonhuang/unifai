@@ -93,6 +93,8 @@ for needle, message in required:
 print("[PASS] VM verifier checkpoint refresh contract looks sane")
 
 smoke_required = [
+    ('assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\\n" in commit_candidate', "Refresh smoke test pins the initial doc-only checked-out tip line"),
+    ('assert "Current checked-out branch tip:" not in stable_commit_candidate', "Refresh smoke test forbids a checked-out tip line when the tracked checkpoint is HEAD"),
     ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Refresh smoke test exercises the already-visible doc-only tip handoff"),
     ('assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref branch-state line"),
     ('assert "Working-tree files:\\n(clean)\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref clean handoff shape"),

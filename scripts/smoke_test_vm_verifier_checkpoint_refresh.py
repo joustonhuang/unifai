@@ -257,6 +257,7 @@ def main() -> int:
         assert f"Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ {docs_head_sha}\n" in commit_candidate
         assert latest_checkpoint == checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in commit_candidate
+        assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\n" in commit_candidate
         assert "Current branch state: ahead 3 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in commit_candidate
@@ -390,6 +391,7 @@ def main() -> int:
         assert "\n- - Files in the bundle:" not in stable_checkpoint
         assert stable_latest_checkpoint == stable_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in stable_commit_candidate
+        assert "Current checked-out branch tip:" not in stable_commit_candidate
         assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint:" not in stable_commit_candidate
         assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in stable_commit_candidate
