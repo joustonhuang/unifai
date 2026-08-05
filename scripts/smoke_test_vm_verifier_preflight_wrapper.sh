@@ -228,6 +228,32 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_SH
   exit 1
 fi
 
+DETACHED_REMOTE_REF_OUTPUT="$(
+  cd "$DETACHED_WORKTREE_DIR" &&
+  UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "$VISIBLE_REMOTE_REF"
+)"
+printf '%s\n' "$DETACHED_REMOTE_REF_OUTPUT"
+
+if ! grep -q "Ref: $VISIBLE_REMOTE_REF" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit remote-tracking ref to be preserved in detached-HEAD case."
+  exit 1
+fi
+
+if ! grep -q "skipping branch-alignment check and treating it as an explicit GitHub-visible ref/SHA" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD remote-ref case to skip branch visibility."
+  exit 1
+fi
+
+if grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Detached-HEAD remote-ref case should not run branch visibility."
+  exit 1
+fi
+
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD remote-ref case to plan the check-gate command."
+  exit 1
+fi
+
 HEADS_REF_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "refs/heads/$BRANCH")"
 printf '%s\n' "$HEADS_REF_OUTPUT"
 
