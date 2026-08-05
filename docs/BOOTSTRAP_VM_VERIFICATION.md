@@ -126,7 +126,7 @@ The verifier only accepts refs GitHub can resolve for this repo. If you point it
 Current known boundary on this branch family:
 - GitHub-visible branch head remains `56aefc5`
 - the local hardening stack is currently ahead of that public ref through `b0d0940` (`tests: cover detached remote-ref wrapper preflight`), 98 commits ahead in total
-- the local sandbox currently also carries 1 uncommitted publish-boundary maintenance path(s) beyond HEAD (`ci-artifacts/branch-reconcile-2026-07-10.md`)
+- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
 - the latest non-doc logic delta in that local stack is `b0d0940` (`tests: cover detached remote-ref wrapper preflight`) in:
   - `scripts/check_vm_verifier_preflight_contract.py`
   - `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`
