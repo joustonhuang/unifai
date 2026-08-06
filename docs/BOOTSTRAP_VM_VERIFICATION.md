@@ -124,13 +124,10 @@ bash scripts/vm/verify_bootstrap_in_vm.sh <github-visible-ref>
 The verifier only accepts refs GitHub can resolve for this repo. If you point it at a local-only commit, it fails closed and tells you to push that commit first or use a GitHub-visible branch/ref.
 
 Current known boundary on this branch family:
-- GitHub-visible branch head remains `56aefc5`
-- the local hardening stack is currently ahead of that public ref through `b0d0940` (`tests: cover detached remote-ref wrapper preflight`), 98 commits ahead in total
-- the local sandbox currently carries no additional uncommitted publish-boundary maintenance delta
-- the latest non-doc logic delta in that local stack is `b0d0940` (`tests: cover detached remote-ref wrapper preflight`) in:
-  - `scripts/check_vm_verifier_preflight_contract.py`
-  - `scripts/smoke_test_vm_verifier_preflight_wrapper.sh`
-- the local wrapper coverage also now proves `scripts/run_vm_verifier_preflight.sh` keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
+- treat the published GitHub-visible ref as the VM-proof boundary and re-check the exact branch/commit state locally before any live verifier run
+- the local sandbox may carry additional ahead-of-published commits and uncommitted publish-boundary maintenance delta, so confirm with `git status --short --branch` before assuming the current tip is publishable
+- the latest wrapper hardening keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`
+- that same wrapper now normalizes explicit GitHub remote-tracking refs down to a GitHub-visible branch name for the final `scripts/vm/verify_bootstrap_in_vm.sh` handoff, so the operator-facing next step stays runnable
 - the wrapper smoke path now also fails with explicit diagnostics if the repo cannot auto-detect any GitHub-backed remote or cannot derive any GitHub-visible remote-tracking ref for coverage, instead of disappearing behind an early `set -e` exit
 - that earlier check-gate ref-resolution hardening now resolves GitHub remote-tracking refs such as `github/fix/openclaw-config-path-and-local-mode` instead of failing immediately at the commit-SHA lookup path
 - a fresh local `bash scripts/bootstrap_installer_preflight.sh` rerun is green with the current publish-boundary maintenance bundle in place
