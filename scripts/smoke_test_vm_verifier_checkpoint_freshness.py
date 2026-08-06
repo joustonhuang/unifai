@@ -42,10 +42,10 @@ def seed_repo(work: Path) -> None:
     (work / ".gitignore").write_text("ci-artifacts/\n", encoding="utf-8")
     (work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md").write_text(
         "Current known boundary on this branch family:\n"
-        "- GitHub-visible branch head remains `oldhead`\n"
-        "- the local hardening stack is currently ahead of that public ref through `oldsha` (`old subject`), 0 commits ahead in total\n"
-        "- the latest non-doc logic delta in that local stack is the placeholder publish-boundary bundle in:\n"
-        "  - `old/path.py`\n",
+        "- treat the published GitHub-visible ref as the VM-proof boundary and re-check the exact branch/commit state locally before any live verifier run\n"
+        "- the local sandbox may carry additional ahead-of-published commits and uncommitted publish-boundary maintenance delta, so confirm with `git status --short --branch` before assuming the current tip is publishable\n"
+        "- the latest wrapper hardening keeps explicit GitHub remote-tracking refs such as `refs/remotes/github/fix/openclaw-config-path-and-local-mode` intact through the dry-run preflight path and into `scripts/check_github_check_gate.py`\n"
+        "- that same wrapper now normalizes explicit GitHub remote-tracking refs down to a GitHub-visible branch name for the final `scripts/vm/verify_bootstrap_in_vm.sh` handoff, so the operator-facing next step stays runnable\n",
         encoding="utf-8",
     )
     (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").write_text(
@@ -142,35 +142,6 @@ def main() -> int:
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
         checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
-        boundary_text = boundary_doc.read_text(encoding="utf-8")
-        boundary_doc.write_text(
-            boundary_text.replace(
-                "- the local sandbox currently also carries 2 uncommitted publish-boundary maintenance path(s) beyond HEAD",
-                "- the local sandbox currently also carries 9 uncommitted publish-boundary maintenance path(s) beyond HEAD",
-                1,
-            ),
-            encoding="utf-8",
-        )
-        stale_dirty_boundary_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Boundary doc dirty bundle summary is stale; expected exact line:" in stale_dirty_boundary_output
-
-        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
-        boundary_text = boundary_doc.read_text(encoding="utf-8")
-        boundary_dirty_line = next(
-            line for line in boundary_text.splitlines() if line.startswith("- the local sandbox currently")
-        )
-        boundary_doc.write_text(
-            boundary_text.replace(
-                boundary_dirty_line,
-                boundary_dirty_line + " beyond that tracked checkpoint state",
-                1,
-            ),
-            encoding="utf-8",
-        )
-        stale_dirty_boundary_suffix_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Boundary doc dirty bundle summary is stale; expected exact line:" in stale_dirty_boundary_suffix_output
-
-        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
         stale_checkpoint_duplicate_delta = (
             "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n"
@@ -372,32 +343,6 @@ def main() -> int:
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
-        boundary_text = boundary_doc.read_text(encoding="utf-8")
-        boundary_doc.write_text(
-            boundary_text.replace(
-                f"- the latest non-doc logic delta in that local stack is `{run(['git', 'rev-parse', '--short', 'HEAD^'], work)}` (`tests: add logic commit`) in:\n",
-                "- the latest non-doc logic delta in that local stack is `wrongsha` (`wrong subject`) in:\n",
-                1,
-            ),
-            encoding="utf-8",
-        )
-        stale_boundary_head_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Boundary doc latest non-doc head is stale; expected to find:" in stale_boundary_head_output
-
-        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
-        boundary_text = boundary_doc.read_text(encoding="utf-8")
-        boundary_doc.write_text(
-            boundary_text.replace(
-                "- `logic.txt`\n",
-                "- `wrong-path.txt`\n",
-                1,
-            ),
-            encoding="utf-8",
-        )
-        stale_boundary_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Boundary doc latest non-doc paths is stale; expected to find:" in stale_boundary_output
-
-        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in boundary_fresh_output
 

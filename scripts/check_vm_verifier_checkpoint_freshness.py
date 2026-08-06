@@ -175,7 +175,7 @@ def main() -> int:
         [line.split(maxsplit=1)[1] for line in status_lines if len(line.split(maxsplit=1)) == 2],
         tracked_ref,
     )
-    boundary_dirty_line, checkpoint_dirty_line = dirty_bundle_lines(dirty_paths)
+    _, checkpoint_dirty_line = dirty_bundle_lines(dirty_paths)
     checkpoint_delta_block = current_delta_block(dirty_paths)
     working_tree_block = (
         "Working-tree files:\n" + "\n".join(dirty_paths)
@@ -191,13 +191,18 @@ def main() -> int:
     checks = [
         (
             boundary_text,
-            f"through `{tracked_head_short}` (`{tracked_head_subject}`), {ahead_count} commits ahead in total",
-            "Boundary doc",
+            "- treat the published GitHub-visible ref as the VM-proof boundary and re-check the exact branch/commit state locally before any live verifier run",
+            "Boundary doc VM-proof boundary guidance",
         ),
         (
             boundary_text,
-            f"- the latest non-doc logic delta in that local stack is `{tracked_head_short}` (`{tracked_head_subject}`) in:",
-            "Boundary doc latest non-doc head",
+            "- the local sandbox may carry additional ahead-of-published commits and uncommitted publish-boundary maintenance delta, so confirm with `git status --short --branch` before assuming the current tip is publishable",
+            "Boundary doc dirty-state guidance",
+        ),
+        (
+            boundary_text,
+            "- that same wrapper now normalizes explicit GitHub remote-tracking refs down to a GitHub-visible branch name for the final `scripts/vm/verify_bootstrap_in_vm.sh` handoff, so the operator-facing next step stays runnable",
+            "Boundary doc verifier handoff guidance",
         ),
         (
             checkpoint_text,
@@ -245,10 +250,6 @@ def main() -> int:
         if status:
             return status
 
-    status = require_exact_line(boundary_text, boundary_dirty_line, "Boundary doc dirty bundle summary")
-    if status:
-        return status
-
     status = require_exact_block(
         commit_candidate_text,
         working_tree_block,
@@ -285,11 +286,6 @@ def main() -> int:
 
     if checkpoint_latest_text != checkpoint_text:
         return fail("Checkpoint latest handoff artifact diverges from the dated checkpoint doc.")
-
-    for path in latest_non_doc_paths:
-        status = require_contains(boundary_text, f"  - `{path}`", "Boundary doc latest non-doc paths")
-        if status:
-            return status
 
     if "Current uncommitted delta on top:\n" in checkpoint_text:
         for path in dirty_paths:

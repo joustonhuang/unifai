@@ -106,9 +106,20 @@ if [ -z "$VISIBLE_REMOTE_REF" ]; then
   echo "[FAIL] Could not resolve a GitHub-visible remote ref for wrapper smoke coverage."
   exit 1
 fi
+VISIBLE_VERIFIER_REF="${VISIBLE_REMOTE_REF#refs/remotes/}"
+VISIBLE_VERIFIER_REF="${VISIBLE_VERIFIER_REF#*/}"
+BRANCH_VERIFIER_REF="$BRANCH"
+if upstream_ref="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref "${BRANCH}@{upstream}" 2>/dev/null)"; then
+  case "$upstream_ref" in
+    "$GITHUB_REMOTE"/*)
+      BRANCH_VERIFIER_REF="${upstream_ref#*/}"
+      ;;
+  esac
+fi
 
 VISIBLE_SHA="$(git -C "$REPO_ROOT" rev-parse "$VISIBLE_REMOTE_REF")"
 git -C "$REPO_ROOT" worktree add --detach "$DETACHED_WORKTREE_DIR" HEAD >/dev/null
+cp "$WRAPPER" "$DETACHED_WORKTREE_DIR/scripts/run_vm_verifier_preflight.sh"
 
 BRANCH_OUTPUT="$("$REAL_BASH" "$WRAPPER" --dry-run "$BRANCH")"
 printf '%s\n' "$BRANCH_OUTPUT"
@@ -138,6 +149,11 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<
   exit 1
 fi
 
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $BRANCH_VERIFIER_REF" <<<"$BRANCH_OUTPUT"; then
+  echo "[FAIL] Expected branch case to hand off the GitHub-visible verifier ref."
+  exit 1
+fi
+
 DEFAULT_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER")"
 printf '%s\n' "$DEFAULT_OUTPUT"
 
@@ -153,6 +169,11 @@ fi
 
 if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$DEFAULT_OUTPUT"; then
   echo "[FAIL] Expected check-gate command missing in default no-arg case."
+  exit 1
+fi
+
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $BRANCH_VERIFIER_REF" <<<"$DEFAULT_OUTPUT"; then
+  echo "[FAIL] Expected default no-arg case to hand off the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -199,6 +220,11 @@ fi
 
 if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF" <<<"$VISIBLE_REMOTE_REF_OUTPUT"; then
   echo "[FAIL] Expected check-gate command missing in explicit remote-tracking ref case."
+  exit 1
+fi
+
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $VISIBLE_VERIFIER_REF" <<<"$VISIBLE_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected verifier handoff to normalize the explicit remote-tracking ref."
   exit 1
 fi
 
@@ -254,6 +280,11 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_RE
   exit 1
 fi
 
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $VISIBLE_VERIFIER_REF" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD remote-ref case to normalize the verifier handoff ref."
+  exit 1
+fi
+
 HEADS_REF_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "refs/heads/$BRANCH")"
 printf '%s\n' "$HEADS_REF_OUTPUT"
 
@@ -277,6 +308,11 @@ if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<
   exit 1
 fi
 
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $BRANCH_VERIFIER_REF" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit refs/heads case to hand off the GitHub-visible verifier ref."
+  exit 1
+fi
+
 DOUBLE_DASH_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" -- "$BRANCH")"
 printf '%s\n' "$DOUBLE_DASH_OUTPUT"
 
@@ -292,6 +328,11 @@ fi
 
 if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$DOUBLE_DASH_OUTPUT"; then
   echo "[FAIL] Expected check-gate command missing when ref is passed after --."
+  exit 1
+fi
+
+if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $BRANCH_VERIFIER_REF" <<<"$DOUBLE_DASH_OUTPUT"; then
+  echo "[FAIL] Expected -- separator case to hand off the GitHub-visible verifier ref."
   exit 1
 fi
 

@@ -74,6 +74,70 @@ local_branch_name() {
   esac
 }
 
+github_visible_ref_for_verifier() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+  local upstream_ref=""
+  local url=""
+
+  if git show-ref --verify --quiet "refs/heads/$ref"; then
+    if upstream_ref="$(git rev-parse --abbrev-ref "$ref@{upstream}" 2>/dev/null)"; then
+      remote="${upstream_ref%%/*}"
+      branch="${upstream_ref#*/}"
+      if [ -n "$remote" ] && [ -n "$branch" ] && [ "$branch" != "$upstream_ref" ]; then
+        if url="$(git remote get-url "$remote" 2>/dev/null)"; then
+          case "$url" in
+            *github.com*|git@github.com:*)
+              printf '%s\n' "$branch"
+              return 0
+              ;;
+          esac
+        fi
+      fi
+    fi
+  fi
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      branch="${ref#refs/remotes/$remote/}"
+      ;;
+    refs/*)
+      printf '%s\n' "$ref"
+      return 0
+      ;;
+    */*)
+      remote="${ref%%/*}"
+      branch="${ref#*/}"
+      ;;
+    *)
+      printf '%s\n' "$ref"
+      return 0
+      ;;
+  esac
+
+  if [ -z "$remote" ] || [ -z "$branch" ] || [ "$branch" = "$ref" ]; then
+    printf '%s\n' "$ref"
+    return 0
+  fi
+
+  if ! url="$(git remote get-url "$remote" 2>/dev/null)"; then
+    printf '%s\n' "$ref"
+    return 0
+  fi
+
+  case "$url" in
+    *github.com*|git@github.com:*)
+      printf '%s\n' "$branch"
+      ;;
+    *)
+      printf '%s\n' "$ref"
+      ;;
+  esac
+}
+
 ensure_ref_is_github_visible() {
   local ref="$1"
   local branch="$2"
@@ -181,6 +245,7 @@ fi
 ensure_ref_is_github_visible "$ref" "$current_branch"
 
 effective_ref="$(local_branch_name "$ref")"
+verifier_ref="$(github_visible_ref_for_verifier "$effective_ref")"
 
 echo "== VM verifier local preflight =="
 echo "Repo: $REPO_ROOT"
@@ -212,4 +277,4 @@ run_step python3 scripts/check_github_check_gate.py "$effective_ref"
 
 echo
 echo "[PASS] VM verifier local preflight is green for $effective_ref"
-echo "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $effective_ref"
+echo "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $verifier_ref"
