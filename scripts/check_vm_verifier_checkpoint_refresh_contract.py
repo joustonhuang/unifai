@@ -95,10 +95,13 @@ print("[PASS] VM verifier checkpoint refresh contract looks sane")
 smoke_required = [
     ('assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\\n" in commit_candidate', "Refresh smoke test pins the initial doc-only checked-out tip line"),
     ('assert "Current checked-out branch tip:" not in stable_commit_candidate', "Refresh smoke test forbids a checked-out tip line when the tracked checkpoint is HEAD"),
+    ('run(["git", "commit", "-m", "docs: settle verifier checkpoint handoff"], work)', "Refresh smoke test exercises a second unpublished doc-only checkpoint commit"),
+    ('assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\\n" in second_doc_only_commit_candidate', "Refresh smoke test pins the handoff tip-delta count after two unpublished doc-only checkpoint commits"),
+    ('f"- The branch still needs the current branch tip `{second_doc_only_tip}` GitHub-visible; "', "Refresh smoke test pins the blocker wording for the second unpublished doc-only checkpoint tip"),
     ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Refresh smoke test exercises the already-visible doc-only tip handoff"),
     ('assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref branch-state line"),
     ('assert "Working-tree files:\\n(clean)\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref clean handoff shape"),
-    ('f"- The exact branch tip `{doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
+    ('f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\\n"', "Refresh smoke test pins the aligned visible-ref next move"),
     ('assert "Next clean move before the real VM-proof path:\\n" in aligned_commit_candidate', "Refresh smoke test keeps the aligned case on the visible-ref rerun path"),
 ]
