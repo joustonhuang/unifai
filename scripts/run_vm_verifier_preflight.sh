@@ -74,6 +74,67 @@ local_branch_name() {
   esac
 }
 
+is_github_remote_head_alias() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+  local url=""
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      branch="${ref#refs/remotes/$remote/}"
+      ;;
+    */*)
+      remote="${ref%%/*}"
+      branch="${ref#*/}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ "$branch" != "HEAD" ] || [ -z "$remote" ]; then
+    return 1
+  fi
+
+  if ! url="$(git remote get-url "$remote" 2>/dev/null)"; then
+    return 1
+  fi
+
+  case "$url" in
+    *github.com*|git@github.com:*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+reject_symbolic_github_remote_head_ref() {
+  local ref="$1"
+  local remote=""
+
+  if ! is_github_remote_head_alias "$ref"; then
+    return 0
+  fi
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      ;;
+    *)
+      remote="${ref%%/*}"
+      ;;
+  esac
+
+  echo "[FAIL] '$ref' is the symbolic remote HEAD alias for GitHub remote '$remote', not a concrete GitHub-visible branch/ref." >&2
+  echo "[INFO] Use a concrete branch/ref such as refs/remotes/$remote/<branch>, $remote/<branch>, or the resolved branch name before running VM verifier preflight." >&2
+  exit 1
+}
+
 github_visible_ref_for_verifier() {
   local ref="$1"
   local remote=""
@@ -236,6 +297,8 @@ if [ "$ref" = "HEAD" ]; then
   echo "[FAIL] Detached HEAD; pass an explicit GitHub-visible ref." >&2
   exit 1
 fi
+
+reject_symbolic_github_remote_head_ref "$ref"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$current_branch" = "HEAD" ]; then

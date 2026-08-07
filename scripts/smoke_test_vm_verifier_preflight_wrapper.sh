@@ -228,6 +228,32 @@ if ! grep -q "Next: bash scripts/vm/verify_bootstrap_in_vm.sh $VISIBLE_VERIFIER_
   exit 1
 fi
 
+set +e
+REMOTE_HEAD_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "refs/remotes/$GITHUB_REMOTE/HEAD" 2>&1)"
+REMOTE_HEAD_STATUS=$?
+set -e
+printf '%s\n' "$REMOTE_HEAD_OUTPUT"
+
+if [ "$REMOTE_HEAD_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected symbolic remote HEAD alias case to fail fast."
+  exit 1
+fi
+
+if ! grep -q "symbolic remote HEAD alias" <<<"$REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Expected symbolic remote HEAD alias failure message missing."
+  exit 1
+fi
+
+if ! grep -q "Use a concrete branch/ref such as refs/remotes/$GITHUB_REMOTE/<branch>, $GITHUB_REMOTE/<branch>, or the resolved branch name" <<<"$REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Expected symbolic remote HEAD alias recovery guidance missing."
+  exit 1
+fi
+
+if grep -q "python3 scripts/check_github_check_gate.py" <<<"$REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Symbolic remote HEAD alias case should fail before the GitHub check-gate step."
+  exit 1
+fi
+
 DETACHED_VISIBLE_SHA_OUTPUT="$(
   cd "$DETACHED_WORKTREE_DIR" &&
   UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "$VISIBLE_SHA"
