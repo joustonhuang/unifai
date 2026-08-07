@@ -254,6 +254,32 @@ if grep -q "python3 scripts/check_github_check_gate.py" <<<"$REMOTE_HEAD_OUTPUT"
   exit 1
 fi
 
+set +e
+SHORT_REMOTE_HEAD_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER" "$GITHUB_REMOTE/HEAD" 2>&1)"
+SHORT_REMOTE_HEAD_STATUS=$?
+set -e
+printf '%s\n' "$SHORT_REMOTE_HEAD_OUTPUT"
+
+if [ "$SHORT_REMOTE_HEAD_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected short-form symbolic remote HEAD alias case to fail fast."
+  exit 1
+fi
+
+if ! grep -q "symbolic remote HEAD alias" <<<"$SHORT_REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Expected short-form symbolic remote HEAD alias failure message missing."
+  exit 1
+fi
+
+if ! grep -q "Use a concrete branch/ref such as refs/remotes/$GITHUB_REMOTE/<branch>, $GITHUB_REMOTE/<branch>, or the resolved branch name" <<<"$SHORT_REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Expected short-form symbolic remote HEAD alias recovery guidance missing."
+  exit 1
+fi
+
+if grep -q "python3 scripts/check_github_check_gate.py" <<<"$SHORT_REMOTE_HEAD_OUTPUT"; then
+  echo "[FAIL] Short-form symbolic remote HEAD alias case should fail before the GitHub check-gate step."
+  exit 1
+fi
+
 DETACHED_VISIBLE_SHA_OUTPUT="$(
   cd "$DETACHED_WORKTREE_DIR" &&
   UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "$VISIBLE_SHA"
