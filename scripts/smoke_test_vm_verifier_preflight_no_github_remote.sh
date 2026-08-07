@@ -9,6 +9,7 @@ TMP_DIR="$(mktemp -d -t unifai-vm-preflight-no-gh-XXXXXX)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 WORKTREE="$TMP_DIR/repo"
+REMOTE_REPO="$TMP_DIR/non-github-origin.git"
 mkdir -p "$WORKTREE/scripts"
 cp "$REPO_ROOT/scripts/run_vm_verifier_preflight.sh" "$WORKTREE/scripts/run_vm_verifier_preflight.sh"
 chmod +x "$WORKTREE/scripts/run_vm_verifier_preflight.sh"
@@ -24,6 +25,11 @@ git commit -q -m "init"
 git branch -M feature/no-github-remote
 
 LOCAL_SHA="$(git rev-parse HEAD)"
+
+git init -q --bare "$REMOTE_REPO"
+git remote add origin "$REMOTE_REPO"
+git push -q -u origin feature/no-github-remote
+git fetch -q origin
 
 STATUS=0
 OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "$LOCAL_SHA" 2>&1)" || STATUS=$?
@@ -46,6 +52,54 @@ fi
 
 if grep -q "scripts/check_vm_host_readiness.sh" <<<"$OUTPUT"; then
   echo "[FAIL] Missing-GitHub-remote case should fail before any preflight steps are planned."
+  exit 1
+fi
+
+SHORT_REMOTE_REF_STATUS=0
+SHORT_REMOTE_REF_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "origin/feature/no-github-remote" 2>&1)" || SHORT_REMOTE_REF_STATUS=$?
+printf '%s\n' "$SHORT_REMOTE_REF_OUTPUT"
+
+if [ "$SHORT_REMOTE_REF_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected short remote-tracking ref on a non-GitHub remote to fail."
+  exit 1
+fi
+
+if ! grep -q "points at remote 'origin', but that remote is not GitHub-backed" <<<"$SHORT_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected short remote-tracking ref non-GitHub failure message missing."
+  exit 1
+fi
+
+if ! grep -q "Use a local branch with a GitHub upstream, a GitHub remote-tracking ref, or a GitHub-visible commit SHA before running VM verifier preflight." <<<"$SHORT_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected short remote-tracking ref non-GitHub recovery guidance missing."
+  exit 1
+fi
+
+if grep -q "scripts/check_vm_host_readiness.sh" <<<"$SHORT_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Short remote-tracking ref non-GitHub case should fail before any preflight steps are planned."
+  exit 1
+fi
+
+FULL_REMOTE_REF_STATUS=0
+FULL_REMOTE_REF_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" scripts/run_vm_verifier_preflight.sh "refs/remotes/origin/feature/no-github-remote" 2>&1)" || FULL_REMOTE_REF_STATUS=$?
+printf '%s\n' "$FULL_REMOTE_REF_OUTPUT"
+
+if [ "$FULL_REMOTE_REF_STATUS" -eq 0 ]; then
+  echo "[FAIL] Expected full remote-tracking ref on a non-GitHub remote to fail."
+  exit 1
+fi
+
+if ! grep -q "points at remote 'origin', but that remote is not GitHub-backed" <<<"$FULL_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected full remote-tracking ref non-GitHub failure message missing."
+  exit 1
+fi
+
+if ! grep -q "Use a local branch with a GitHub upstream, a GitHub remote-tracking ref, or a GitHub-visible commit SHA before running VM verifier preflight." <<<"$FULL_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected full remote-tracking ref non-GitHub recovery guidance missing."
+  exit 1
+fi
+
+if grep -q "scripts/check_vm_host_readiness.sh" <<<"$FULL_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Full remote-tracking ref non-GitHub case should fail before any preflight steps are planned."
   exit 1
 fi
 

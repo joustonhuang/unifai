@@ -112,6 +112,36 @@ is_github_remote_head_alias() {
   return 1
 }
 
+explicit_remote_ref_remote() {
+  local ref="$1"
+  local remote=""
+  local branch=""
+
+  case "$ref" in
+    refs/remotes/*)
+      remote="${ref#refs/remotes/}"
+      remote="${remote%%/*}"
+      branch="${ref#refs/remotes/$remote/}"
+      ;;
+    */*)
+      remote="${ref%%/*}"
+      branch="${ref#*/}"
+      if ! git remote get-url "$remote" >/dev/null 2>&1; then
+        return 1
+      fi
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ -z "$remote" ] || [ -z "$branch" ] || [ "$branch" = "$ref" ]; then
+    return 1
+  fi
+
+  printf '%s\n' "$remote"
+}
+
 reject_symbolic_github_remote_head_ref() {
   local ref="$1"
   local remote=""
@@ -132,6 +162,30 @@ reject_symbolic_github_remote_head_ref() {
 
   echo "[FAIL] '$ref' is the symbolic remote HEAD alias for GitHub remote '$remote', not a concrete GitHub-visible branch/ref." >&2
   echo "[INFO] Use a concrete branch/ref such as refs/remotes/$remote/<branch>, $remote/<branch>, or the resolved branch name before running VM verifier preflight." >&2
+  exit 1
+}
+
+reject_non_github_remote_tracking_ref() {
+  local ref="$1"
+  local remote=""
+  local url=""
+
+  if ! remote="$(explicit_remote_ref_remote "$ref")"; then
+    return 0
+  fi
+
+  if ! url="$(git remote get-url "$remote" 2>/dev/null)"; then
+    return 0
+  fi
+
+  case "$url" in
+    *github.com*|git@github.com:*)
+      return 0
+      ;;
+  esac
+
+  echo "[FAIL] '$ref' points at remote '$remote', but that remote is not GitHub-backed and cannot be used as a GitHub-visible verifier ref." >&2
+  echo "[INFO] Use a local branch with a GitHub upstream, a GitHub remote-tracking ref, or a GitHub-visible commit SHA before running VM verifier preflight." >&2
   exit 1
 }
 
@@ -299,6 +353,7 @@ if [ "$ref" = "HEAD" ]; then
 fi
 
 reject_symbolic_github_remote_head_ref "$ref"
+reject_non_github_remote_tracking_ref "$ref"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 if [ "$current_branch" = "HEAD" ]; then
