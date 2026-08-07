@@ -33,8 +33,8 @@ required = [
     ('f"refs/remotes/{ref}"', "Branch-reconcile checker falls back to explicit remote-tracking refs"),
     ('def is_handoff_only_commit(ref: str, rel_note_path: str) -> bool:', "Branch-reconcile checker can classify note-only bookkeeping commits"),
     ('all(path == rel_note_path for path in changed_paths)', "Branch-reconcile checker treats note-only commits as handoff bookkeeping"),
-    ('def latest_non_handoff_ref(rel_note_path: str) -> str:', "Branch-reconcile checker walks back past handoff-only HEAD commits"),
-    ('while is_handoff_only_commit(ref, rel_note_path):', "Branch-reconcile checker ignores handoff-only refresh commits when finding the captured tip"),
+    ('def latest_non_handoff_ref(rel_note_path: str) -> str:', "Branch-reconcile checker walks back past handoff/doc-only bookkeeping HEAD commits"),
+    ('while is_handoff_only_commit(ref, rel_note_path) or is_checkpoint_doc_only_commit(ref):', "Branch-reconcile checker ignores handoff-only and doc-only refresh commits when finding the captured tip"),
     ('def is_checkpoint_doc_only_commit(ref: str) -> bool:', "Branch-reconcile checker can classify doc-only publish-boundary commits"),
     ('while ref != upstream and is_checkpoint_doc_only_commit(ref):', "Branch-reconcile checker walks back past doc-only publish-boundary commits to the tracked checkpoint"),
     ('def expected_checkpoint_line(', "Branch-reconcile checker derives visibility-aware tracked-checkpoint wording"),
@@ -50,6 +50,7 @@ required = [
     ('resolved_older_ref = resolve_ref(args.older_ref)', "Branch-reconcile checker resolves the older ref before divergence math"),
     ('f"{resolved_older_ref}...{latest_handoff_ref}"', "Branch-reconcile checker anchors divergence counts to the latest non-handoff tip"),
     ('f"- The latest non-handoff branch tip captured by this note is `{latest_handoff_short}`; "', "Branch-reconcile checker validates the captured non-handoff tip line"),
+    ('later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.', "Branch-reconcile checker explains why doc-only and note-only refresh commits stay out of the captured tip"),
     ('"[PASS] Branch-reconcile handoff note matches current publish-boundary state"', "Branch-reconcile checker emits a passing verdict"),
 ]
 
@@ -62,6 +63,7 @@ smoke_required = [
     ('python3 scripts/check_branch_reconcile_handoff.py', "Branch-reconcile smoke test exercises the checker on a synthetic publish-boundary repo"),
     ('docs: refresh branch reconcile publish handoff', "Branch-reconcile smoke test creates a handoff-only bookkeeping commit at HEAD"),
     ('The latest non-handoff branch tip captured by this note is', "Branch-reconcile smoke test writes a synthetic handoff note with a captured non-handoff tip"),
+    ('later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.', "Branch-reconcile smoke test pins the expanded bookkeeping-ignore wording"),
     ('Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is the current branch tip.', "Branch-reconcile smoke test covers the non-doc HEAD checkpoint state"),
     ('git push origin HEAD:fix/openclaw-config-path-and-local-mode >/dev/null', "Branch-reconcile smoke test aligns the synthetic remote before visible-ref coverage"),
     ('and it is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned GitHub-visible checkpoint wording"),

@@ -89,10 +89,12 @@ def is_checkpoint_doc_only_commit(ref: str) -> bool:
 
 def latest_non_handoff_ref(rel_note_path: str) -> str:
     ref = "HEAD"
-    while is_handoff_only_commit(ref, rel_note_path):
+    while is_handoff_only_commit(ref, rel_note_path) or is_checkpoint_doc_only_commit(ref):
         parent = git_optional("rev-parse", f"{ref}^")
         if not parent:
-            fail("branch-reconcile handoff checker could not step back past handoff-only HEAD.")
+            fail(
+                "branch-reconcile handoff checker could not step back past handoff/doc-only bookkeeping HEAD."
+            )
         ref = parent
     return ref
 
@@ -205,7 +207,7 @@ def main() -> None:
         note_text,
         (
             f"- The latest non-handoff branch tip captured by this note is `{latest_handoff_short}`; "
-            "later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit."
+            "later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit."
         ),
         "Branch-reconcile note captured tip line",
     )

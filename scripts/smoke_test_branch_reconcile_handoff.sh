@@ -47,8 +47,8 @@ git add docs/checkpoint.md
 git commit -q -m "docs: refresh visible verifier boundary state"
 docs_sha="$(git rev-parse --short HEAD)"
 
-older_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $1}')"
-cleaner_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...refs/heads/transplant/fix-openclaw-config-path-and-local-mode-clean-stack | awk '{print $2}')"
+older_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...${logic_sha} | awk '{print $1}')"
+cleaner_count="$(git rev-list --left-right --count refs/heads/fix/openclaw-config-path-and-local-mode...${logic_sha} | awk '{print $2}')"
 
 cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
 # Branch Reconcile Note — refreshed 2026-07-28 22:20 Asia/Taipei
@@ -57,7 +57,7 @@ cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
 
 - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` is the cleaner publish candidate.
 - \`fix/openclaw-config-path-and-local-mode\` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is \`${docs_sha}\`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The latest non-handoff branch tip captured by this note is \`${logic_sha}\`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
 - The last non-doc tracked publish-boundary checkpoint remains \`${logic_sha}\` until the current doc-only tip becomes GitHub-visible.
 - Divergence count from \`git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`:
   - \`fix/openclaw-config-path-and-local-mode\`: \`${older_count}\`
@@ -82,7 +82,7 @@ python3 - <<PY
 from pathlib import Path
 path = Path("$WORKTREE/ci-artifacts/branch-reconcile-2026-07-10.md")
 text = path.read_text(encoding="utf-8")
-text = text.replace("${docs_sha}", "${head_sha}")
+text = text.replace("${logic_sha}", "${head_sha}")
 path.write_text(text, encoding="utf-8")
 PY
 STALE_TIP_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py" 2>&1 || true)"
@@ -96,7 +96,7 @@ python3 - <<PY
 from pathlib import Path
 path = Path("$WORKTREE/ci-artifacts/branch-reconcile-2026-07-10.md")
 text = path.read_text(encoding="utf-8")
-text = text.replace("${head_sha}", "${docs_sha}")
+text = text.replace("${head_sha}", "${logic_sha}")
 text = text.replace("  - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`: \`${cleaner_count}\`", "  - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`: \`999\`")
 path.write_text(text, encoding="utf-8")
 PY
@@ -123,7 +123,7 @@ cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
 
 - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` is the cleaner publish candidate.
 - \`fix/openclaw-config-path-and-local-mode\` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
 - The current branch tip is already the tracked non-doc publish-boundary checkpoint: \`${non_doc_head_sha}\`. It still needs to become GitHub-visible.
 - Divergence count from \`git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`:
   - \`fix/openclaw-config-path-and-local-mode\`: \`${older_count}\`
@@ -153,7 +153,7 @@ cat > ci-artifacts/branch-reconcile-2026-07-10.md <<EOF
 
 - \`transplant/fix-openclaw-config-path-and-local-mode-clean-stack\` is the cleaner publish candidate.
 - \`fix/openclaw-config-path-and-local-mode\` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later branch-reconcile-only note refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The latest non-handoff branch tip captured by this note is \`${non_doc_head_sha}\`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
 - The current branch tip is already the tracked non-doc publish-boundary checkpoint: \`${non_doc_head_sha}\`, and it is already GitHub-visible.
 - Divergence count from \`git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack\`:
   - \`fix/openclaw-config-path-and-local-mode\`: \`${older_count}\`
