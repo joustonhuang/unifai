@@ -264,6 +264,8 @@ def main() -> int:
             f"branch '{current_branch}' has no upstream; set a GitHub-visible upstream before refreshing the verifier publish-boundary checkpoint."
         )
     upstream_display = upstream_display_name(upstream)
+    upstream_remote, upstream_branch = upstream.split("/", 1)
+    push_command = f"git push {upstream_remote} HEAD:{upstream_branch}"
 
     upstream_short = git("rev-parse", "--short", upstream)
     current_head_short = git("rev-parse", "--short", "HEAD")
@@ -626,7 +628,7 @@ def main() -> int:
     if tracked_ref != "HEAD" and current_head_ahead_count != "0":
         next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
         next_move_line = (
-            f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
+            f"- Run `{push_command}` to make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
         )
         external_blocker_line = (
@@ -645,7 +647,9 @@ def main() -> int:
         )
     else:
         next_move_heading = "Next clean move before the real VM-proof path:\n"
-        next_move_line = f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n"
+        next_move_line = (
+            f"- Run `{push_command}` to make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n"
+        )
         external_blocker_line = (
             f"- The branch still needs the local checkpoint chain through `{tracked_head_short}` to become GitHub-visible before the real VM-proof path can continue.\n"
         )

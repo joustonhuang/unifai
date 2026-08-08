@@ -274,7 +274,7 @@ def main() -> int:
         assert "Next clean move once the branch tip is GitHub-visible:\n" in commit_candidate
         assert "GitHub auth / a visible ref" not in commit_candidate
         assert (
-            f"- Make the current branch tip `{head_sha}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{head_sha}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{docs_head_sha}` until a non-doc commit supersedes it.\n"
         ) in commit_candidate
 
@@ -341,7 +341,7 @@ def main() -> int:
         assert f"- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `{remote_sha}`, so the next real boundary is still a visible rerun on the exact published ref.\n" in refreshed_commit_candidate
         assert "Next clean move once the branch tip is GitHub-visible:\n" in refreshed_commit_candidate
         assert (
-            f"- Make the current branch tip `{refreshed_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{refreshed_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{docs_head_sha}` until a non-doc commit supersedes it.\n"
         ) in refreshed_commit_candidate
         assert "GitHub auth / a visible ref" not in refreshed_commit_candidate
@@ -436,7 +436,7 @@ def main() -> int:
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
         ) in doc_only_commit_candidate
         assert (
-            f"- Make the current branch tip `{doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in doc_only_commit_candidate
 
@@ -468,7 +468,7 @@ def main() -> int:
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
         ) in second_doc_only_commit_candidate
         assert (
-            f"- Make the current branch tip `{second_doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{second_doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in second_doc_only_commit_candidate
 
