@@ -150,6 +150,8 @@ def main() -> int:
     if not upstream:
         return fail(f"branch '{current_branch}' has no upstream; cannot verify checkpoint freshness.")
     upstream_display = upstream_display_name(upstream)
+    upstream_remote, upstream_branch = upstream.split("/", 1)
+    push_command = f"git push {upstream_remote} HEAD:{upstream_branch}"
 
     tracked_ref = "HEAD"
     while tracked_ref != upstream and is_checkpoint_doc_only_commit(tracked_ref):
@@ -325,7 +327,7 @@ def main() -> int:
         status = require_contains(
             commit_candidate_text,
             (
-                f"- Make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
+                f"- Run `{push_command}` to make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
                 f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
             ),
             "Commit-candidate next move",
@@ -384,7 +386,7 @@ def main() -> int:
             return status
         status = require_contains(
             commit_candidate_text,
-            f"- Make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n",
+            f"- Run `{push_command}` to make local checkpoint `{tracked_head_short}` GitHub-visible on `{upstream_display}`.\n",
             "Commit-candidate next move",
         )
         if status:

@@ -243,8 +243,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "- Make local checkpoint ",
-                "- Make stale local checkpoint ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make local checkpoint ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make stale local checkpoint ",
                 1,
             ),
             encoding="utf-8",
@@ -319,8 +319,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "- Make the current branch tip ",
-                "- Make the stale branch tip ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the stale branch tip ",
                 1,
             ),
             encoding="utf-8",
