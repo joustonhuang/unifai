@@ -107,6 +107,24 @@ grep -q "cleaner divergence count is stale" <<<"$STALE_COUNT_OUTPUT" || {
   exit 1
 }
 
+export CLEANER_COUNT="$cleaner_count"
+export WORKTREE_PATH="$WORKTREE"
+python3 - <<'PY'
+import os
+from pathlib import Path
+path = Path(os.environ["WORKTREE_PATH"]) / "ci-artifacts" / "branch-reconcile-2026-07-10.md"
+text = path.read_text(encoding="utf-8")
+text = text.replace("`999`", f"`{os.environ['CLEANER_COUNT']}`")
+text += "\n\nAs of `deadbee`, the local branch-reconcile handoff is back in sync with the tree.\n"
+path.write_text(text, encoding="utf-8")
+PY
+LEGACY_APPENDIX_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py" 2>&1 || true)"
+printf '%s\n' "$LEGACY_APPENDIX_OUTPUT"
+grep -q "legacy appendix is stale" <<<"$LEGACY_APPENDIX_OUTPUT" || {
+  echo "[FAIL] Expected branch-reconcile checker to reject stale legacy appendix text."
+  exit 1
+}
+
 cat > logic.py <<'EOF'
 print("second logic change")
 EOF

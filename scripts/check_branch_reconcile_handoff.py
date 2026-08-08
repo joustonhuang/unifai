@@ -61,6 +61,11 @@ def require_contains(text: str, needle: str, label: str) -> None:
         fail(f"{label} is stale; expected to find: {needle}")
 
 
+def require_absent(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        fail(f"{label} is stale; unexpected legacy text found: {needle}")
+
+
 def note_relpath(note_path: Path) -> str:
     return str(note_path.resolve().relative_to(REPO_ROOT))
 
@@ -240,6 +245,11 @@ def main() -> None:
         note_text,
         expected_next_move_line(current_head_ahead_count),
         "Branch-reconcile note best-next-move guidance",
+    )
+    require_absent(
+        note_text,
+        "As of `",
+        "Branch-reconcile note legacy appendix",
     )
 
     print("[PASS] Branch-reconcile handoff note matches current publish-boundary state")
