@@ -151,6 +151,13 @@ def expected_next_move_line(current_head_ahead_count: str) -> str:
     )
 
 
+def expected_divergence_heading(older_ref: str, cleaner_ref: str) -> str:
+    return (
+        f"- Divergence count from `git rev-list --left-right --count "
+        f"{older_ref}...{cleaner_ref}`:"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -227,8 +234,7 @@ def main() -> None:
     )
     require_contains(
         note_text,
-        "- Divergence count from `git rev-list --left-right --count "
-        "fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:",
+        expected_divergence_heading(args.older_ref, args.cleaner_ref),
         "Branch-reconcile note divergence heading",
     )
     require_contains(

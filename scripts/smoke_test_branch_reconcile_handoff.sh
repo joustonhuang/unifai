@@ -78,6 +78,45 @@ grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary
   exit 1
 }
 
+export WORKTREE_PATH="$WORKTREE"
+export OLDER_COUNT="$older_count"
+python3 - <<'PY'
+import os
+from pathlib import Path
+path = Path(os.environ["WORKTREE_PATH"]) / "ci-artifacts" / "branch-reconcile-2026-07-10.md"
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+    "origin/fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+text = text.replace(
+    f"  - `fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+    f"  - `origin/fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+)
+path.write_text(text, encoding="utf-8")
+PY
+REMOTE_OLDER_REF_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py --older-ref origin/fix/openclaw-config-path-and-local-mode")"
+printf '%s\n' "$REMOTE_OLDER_REF_OUTPUT"
+grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary state" <<<"$REMOTE_OLDER_REF_OUTPUT" || {
+  echo "[FAIL] Expected branch-reconcile checker to pass when --older-ref uses the GitHub remote-tracking ref."
+  exit 1
+}
+python3 - <<'PY'
+import os
+from pathlib import Path
+path = Path(os.environ["WORKTREE_PATH"]) / "ci-artifacts" / "branch-reconcile-2026-07-10.md"
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "origin/fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+    "fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+text = text.replace(
+    f"  - `origin/fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+    f"  - `fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+)
+path.write_text(text, encoding="utf-8")
+PY
+
 python3 - <<PY
 from pathlib import Path
 path = Path("$WORKTREE/ci-artifacts/branch-reconcile-2026-07-10.md")
