@@ -69,6 +69,8 @@ smoke_required = [
     ('and it is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned GitHub-visible checkpoint wording"),
     ('should stay focused on the visible publish boundary: rerun \\`Bootstrap Installer Preflight\\` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.', "Branch-reconcile smoke test covers the aligned visible-ref next move"),
     ('Expected branch-reconcile checker to pass when the tracked non-doc checkpoint is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned visible checkpoint state"),
+    ('while the exact current doc-only tip is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned visible doc-only tip wording"),
+    ('Expected branch-reconcile checker to pass when the current doc-only tip is already GitHub-visible.', "Branch-reconcile smoke test covers the aligned visible doc-only tip state"),
     ('Expected branch-reconcile checker to reject a note that captures the bookkeeping HEAD tip.', "Branch-reconcile smoke test fail-closes on self-stale captured-tip wording"),
     ('Expected branch-reconcile checker to reject stale divergence counts.', "Branch-reconcile smoke test fail-closes on stale divergence counts"),
 ]
