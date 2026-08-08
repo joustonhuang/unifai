@@ -105,6 +105,9 @@ smoke_required = [
     ('"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `",', "Freshness smoke test covers stale aligned visible-ref next-move wording"),
     ('assert "Commit-candidate external blocker is stale; expected to find:" in aligned_doc_only_blocker_output', "Freshness smoke test fails closed on stale aligned visible-ref blocker text"),
     ('assert "Commit-candidate next move is stale; expected to find:" in aligned_doc_only_move_output', "Freshness smoke test fails closed on stale aligned visible-ref next-move text"),
+    ('run(["git", "remote", "rename", "origin", "github"], work)', "Freshness smoke test renames the upstream remote to exercise dynamic push-command generation"),
+    ('"--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"', "Freshness smoke test points the branch at the renamed GitHub remote"),
+    ('f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Freshness smoke test pins the unpublished doc-only next move against the renamed GitHub remote"),
 ]
 
 for needle, message in smoke_required:

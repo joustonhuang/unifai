@@ -503,6 +503,28 @@ def main() -> int:
         ) in aligned_commit_candidate
         assert "Next clean move before the real VM-proof path:\n" in aligned_commit_candidate
 
+        run(["git", "remote", "rename", "origin", "github"], work)
+        run(
+            ["git", "branch", "--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"],
+            work,
+        )
+        run(["git", "checkout", "-B", "docs-only-tip-needs-publish"], work)
+        run(
+            ["git", "branch", "--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"],
+            work,
+        )
+        (work / "docs" / "github-remote-checkpoint.md").write_text("github remote doc-only tip\n", encoding="utf-8")
+        run(["git", "add", "docs/github-remote-checkpoint.md"], work)
+        run(["git", "commit", "-m", "docs: add github-remote doc-only tip"], work)
+        github_remote_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
+        subprocess.check_call(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
+
+        github_remote_commit_candidate = read_commit_candidate(work)
+        assert (
+            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
+        ) in github_remote_commit_candidate
+
         spec = importlib.util.spec_from_file_location("refresh_vm_verifier_checkpoint_state_no_gh", work / "scripts" / HELPER.name)
         if spec is None or spec.loader is None:
             raise AssertionError("Could not load checkpoint refresh helper for no-gh smoke validation")

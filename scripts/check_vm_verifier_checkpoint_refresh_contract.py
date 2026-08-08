@@ -105,6 +105,9 @@ smoke_required = [
     ('f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\\n"', "Refresh smoke test pins the aligned visible-ref next move"),
     ('assert "Next clean move before the real VM-proof path:\\n" in aligned_commit_candidate', "Refresh smoke test keeps the aligned case on the visible-ref rerun path"),
+    ('run(["git", "remote", "rename", "origin", "github"], work)', "Refresh smoke test renames the upstream remote to exercise dynamic push-command generation"),
+    ('"--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"', "Refresh smoke test points the branch at the renamed GitHub remote"),
+    ('f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the unpublished doc-only next move against the renamed GitHub remote"),
 ]
 
 for needle, message in smoke_required:

@@ -351,9 +351,39 @@ def main() -> int:
         aligned_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
         assert "[PASS] VM verifier checkpoint artifacts match current repo state" in aligned_fresh_output
 
+        run(["git", "remote", "rename", "origin", "github"], work)
+        run(
+            ["git", "branch", "--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"],
+            work,
+        )
+        run(["git", "checkout", "-B", "docs-only-tip-needs-publish"], work)
+        run(
+            ["git", "branch", "--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"],
+            work,
+        )
+        (work / "docs" / "github-remote-freshness.md").write_text("github remote doc-only tip\n", encoding="utf-8")
+        run(["git", "add", "docs/github-remote-freshness.md"], work)
+        run(["git", "commit", "-m", "docs: add github-remote freshness tip"], work)
+        github_remote_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
+        github_remote_tip_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        github_remote_unpublished_commit_candidate = commit_candidate.read_text(encoding="utf-8")
+        assert f"Current checked-out branch tip: {github_remote_tip} ({github_remote_tip_subject})\n" in github_remote_unpublished_commit_candidate
+        assert (
+            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"the tracked publish-boundary checkpoint remains `{current_head_short}` until a non-doc commit supersedes it.\n"
+        ) in github_remote_unpublished_commit_candidate
+        github_remote_unpublished_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in github_remote_unpublished_fresh_output
+
+        run(["git", "push", "github", "HEAD:fix/openclaw-config-path-and-local-mode"], work)
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        github_remote_aligned_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "[PASS] VM verifier checkpoint artifacts match current repo state" in github_remote_aligned_fresh_output
+
         boundary_text = boundary_doc.read_text(encoding="utf-8")
         boundary_doc.write_text(
-            boundary_text + f"\n- the current checked-out branch tip is `{current_head_short}` (`{current_head_subject}`)\n",
+            boundary_text + f"\n- the current checked-out branch tip is `{github_remote_tip}` (`{github_remote_tip_subject}`)\n",
             encoding="utf-8",
         )
         aligned_boundary_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
@@ -365,11 +395,11 @@ def main() -> int:
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
         latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         checkpoint_doc.write_text(
-            checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
+            checkpoint_text + f"\n- Current checked-out branch tip: `{github_remote_tip}` (`{github_remote_tip_subject}`)\n",
             encoding="utf-8",
         )
         latest_checkpoint.write_text(
-            latest_checkpoint_text + f"\n- Current checked-out branch tip: `{current_head_short}` (`{current_head_subject}`)\n",
+            latest_checkpoint_text + f"\n- Current checked-out branch tip: `{github_remote_tip}` (`{github_remote_tip_subject}`)\n",
             encoding="utf-8",
         )
         aligned_checkpoint_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
