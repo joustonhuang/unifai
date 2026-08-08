@@ -1,14 +1,14 @@
-# Branch Reconcile Note — refreshed 2026-08-08 12:20 Asia/Taipei
+# Branch Reconcile Note — refreshed 2026-08-08 13:50 Asia/Taipei
 
 ## Current state
 
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
 - `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
-- The latest non-handoff branch tip captured by this note is `6acffbf`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
-- The last non-doc tracked publish-boundary checkpoint remains `6acffbf` until the current doc-only tip becomes GitHub-visible.
+- The latest non-handoff branch tip captured by this note is `79e8595`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
+- The last non-doc tracked publish-boundary checkpoint remains `79e8595` until the current doc-only tip becomes GitHub-visible.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
-  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `218`
+  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `224`
 
 ## Transplant-only commits
 
