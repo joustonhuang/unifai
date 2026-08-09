@@ -332,6 +332,8 @@ def main() -> int:
     verification_block = (
         "- Fresh local verification at the current sandbox state is green again:\n"
         "  - `python3 scripts/check_publish_stack_parity_contract.py`\n"
+        "  - `python3 scripts/check_publish_stack_reconciliation_note.py`\n"
+        "  - `python3 scripts/check_publish_stack_reconciliation_note_contract.py`\n"
         "  - `python3 scripts/check_compare_publish_branch_histories_contract.py`\n"
         "  - `python3 scripts/check_github_branch_visibility_contract.py`\n"
         "  - `python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py`\n"
@@ -339,6 +341,7 @@ def main() -> int:
         "  - `python3 scripts/check_vm_host_readiness_contract.py`\n"
         "  - `bash scripts/smoke_test_publish_stack_parity.sh`\n"
         "  - `bash scripts/smoke_test_compare_publish_branch_histories.sh`\n"
+        "  - `bash scripts/smoke_test_publish_stack_reconciliation_note.sh`\n"
         "  - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py`\n"
         "  - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py`\n"
         "  - `bash scripts/bootstrap_installer_preflight.sh` (rerun with the publish-boundary maintenance bundle in place)"
@@ -610,6 +613,8 @@ def main() -> int:
     verification_gates = (
         "Verification gates run:\n"
         "python3 scripts/check_publish_stack_parity_contract.py\n"
+        "python3 scripts/check_publish_stack_reconciliation_note.py\n"
+        "python3 scripts/check_publish_stack_reconciliation_note_contract.py\n"
         "python3 scripts/check_compare_publish_branch_histories_contract.py\n"
         "python3 scripts/check_github_branch_visibility_contract.py\n"
         "python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\n"
@@ -617,6 +622,7 @@ def main() -> int:
         "python3 scripts/check_vm_host_readiness_contract.py\n"
         "bash scripts/smoke_test_publish_stack_parity.sh\n"
         "bash scripts/smoke_test_compare_publish_branch_histories.sh\n"
+        "bash scripts/smoke_test_publish_stack_reconciliation_note.sh\n"
         "python3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\n"
         "python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\n"
         "bash scripts/bootstrap_installer_preflight.sh"

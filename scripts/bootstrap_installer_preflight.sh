@@ -90,8 +90,11 @@ require_file "$REPO_ROOT/scripts/check_publish_stack_parity.py"
 require_file "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_publish_stack_parity.sh"
 require_file "$REPO_ROOT/scripts/compare_publish_branch_histories.py"
+require_file "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note.py"
+require_file "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note_contract.py"
 require_file "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
+require_file "$REPO_ROOT/scripts/smoke_test_publish_stack_reconciliation_note.sh"
 require_file "$REPO_ROOT/scripts/check_branch_reconcile_handoff.py"
 require_file "$REPO_ROOT/scripts/check_branch_reconcile_handoff_contract.py"
 require_file "$REPO_ROOT/scripts/smoke_test_branch_reconcile_handoff.sh"
@@ -202,11 +205,20 @@ pass "Publish stack parity smoke script passes bash -n"
 python3 -m py_compile "$REPO_ROOT/scripts/compare_publish_branch_histories.py"
 pass "Publish branch history helper passes py_compile"
 
+python3 -m py_compile "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note.py"
+pass "Publish-stack reconciliation note checker passes py_compile"
+
+python3 -m py_compile "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note_contract.py"
+pass "Publish-stack reconciliation note contract checker passes py_compile"
+
 python3 -m py_compile "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
 pass "Publish branch history contract checker passes py_compile"
 
 bash -n "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
 pass "Publish branch history smoke script passes bash -n"
+
+bash -n "$REPO_ROOT/scripts/smoke_test_publish_stack_reconciliation_note.sh"
+pass "Publish-stack reconciliation note smoke script passes bash -n"
 
 python3 -m py_compile "$REPO_ROOT/scripts/check_branch_reconcile_handoff.py"
 pass "Branch-reconcile handoff checker passes py_compile"
@@ -280,6 +292,12 @@ pass "VM host readiness contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_publish_stack_parity_contract.py"
 pass "Publish stack parity contract check passed"
+
+python3 "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note.py"
+pass "Publish-stack reconciliation note check passed"
+
+python3 "$REPO_ROOT/scripts/check_publish_stack_reconciliation_note_contract.py"
+pass "Publish-stack reconciliation note contract check passed"
 
 python3 "$REPO_ROOT/scripts/check_compare_publish_branch_histories_contract.py"
 pass "Publish branch history contract check passed"
@@ -361,6 +379,9 @@ pass "Publish stack parity smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_compare_publish_branch_histories.sh"
 pass "Publish branch history smoke test passed"
+
+bash "$REPO_ROOT/scripts/smoke_test_publish_stack_reconciliation_note.sh"
+pass "Publish-stack reconciliation note smoke test passed"
 
 bash "$REPO_ROOT/scripts/smoke_test_branch_reconcile_handoff.sh"
 pass "Branch-reconcile handoff smoke test passed"
