@@ -602,7 +602,9 @@ def main() -> int:
     CHECKPOINT_LATEST.parent.mkdir(parents=True, exist_ok=True)
     CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")
 
-    current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"
+    # Keep the handoff stable across doc-only settle commits by reporting the
+    # tracked functional checkpoint state, not the checked-out doc-only tip.
+    current_branch_state = f"ahead {ahead_count} over {upstream_display}"
     tip_delta_line = ""
     if tracked_ref != "HEAD":
         tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")

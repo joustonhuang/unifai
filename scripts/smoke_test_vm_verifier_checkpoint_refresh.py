@@ -263,7 +263,7 @@ def main() -> int:
         assert latest_checkpoint == checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in commit_candidate
         assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\n" in commit_candidate
-        assert "Current branch state: ahead 3 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
+        assert "Current branch state: ahead 2 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_publish_stack_reconciliation_note.py\npython3 scripts/check_publish_stack_reconciliation_note_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\nbash scripts/smoke_test_publish_stack_reconciliation_note.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in commit_candidate
@@ -419,8 +419,6 @@ def main() -> int:
         doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         doc_only_latest_checkpoint = read_latest_checkpoint(work)
         doc_only_commit_candidate = read_commit_candidate(work)
-        doc_only_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
-
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in doc_only_boundary
         assert "- Working branch: `fix/openclaw-config-path-and-local-mode`" in doc_only_checkpoint
         assert f"Latest tracked local head in the stack: `{stable_head}`" in doc_only_checkpoint
@@ -430,7 +428,7 @@ def main() -> int:
         assert doc_only_latest_checkpoint == doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
-        assert f"Current branch state: ahead {doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
+        assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_publish_stack_reconciliation_note.py\npython3 scripts/check_publish_stack_reconciliation_note_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\nbash scripts/smoke_test_publish_stack_reconciliation_note.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
@@ -453,8 +451,6 @@ def main() -> int:
         second_doc_only_checkpoint = (work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md").read_text(encoding="utf-8")
         second_doc_only_latest_checkpoint = read_latest_checkpoint(work)
         second_doc_only_commit_candidate = read_commit_candidate(work)
-        second_doc_only_ahead = run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], work)
-
         assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in second_doc_only_boundary
         assert f"Latest tracked local head in the stack: `{stable_head}`" in second_doc_only_checkpoint
         assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in second_doc_only_checkpoint
@@ -463,7 +459,7 @@ def main() -> int:
         assert second_doc_only_latest_checkpoint == second_doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in second_doc_only_commit_candidate
         assert f"Current checked-out branch tip: {second_doc_only_tip} ({second_doc_only_subject})\n" in second_doc_only_commit_candidate
-        assert f"Current branch state: ahead {second_doc_only_ahead} over fix/openclaw-config-path-and-local-mode\n" in second_doc_only_commit_candidate
+        assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in second_doc_only_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in second_doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in second_doc_only_commit_candidate
         assert (

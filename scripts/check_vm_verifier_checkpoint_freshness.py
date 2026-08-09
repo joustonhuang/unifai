@@ -242,7 +242,7 @@ def main() -> int:
         ),
         (
             commit_candidate_text,
-            f"Current branch state: ahead {current_head_ahead_count} over {upstream_display}\n",
+            f"Current branch state: ahead {ahead_count} over {upstream_display}\n",
             "Commit-candidate branch state",
         ),
     ]
