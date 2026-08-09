@@ -5,9 +5,12 @@ import argparse
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+RECONCILIATION_NOTE = REPO_ROOT / "ci-artifacts" / "publish-stack-reconciliation-next-step.txt"
 REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {
     (
         "fix/openclaw-config-path-and-local-mode",
@@ -257,12 +260,12 @@ def commit_is_absorbed_by_ref(commit: str, ref: str) -> bool:
     return commit_is_textually_absorbed_by_ref(commit, ref) or commit_matches_known_absorption(commit, ref)
 
 
-def print_reconciliation_next_step(
+def summarize_reconciliation(
     older_ref: str,
     cleaner_ref: str,
     older_vs_cleaner: list[tuple[str, str, str, list[str]]],
     cleaner_vs_older: list[tuple[str, str, str, list[str]]],
-) -> None:
+) -> dict[str, object]:
     already_reviewed = reviewed_drop_candidates(older_ref, cleaner_ref)
     older_unique_rows = [
         row for row in older_vs_cleaner if row[0] == "+" and row[1] not in already_reviewed
@@ -292,6 +295,40 @@ def print_reconciliation_next_step(
         for _, commit, _, paths in older_unique_rows
         if paths and not is_doc_only(paths) and not is_code_only(paths)
     ]
+    return {
+        "absorbed_candidates": absorbed_candidates,
+        "already_reviewed": already_reviewed,
+        "cleaner_duplicates": cleaner_duplicates,
+        "cleaner_unique": cleaner_unique,
+        "doc_only_older": doc_only_older,
+        "mixed_older": mixed_older,
+        "older_duplicates": older_duplicates,
+        "older_unique": older_unique,
+        "replay_candidates": replay_candidates,
+        "unresolved_older": unresolved_older,
+    }
+
+
+def print_reconciliation_next_step(
+    older_ref: str,
+    cleaner_ref: str,
+    older_vs_cleaner: list[tuple[str, str, str, list[str]]],
+    cleaner_vs_older: list[tuple[str, str, str, list[str]]],
+) -> None:
+    summary = summarize_reconciliation(
+        older_ref,
+        cleaner_ref,
+        older_vs_cleaner,
+        cleaner_vs_older,
+    )
+    replay_candidates = summary["replay_candidates"]
+    older_duplicates = summary["older_duplicates"]
+    cleaner_duplicates = summary["cleaner_duplicates"]
+    absorbed_candidates = summary["absorbed_candidates"]
+    cleaner_unique = summary["cleaner_unique"]
+    mixed_older = summary["mixed_older"]
+    doc_only_older = summary["doc_only_older"]
+    unresolved_older = summary["unresolved_older"]
 
     print("Suggested next step:")
     print(f"  git checkout {cleaner_ref}")
@@ -333,6 +370,75 @@ def print_reconciliation_next_step(
         print("  # no older-only commits remain")
 
 
+def default_generated_at() -> str:
+    return datetime.now(ZoneInfo("Asia/Taipei")).strftime("%Y-%m-%d %H:%M Asia/Taipei")
+
+
+def build_reconciliation_note(
+    older_ref: str,
+    cleaner_ref: str,
+    left_count: int,
+    right_count: int,
+    older_vs_cleaner: list[tuple[str, str, str, list[str]]],
+    cleaner_vs_older: list[tuple[str, str, str, list[str]]],
+    *,
+    generated_at: str,
+) -> str:
+    summary = summarize_reconciliation(
+        older_ref,
+        cleaner_ref,
+        older_vs_cleaner,
+        cleaner_vs_older,
+    )
+    replay_candidates = summary["replay_candidates"]
+    absorbed_candidates = summary["absorbed_candidates"]
+    mixed_older = summary["mixed_older"]
+    doc_only_older = summary["doc_only_older"]
+    already_reviewed = summary["already_reviewed"]
+    cleaner_unique = summary["cleaner_unique"]
+
+    replay_line = (
+        f"- {len(replay_candidates)} code-only older commits remain to replay from {older_ref}"
+        if replay_candidates
+        else f"- no code-only older commits remain to replay from {older_ref}"
+    )
+    return "\n".join(
+        [
+            "Publish-stack reconciliation checkpoint",
+            f"Generated: {generated_at}",
+            "",
+            "Baseline branch:",
+            f"- {cleaner_ref}",
+            "",
+            "Current status:",
+            f"- baseline branch is ahead {right_count} over {older_ref}",
+            replay_line,
+            f"- {len(absorbed_candidates)} older code-only commits are already absorbed on the baseline branch",
+            (
+                f"- {len(mixed_older)} older mixed docs+code commits remain for manual review"
+                if mixed_older
+                else "- no older mixed docs+code commits remain for manual review"
+            ),
+            (
+                f"- {len(doc_only_older)} older doc/checkpoint-only commits remain for manual review or drop"
+                if doc_only_older
+                else "- no older doc/checkpoint-only commits remain for manual review or drop"
+            ),
+            f"- {len(already_reviewed)} older commits are already reviewed and ready to drop",
+            f"- {len(cleaner_unique)} cleaner-only commits remain on the baseline branch relative to the older local fix branch",
+            "",
+            "Next clean move:",
+            f"1. Stay on {cleaner_ref} as the publish baseline.",
+            "2. Treat the remaining older-only history as already-accounted-for drop noise unless archaeology is needed.",
+            "3. Keep the next live step focused on making the current transplant tip GitHub-visible, rerunning `Bootstrap Installer Preflight` on that exact visible ref, and only then moving into VM verifier preflight / proof.",
+            "",
+            "Reference command:",
+            f"python3 scripts/compare_publish_branch_histories.py {older_ref} {cleaner_ref}",
+            "",
+        ]
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -342,6 +448,16 @@ def main() -> None:
     )
     parser.add_argument("older_ref", help="Older or noisier local branch/ref")
     parser.add_argument("cleaner_ref", help="Cleaner candidate branch/ref")
+    parser.add_argument(
+        "--write-reconciliation-note",
+        action="store_true",
+        help="Refresh the tracked publish-stack reconciliation note from the current comparison output",
+    )
+    parser.add_argument(
+        "--generated-at",
+        default=default_generated_at(),
+        help="Override the reconciliation note timestamp (default: current Asia/Taipei time)",
+    )
     args = parser.parse_args()
 
     resolved_older_ref = resolve_ref(args.older_ref)
@@ -434,6 +550,20 @@ def main() -> None:
         older_vs_cleaner,
         cleaner_vs_older,
     )
+    if args.write_reconciliation_note:
+        RECONCILIATION_NOTE.write_text(
+            build_reconciliation_note(
+                args.older_ref,
+                args.cleaner_ref,
+                left_count,
+                right_count,
+                older_vs_cleaner,
+                cleaner_vs_older,
+                generated_at=args.generated_at,
+            ),
+            encoding="utf-8",
+        )
+        print(f"[PASS] Wrote reconciliation note to {RECONCILIATION_NOTE.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

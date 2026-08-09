@@ -225,6 +225,47 @@ grep -q "older branch still has 4 older-only commit(s) to review/drop consciousl
   exit 1
 }
 
+mkdir -p "$WORKTREE/ci-artifacts"
+WRITE_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/compare_publish_branch_histories.py --write-reconciliation-note --generated-at '2026-08-09 14:20 Asia/Taipei' fix/older transplant/cleaner")"
+printf '%s\n' "$WRITE_OUTPUT"
+
+grep -q "Wrote reconciliation note to ci-artifacts/publish-stack-reconciliation-next-step.txt" <<<"$WRITE_OUTPUT" || {
+  echo "[FAIL] Expected tracked-note refresh verdict."
+  exit 1
+}
+grep -q "Generated: 2026-08-09 14:20 Asia/Taipei" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected deterministic reconciliation note timestamp."
+  exit 1
+}
+grep -q "baseline branch is ahead 4 over fix/older" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record the live cleaner-ahead count."
+  exit 1
+}
+grep -q "2 code-only older commits remain to replay from fix/older" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record replay-safe older commit count."
+  exit 1
+}
+grep -q "1 older code-only commits are already absorbed on the baseline branch" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record absorbed older code-only count."
+  exit 1
+}
+grep -q "1 older mixed docs+code commits remain for manual review" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record mixed older review count."
+  exit 1
+}
+grep -q "1 older doc/checkpoint-only commits remain for manual review or drop" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record doc-only older review count."
+  exit 1
+}
+grep -q "0 older commits are already reviewed and ready to drop" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record reviewed-drop count."
+  exit 1
+}
+grep -q "3 cleaner-only commits remain on the baseline branch relative to the older local fix branch" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt" || {
+  echo "[FAIL] Expected reconciliation note to record cleaner-only baseline count."
+  exit 1
+}
+
 ABSORB_DIR="$(mktemp -d -t unifai-compare-publish-history-absorbed-XXXXXX)"
 trap 'rm -rf "$TMP_DIR" "$ABSORB_DIR"' EXIT
 ABSORB_WORKTREE="$ABSORB_DIR/repo"
