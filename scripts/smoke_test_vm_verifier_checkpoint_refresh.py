@@ -89,8 +89,8 @@ def main() -> int:
         detached = root / "detached"
         no_upstream = root / "no-upstream"
 
-        subprocess.check_call(["git", "init", "--bare", str(remote)])
-        subprocess.check_call(["git", "clone", str(remote), str(work)])
+        run_ok(["git", "init", "--bare", "--initial-branch=main", str(remote)], root)
+        run_ok(["git", "clone", str(remote), str(work)], root)
         run(["git", "config", "user.name", "Little7 Smoke Test"], work)
         run(["git", "config", "user.email", "little7@example.invalid"], work)
 
