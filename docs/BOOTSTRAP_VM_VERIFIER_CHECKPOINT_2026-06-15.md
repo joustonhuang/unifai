@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`
 - GitHub-visible branch head: `56aefc5`
-- Latest tracked local head in the stack: `c1a4a1f`
-- Latest non-doc logic head in the local stack: `c1a4a1f`
-- Tracked local branch state at checkpoint: ahead by 164 commits over the GitHub-visible branch head
+- Latest tracked local head in the stack: `2d7a58a`
+- Latest non-doc logic head in the local stack: `2d7a58a`
+- Tracked local branch state at checkpoint: ahead by 168 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `38a2e61` — `tests: align checkpoint refresh smoke with upstream ref`
@@ -172,6 +172,10 @@
 162. `8563bbf` — `docs: settle Task-based verifier checkpoint`
 163. `872e2d0` — `docs: finalize Task verifier checkpoint`
 164. `c1a4a1f` — `tests: guard gaia workflow preflight coverage`
+165. `e8c8411` — `docs: refresh verifier checkpoint after gaia preflight`
+166. `eae9b89` — `docs: settle verifier checkpoint after gaia preflight`
+167. `7b4f5fc` — `tests: cover forced github remote visibility guard`
+168. `2d7a58a` — `scripts: normalize preflight check-gate ref`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -207,10 +211,11 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `c1a4a1f`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, and the branch is `ahead 164` over `fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `2d7a58a`, that same commit is also the latest non-doc logic head, the sandbox currently carries 1 uncommitted publish-boundary maintenance update, and the branch is `ahead 168` over `fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
+- The current local sandbox now carries one small publish-boundary maintenance delta beyond the tracked local stack:
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
 - Fresh local verification at the current sandbox state is green again:
   - `python3 scripts/check_publish_stack_parity_contract.py`
   - `python3 scripts/check_publish_stack_reconciliation_note.py`
