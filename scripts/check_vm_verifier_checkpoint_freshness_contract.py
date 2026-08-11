@@ -55,7 +55,7 @@ required = [
     ('"Checkpoint latest ahead count"', "Freshness checker validates the stable latest-checkpoint ahead count"),
     ('if checkpoint_latest_text != checkpoint_text:', "Freshness checker fail-closes when the stable latest-checkpoint artifact diverges from the dated checkpoint doc"),
     ('"Checkpoint latest handoff artifact diverges from the dated checkpoint doc."', "Freshness checker emits a clear mismatch failure for latest-checkpoint drift"),
-    ('f"Current branch state: ahead {current_head_ahead_count} over {upstream_display}\\n"', "Freshness checker validates the handoff branch-state line against HEAD"),
+    ('f"Current branch state: ahead {ahead_count} over {upstream_display}\\n"', "Freshness checker validates the handoff branch-state line against HEAD"),
     ('f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\\n"', "Freshness checker validates the handoff checked-out tip line for doc-only cases"),
     ('if "the current checked-out branch tip is `" in boundary_text:', "Freshness checker rejects checked-out tip prose leaking back into the boundary doc"),
     ('if "- Current checked-out branch tip: `" in checkpoint_text:', "Freshness checker rejects checked-out tip lines leaking back into the checkpoint doc"),
