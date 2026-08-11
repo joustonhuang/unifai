@@ -8,6 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "check_github_branch_visibility.sh"
 SMOKE = REPO_ROOT / "scripts" / "smoke_test_github_branch_visibility.sh"
 NO_REMOTE_SMOKE = REPO_ROOT / "scripts" / "smoke_test_github_branch_visibility_no_github_remote.sh"
+FORCED_REMOTE_SMOKE = REPO_ROOT / "scripts" / "smoke_test_github_branch_visibility_forced_remote.sh"
 
 
 def fail(message: str) -> None:
@@ -22,6 +23,7 @@ def ok(message: str) -> None:
 text = SCRIPT.read_text(encoding="utf-8")
 smoke_text = SMOKE.read_text(encoding="utf-8")
 no_remote_smoke_text = NO_REMOTE_SMOKE.read_text(encoding="utf-8")
+forced_remote_smoke_text = FORCED_REMOTE_SMOKE.read_text(encoding="utf-8")
 
 required = [
     ('Usage: bash scripts/check_github_branch_visibility.sh [branch]', "Branch-visibility helper documents its usage"),
@@ -89,6 +91,20 @@ no_remote_required = [
 
 for needle, message in no_remote_required:
     if needle not in no_remote_smoke_text:
+        fail(message)
+    ok(message)
+
+forced_remote_required = [
+    ('GITHUB_REMOTE=github "$REAL_BASH" "$HELPER" feature/forced-remote', "Forced-remote smoke test covers a missing configured override remote"),
+    ("Remote 'github' is not configured.", "Forced-remote smoke test expects the missing forced-remote failure message"),
+    ('Add it with: git remote add github https://github.com/<owner>/<repo>.git', "Forced-remote smoke test expects recovery guidance for a missing forced remote"),
+    ('git remote add origin https://example.com/not-github/unifai.git', "Forced-remote smoke test covers a configured but non-GitHub override remote"),
+    ("Remote 'origin' is not GitHub-backed: https://example.com/not-github/unifai.git", "Forced-remote smoke test expects the non-GitHub forced-remote failure message"),
+    ('Forced-remote override failures should happen before any GitHub branch state is reported.', "Forced-remote smoke test guards that override failures happen before branch state reporting"),
+]
+
+for needle, message in forced_remote_required:
+    if needle not in forced_remote_smoke_text:
         fail(message)
     ok(message)
 
