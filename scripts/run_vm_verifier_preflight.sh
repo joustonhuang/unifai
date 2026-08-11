@@ -391,7 +391,7 @@ fi
 
 echo
 echo "== Step 4/4: GitHub check gate =="
-run_step python3 scripts/check_github_check_gate.py "$effective_ref"
+run_step python3 scripts/check_github_check_gate.py "$verifier_ref"
 
 echo
 echo "[PASS] VM verifier local preflight is green for $effective_ref"

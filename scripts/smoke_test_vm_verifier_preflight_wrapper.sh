@@ -144,8 +144,8 @@ if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$BRANCH_OUTPUT"; then
-  echo "[FAIL] Expected check-gate command missing in branch case."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH_VERIFIER_REF" <<<"$BRANCH_OUTPUT"; then
+  echo "[FAIL] Expected branch case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -167,8 +167,8 @@ if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$DEFAULT_OUTPUT"; then
-  echo "[FAIL] Expected check-gate command missing in default no-arg case."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH_VERIFIER_REF" <<<"$DEFAULT_OUTPUT"; then
+  echo "[FAIL] Expected default no-arg case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -218,8 +218,8 @@ if grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh" <<<"$VIS
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF" <<<"$VISIBLE_REMOTE_REF_OUTPUT"; then
-  echo "[FAIL] Expected check-gate command missing in explicit remote-tracking ref case."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_VERIFIER_REF" <<<"$VISIBLE_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit remote-tracking ref case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -327,8 +327,8 @@ if grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh" <<<"$DET
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_REMOTE_REF" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
-  echo "[FAIL] Expected detached-HEAD remote-ref case to plan the check-gate command."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $VISIBLE_VERIFIER_REF" <<<"$DETACHED_REMOTE_REF_OUTPUT"; then
+  echo "[FAIL] Expected detached-HEAD remote-ref case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -355,8 +355,8 @@ if grep -q "skipping branch-alignment check and treating it as an explicit GitHu
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$HEADS_REF_OUTPUT"; then
-  echo "[FAIL] Expected normalized check-gate command missing in explicit refs/heads case."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH_VERIFIER_REF" <<<"$HEADS_REF_OUTPUT"; then
+  echo "[FAIL] Expected explicit refs/heads case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
@@ -378,8 +378,8 @@ if ! grep -q "\[DRY_RUN\] bash scripts/check_github_branch_visibility.sh $BRANCH
   exit 1
 fi
 
-if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH" <<<"$DOUBLE_DASH_OUTPUT"; then
-  echo "[FAIL] Expected check-gate command missing when ref is passed after --."
+if ! grep -q "\[DRY_RUN\] python3 scripts/check_github_check_gate.py $BRANCH_VERIFIER_REF" <<<"$DOUBLE_DASH_OUTPUT"; then
+  echo "[FAIL] Expected -- separator case to run the check-gate command on the GitHub-visible verifier ref."
   exit 1
 fi
 
