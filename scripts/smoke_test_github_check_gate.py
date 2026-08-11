@@ -212,10 +212,10 @@ def fake_subprocess_run(cmd, check, capture_output, text, timeout):
         return FakeCompletedProcess("https://gitlab.com/example/unifai.git\n")
     if cmd == ["git", "show", "def456:.github/workflows/bootstrap-preflight.yml"]:
         lines = [f"line {i}" for i in range(1, 57)]
-        lines[37] = '      - name: Run bootstrap installer preflight'
-        lines[38] = '        run: |'
-        lines[39] = '          chmod +x scripts/bootstrap_installer_preflight.sh'
-        lines[40] = '          ./scripts/bootstrap_installer_preflight.sh'
+        lines[37] = '      - name: Install Task'
+        lines[38] = '        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin'
+        lines[39] = '      - name: Run bootstrap Task entrypoint'
+        lines[40] = '        run: task verify'
         lines[41] = ''
         return FakeCompletedProcess("\n".join(lines) + "\n")
     if cmd == ["git", "show", "def456:.github/workflows/unifai-ci.yml"]:

@@ -1,0 +1,106 @@
+version: '3'
+
+vars:
+  PYTHON: python3
+  INSTALLER: ./little7-installer/install.sh
+
+silent: false
+
+tasks:
+  default:
+    desc: List available UnifAI tasks
+    cmds:
+      - task --list-all
+
+  ci:
+    desc: Run the default local CI entrypoint
+    cmds:
+      - task verify
+
+  verify:
+    desc: Run local verification gates
+    deps:
+      - check:no-sandbox
+      - check:runtime-baseline
+      - installer:verify
+      - preflight:bootstrap
+
+  check:no-sandbox:
+    desc: Enforce no-sandbox doctrine
+    cmds:
+      - '{{.PYTHON}} scripts/check_no_sandbox_doctrine.py'
+
+  check:runtime-baseline:
+    desc: Enforce runtime baseline
+    cmds:
+      - '{{.PYTHON}} scripts/check_runtime_baseline.py'
+
+  installer:verify:
+    desc: Run installer verify contract
+    cmds:
+      - bash {{.INSTALLER}} verify
+
+  preflight:bootstrap:
+    desc: Run bootstrap installer preflight
+    cmds:
+      - chmod +x scripts/bootstrap_installer_preflight.sh
+      - ./scripts/bootstrap_installer_preflight.sh
+
+  install:list:
+    desc: List installer stages
+    cmds:
+      - bash {{.INSTALLER}} list
+
+  install:all:
+    desc: Run all installer stages
+    cmds:
+      - bash {{.INSTALLER}}
+
+  install:stage:
+    desc: Run a single installer stage via STAGE=<NN or NN_name>
+    requires:
+      vars: [STAGE]
+    cmds:
+      - bash {{.INSTALLER}} {{.STAGE}}
+
+  smoke:gaia:
+    desc: Run Gaia smoke test
+    cmds:
+      - bash ./scripts/smoke_test_gaia.sh
+
+  smoke:gaia-ci:
+    desc: Run the Gaia smoke-test CI entrypoint locally
+    deps:
+      - check:no-sandbox
+      - check:runtime-baseline
+      - smoke:gaia
+    cmds:
+      - '{{.PYTHON}} -c "import yaml; print(\"pyyaml-ready\")"'
+
+  smoke:governance:
+    desc: Run OpenClaw governance smoke test
+    cmds:
+      - bash ./scripts/smoke_test_openclaw_governance.sh
+
+  smoke:injection:
+    desc: Run OpenClaw injection smoke test
+    cmds:
+      - bash ./scripts/smoke_test_openclaw_injection.sh
+
+  smoke:core-ci:
+    desc: Run a core local smoke bundle for CI-style integrity checks
+    deps:
+      - check:no-sandbox
+      - check:runtime-baseline
+    cmds:
+      - chmod +x scripts/smoke_test_*.sh
+      - bash ./scripts/smoke_test_openclaw_injection.sh
+      - bash ./scripts/smoke_test_gaia.sh
+      - bash ./scripts/smoke_test_openclaw_governance.sh
+
+  vm:verify:
+    desc: Verify bootstrap in a fresh VM via REF=<git-ref-or-sha>
+    requires:
+      vars: [REF]
+    cmds:
+      - bash ./scripts/vm/verify_bootstrap_in_vm.sh {{.REF}}

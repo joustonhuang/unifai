@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "bootstrap-preflight.yml"
 UNIFAI_CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unifai-ci.yml"
 LOCK_FILE = REPO_ROOT / "little7-installer" / "config" / "supervisor-secretvault.lock"
+TASKFILE = REPO_ROOT / "Taskfile.yml"
 
 
 def fail(message: str) -> None:
@@ -23,6 +24,7 @@ def ok(message: str) -> None:
 workflow_text = WORKFLOW.read_text(encoding="utf-8")
 unifai_ci_text = UNIFAI_CI_WORKFLOW.read_text(encoding="utf-8")
 lock_text = LOCK_FILE.read_text(encoding="utf-8")
+taskfile_text = TASKFILE.read_text(encoding="utf-8")
 
 for branch in ["main", "master", "feat/**", "fix/**", "claude/**"]:
     if f"- '{branch}'" not in workflow_text and f"- {branch}" not in workflow_text:
@@ -30,21 +32,20 @@ for branch in ["main", "master", "feat/**", "fix/**", "claude/**"]:
 ok("Workflow push trigger covers main/master/feat/fix/claude branches")
 
 for required_step in [
-    "Enforce No Sandbox Doctrine",
-    "Enforce Runtime Baseline",
-    "Run bootstrap installer preflight",
+    "Install Task",
+    "Run bootstrap Task entrypoint",
 ]:
     if workflow_text.count(f"- name: {required_step}") != 1:
         fail(f"Workflow must invoke '{required_step}' exactly once")
-ok("Workflow invokes doctrine, runtime baseline, and bootstrap preflight exactly once")
+ok("Workflow installs Task and invokes the bootstrap task entrypoint exactly once")
 
 for required_snippet in [
-    "- name: Enforce No Sandbox Doctrine\n        run: python scripts/check_no_sandbox_doctrine.py",
-    "- name: Enforce Runtime Baseline\n        run: python scripts/check_runtime_baseline.py",
+    "- name: Install Task\n        run: sh -c \"$(curl --location https://taskfile.dev/install.sh)\" -- -d -b /usr/local/bin",
+    "- name: Run bootstrap Task entrypoint\n        run: task verify",
 ]:
     if required_snippet not in workflow_text:
         fail(f"Workflow missing exact step snippet: {required_snippet!r}")
-ok("Workflow preserves no-sandbox and runtime-baseline enforcement steps")
+ok("Workflow installs Task and dispatches the shared bootstrap task entrypoint")
 
 for required_snippet in [
     "- name: Checkout repository\n        uses: actions/checkout@v5",
@@ -62,6 +63,21 @@ for forbidden in [
     if forbidden in workflow_text:
         fail(f"Workflow should not duplicate smoke tests outside bootstrap preflight: {forbidden}")
 ok("Workflow does not duplicate VM verifier smoke tests")
+
+for required_snippet, label in [
+    ("version: '3'", "Taskfile declares the Task schema version"),
+    ("  verify:\n", "Taskfile defines the shared verify entrypoint"),
+    ("      - check:no-sandbox", "Task verify keeps the no-sandbox gate"),
+    ("      - check:runtime-baseline", "Task verify keeps the runtime-baseline gate"),
+    ("      - installer:verify", "Task verify keeps the installer verify gate"),
+    ("      - preflight:bootstrap", "Task verify keeps the bootstrap preflight gate"),
+    ("  smoke:gaia-ci:\n", "Taskfile defines the Gaia CI entrypoint"),
+    ("      - smoke:gaia", "Gaia CI task still runs the Gaia smoke script"),
+    ("pyyaml-ready", "Gaia CI task still verifies the PyYAML dependency"),
+]:
+    if required_snippet not in taskfile_text:
+        fail(label)
+ok("Taskfile preserves the shared verify and Gaia CI entrypoints")
 
 for required_snippet, label in [
     ("submodule-integrity-audit:", "UnifAI CI workflow preserves the submodule-integrity-audit job"),

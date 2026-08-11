@@ -36,16 +36,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Enforce No Sandbox Doctrine
-        run: python scripts/check_no_sandbox_doctrine.py
+      - name: Install Task
+        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
 
-      - name: Enforce Runtime Baseline
-        run: python scripts/check_runtime_baseline.py
-
-      - name: Run bootstrap installer preflight
-        run: |
-          chmod +x scripts/bootstrap_installer_preflight.sh
-          ./scripts/bootstrap_installer_preflight.sh
+      - name: Run bootstrap Task entrypoint
+        run: task verify
 
       - name: Upload bootstrap preflight report
         if: always()
