@@ -30,6 +30,19 @@ REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {
     },
 }
 KNOWN_ABSORPTION_MARKERS: dict[str, dict[str, list[str]]] = {
+    "scripts: cover default vm preflight ref path": {
+        "scripts/check_vm_verifier_preflight_contract.py": [
+            "Wrapper smoke test explains the default-branch expectation",
+            "Wrapper smoke test checks branch visibility in the default no-arg case",
+            "Wrapper smoke test checks the check-gate step in the default no-arg case",
+        ],
+        "scripts/smoke_test_vm_verifier_preflight_wrapper.sh": [
+            'DEFAULT_OUTPUT="$(UNIFAI_VM_PREFLIGHT_DRY_RUN=1 "$REAL_BASH" "$WRAPPER")"',
+            'echo "[FAIL] Expected current branch to be used when no ref is provided."',
+            'echo "[FAIL] Expected branch visibility command missing in default no-arg case."',
+            'echo "[FAIL] Expected default no-arg case to run the check-gate command on the GitHub-visible verifier ref."',
+        ],
+    },
     "scripts: stabilize verifier checkpoint refresh tracking": {
         "scripts/refresh_vm_verifier_checkpoint_state.py": [
             "CHECKPOINT_DOCS = {",

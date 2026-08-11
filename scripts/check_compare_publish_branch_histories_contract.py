@@ -12,6 +12,7 @@ EXPECTATIONS = [
     ('RECONCILIATION_NOTE = REPO_ROOT / "ci-artifacts" / "publish-stack-reconciliation-next-step.txt"', "Branch-history helper tracks the checked-in reconciliation next-step note path"),
     ('REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {', "Branch-history helper tracks reviewed older commits that are already ready to drop for known branch pairs"),
     ('KNOWN_ABSORPTION_MARKERS: dict[str, dict[str, list[str]]] = {', "Branch-history helper carries known absorbed-commit markers for generalized coverage cases"),
+    ('"scripts: cover default vm preflight ref path"', "Branch-history helper recognizes the older default-preflight coverage commit as a known absorption case"),
     ('"scripts: stabilize verifier checkpoint refresh tracking"', "Branch-history helper recognizes the older checkpoint-refresh tracking commit as a known absorption case"),
     ('def ref_exists(ref: str) -> bool:', "Branch-history helper can verify candidate refs before comparing histories"),
     ('def resolve_ref(ref: str) -> str:', "Branch-history helper can normalize branch names to concrete local or remote-tracking refs"),
