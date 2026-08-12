@@ -70,6 +70,7 @@ EOF
 git add ci-artifacts/branch-reconcile-2026-07-10.md
 git commit -q -m "docs: refresh branch reconcile publish handoff"
 head_sha="$(git rev-parse --short HEAD)"
+git push origin HEAD:transplant/fix-openclaw-config-path-and-local-mode-clean-stack >/dev/null
 
 OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py")"
 printf '%s\n' "$OUTPUT"
@@ -80,6 +81,7 @@ grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary
 
 export WORKTREE_PATH="$WORKTREE"
 export OLDER_COUNT="$older_count"
+export CLEANER_COUNT="$cleaner_count"
 python3 - <<'PY'
 import os
 from pathlib import Path
@@ -106,6 +108,47 @@ import os
 from pathlib import Path
 path = Path(os.environ["WORKTREE_PATH"]) / "ci-artifacts" / "branch-reconcile-2026-07-10.md"
 text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "- `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.",
+    "- `origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.",
+)
+text = text.replace(
+    "origin/fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+    "fix/openclaw-config-path-and-local-mode...origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+text = text.replace(
+    f"  - `origin/fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+    f"  - `fix/openclaw-config-path-and-local-mode`: `{os.environ['OLDER_COUNT']}`",
+)
+text = text.replace(
+    f"  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `{os.environ['CLEANER_COUNT']}`",
+    f"  - `origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `{os.environ['CLEANER_COUNT']}`",
+)
+path.write_text(text, encoding="utf-8")
+PY
+REMOTE_CLEANER_REF_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_branch_reconcile_handoff.py --cleaner-ref origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack")"
+printf '%s\n' "$REMOTE_CLEANER_REF_OUTPUT"
+grep -q "\[PASS\] Branch-reconcile handoff note matches current publish-boundary state" <<<"$REMOTE_CLEANER_REF_OUTPUT" || {
+  echo "[FAIL] Expected branch-reconcile checker to pass when --cleaner-ref uses the GitHub remote-tracking ref."
+  exit 1
+}
+python3 - <<'PY'
+import os
+from pathlib import Path
+path = Path(os.environ["WORKTREE_PATH"]) / "ci-artifacts" / "branch-reconcile-2026-07-10.md"
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "- `origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.",
+    "- `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.",
+)
+text = text.replace(
+    "fix/openclaw-config-path-and-local-mode...origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+    "fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
+)
+text = text.replace(
+    f"  - `origin/transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `{os.environ['CLEANER_COUNT']}`",
+    f"  - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `{os.environ['CLEANER_COUNT']}`",
+)
 text = text.replace(
     "origin/fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
     "fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack",
