@@ -63,6 +63,8 @@ required = [
     ('"python3 scripts/check_publish_stack_reconciliation_note.py\\n"', "Refresh helper keeps the publish-stack reconciliation note freshness gate in the handoff artifact"),
     ('"python3 scripts/check_publish_stack_reconciliation_note_contract.py\\n"', "Refresh helper keeps the publish-stack reconciliation note contract gate in the handoff artifact"),
     ('"python3 scripts/check_compare_publish_branch_histories_contract.py\\n"', "Refresh helper keeps the publish-branch-history contract gate in the handoff artifact"),
+    ('"python3 scripts/check_branch_reconcile_handoff.py\\n"', "Refresh helper keeps the branch-reconcile handoff freshness gate in the handoff artifact"),
+    ('"python3 scripts/check_branch_reconcile_handoff_contract.py\\n"', "Refresh helper keeps the branch-reconcile handoff contract gate in the handoff artifact"),
     ('"  - `python3 scripts/check_github_branch_visibility_contract.py`\\n"', "Refresh helper keeps the branch-visibility contract gate in the generated checkpoint verification block"),
     ('"python3 scripts/check_github_branch_visibility_contract.py\\n"', "Refresh helper keeps the branch-visibility contract gate in the handoff artifact"),
     ('"python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\\n"', "Refresh helper keeps the checkpoint-freshness contract gate in the handoff artifact"),
@@ -71,6 +73,7 @@ required = [
     ('"bash scripts/smoke_test_publish_stack_parity.sh\\n"', "Refresh helper keeps the publish-stack parity smoke gate in the handoff artifact"),
     ('"bash scripts/smoke_test_compare_publish_branch_histories.sh\\n"', "Refresh helper keeps the publish-branch-history smoke gate in the handoff artifact"),
     ('"bash scripts/smoke_test_publish_stack_reconciliation_note.sh\\n"', "Refresh helper keeps the publish-stack reconciliation note smoke gate in the handoff artifact"),
+    ('"bash scripts/smoke_test_branch_reconcile_handoff.sh\\n"', "Refresh helper keeps the branch-reconcile handoff smoke gate in the handoff artifact"),
     ('"python3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\\n"', "Refresh helper keeps the checkpoint-freshness smoke gate in the handoff artifact"),
     ('"python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\\n"', "Refresh helper keeps the checkpoint-refresh smoke gate in the handoff artifact"),
     ('"bash scripts/bootstrap_installer_preflight.sh"', "Refresh helper keeps bootstrap preflight as the publish gate"),
@@ -85,7 +88,7 @@ required = [
     ('f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "', "Refresh helper reports when a doc-only checked-out tip is already GitHub-visible"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\\n"', "Refresh helper points the aligned doc-only visible-ref case back at the visible preflight rerun"),
     ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
-    ('current_branch_state = f"ahead {current_head_ahead_count} over {upstream_display}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
+    ('current_branch_state = f"ahead {ahead_count} over {upstream_display}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),
 ]
 
