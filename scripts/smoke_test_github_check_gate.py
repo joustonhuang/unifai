@@ -363,7 +363,7 @@ if "likely root signal: failure: .github/workflows/bootstrap-preflight.yml line 
 if "source context (.github/workflows/bootstrap-preflight.yml:38-42 @ def456):" not in stdout:
     print("[FAIL] Expected direct-file source-context header missing from failure case.")
     raise SystemExit(1)
-if "    > 40:           chmod +x scripts/bootstrap_installer_preflight.sh" not in stdout:
+if "    > 40:       - name: Run bootstrap Task entrypoint" not in stdout:
     print("[FAIL] Expected direct-file highlighted source-context line missing from failure case.")
     raise SystemExit(1)
 if "annotations:" not in stdout or "Node.js 20 actions are deprecated." not in stdout or "Process completed with exit code 1." not in stdout:
