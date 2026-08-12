@@ -393,4 +393,82 @@ if remote != expected:
     raise SystemExit("[FAIL] refs/remotes branch-pair lookup should match the canonical reviewed-drop candidate set.")
 PY
 
+KNOWN_ABSORB_DIR="$(mktemp -d -t unifai-compare-publish-history-known-XXXXXX)"
+trap 'rm -rf "$TMP_DIR" "$ABSORB_DIR" "$KNOWN_ABSORB_DIR"' EXIT
+KNOWN_ABSORB_WORKTREE="$KNOWN_ABSORB_DIR/repo"
+mkdir -p "$KNOWN_ABSORB_WORKTREE/scripts"
+cp "$REPO_ROOT/scripts/compare_publish_branch_histories.py" "$KNOWN_ABSORB_WORKTREE/scripts/compare_publish_branch_histories.py"
+chmod +x "$KNOWN_ABSORB_WORKTREE/scripts/compare_publish_branch_histories.py"
+
+cd "$KNOWN_ABSORB_WORKTREE"
+git init -q
+git config user.name "UnifAI Smoke"
+git config user.email "smoke@unifai.invalid"
+
+mkdir -p scripts
+cat > scripts/refresh_vm_verifier_checkpoint_state.py <<'EOF'
+def refresh():
+    return "base"
+EOF
+git add scripts/refresh_vm_verifier_checkpoint_state.py
+git commit -q -m "base"
+git branch -M base
+
+git checkout -q -b fix/older
+cat > scripts/refresh_vm_verifier_checkpoint_state.py <<'EOF'
+def refresh():
+    return "older-only tracking helper"
+EOF
+git add scripts/refresh_vm_verifier_checkpoint_state.py
+git commit -q -m "scripts: stabilize verifier checkpoint refresh tracking"
+
+git checkout -q base
+git checkout -q -b transplant/cleaner
+cat > scripts/refresh_vm_verifier_checkpoint_state.py <<'EOF'
+CHECKPOINT_DOCS = {
+    "docs/BOOTSTRAP_VM_VERIFICATION.md",
+}
+
+
+def is_checkpoint_doc_only_commit(ref: str) -> bool:
+    return ref.startswith("docs/")
+
+
+def refresh():
+    tracked_ref = "HEAD"
+    while tracked_ref != upstream and is_checkpoint_doc_only_commit(tracked_ref):
+        tracked_ref = "parent"
+    return tracked_ref
+EOF
+cat > scripts/smoke_test_vm_verifier_checkpoint_refresh.py <<'EOF'
+def smoke_lines():
+    run(["git", "commit", "-m", "docs: sync visible verifier boundary state"], work)
+    subprocess.check_call(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
+    assert f"through `{stable_head}` (`{stable_subject}`), {stable_ahead} commits ahead in total" in stable_boundary
+    assert f"Latest tracked local head in the stack: `{stable_head}`" in stable_checkpoint
+    assert f"Tracked local branch state at checkpoint: ahead by {stable_ahead} commits over the GitHub-visible branch head" in stable_checkpoint
+EOF
+git add scripts/refresh_vm_verifier_checkpoint_state.py scripts/smoke_test_vm_verifier_checkpoint_refresh.py
+git commit -q -m "cleaner: generalize checkpoint refresh tracking coverage"
+
+KNOWN_ABSORB_OUTPUT="$("$REAL_BASH" -lc "cd '$KNOWN_ABSORB_WORKTREE' && python3 scripts/compare_publish_branch_histories.py fix/older transplant/cleaner")"
+printf '%s\n' "$KNOWN_ABSORB_OUTPUT"
+
+grep -q "Code-only older commits already absorbed on transplant/cleaner:" <<<"$KNOWN_ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected known-absorption smoke case to report an absorbed older code-only commit."
+  exit 1
+}
+grep -q "scripts: stabilize verifier checkpoint refresh tracking" <<<"$KNOWN_ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected known-absorption smoke case to keep the absorbed checkpoint-refresh commit visible."
+  exit 1
+}
+grep -q "no code-only older commits remain to replay from fix/older" <<<"$KNOWN_ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected known-absorption smoke case to suppress replay guidance once the marker path absorbs the older commit."
+  exit 1
+}
+grep -q "no older-only commits remain" <<<"$KNOWN_ABSORB_OUTPUT" || {
+  echo "[FAIL] Expected known-absorption smoke case to clear the unresolved older-only summary."
+  exit 1
+}
+
 echo "[PASS] Compare publish branch histories behaves as expected."

@@ -101,6 +101,8 @@ SMOKE_EXPECTATIONS = [
     ('older mixed docs+code commit(s) remain for manual review before replay', "Branch-history smoke test asserts mixed older commits stay out of replay guidance"),
     ('older-only doc/checkpoint commit(s) remain for manual review or drop', "Branch-history smoke test asserts doc-only older churn stays out of replay guidance"),
     ('code-only older commit(s) are already absorbed on transplant/cleaner and can stay out of replay', "Branch-history smoke test asserts absorbed older code-only churn is recognized explicitly"),
+    ('KNOWN_ABSORB_OUTPUT="$("$REAL_BASH" -lc "cd \'$KNOWN_ABSORB_WORKTREE\' && python3 scripts/compare_publish_branch_histories.py fix/older transplant/cleaner")"', "Branch-history smoke test exercises the known-absorption marker fallback through the main CLI flow"),
+    ('scripts: stabilize verifier checkpoint refresh tracking', "Branch-history smoke test keeps the known-absorption checkpoint-refresh subject visible in output"),
     ('older branch still has 4 older-only commit(s) to review/drop consciously', "Branch-history smoke test pins the unresolved older-only summary after excluding absorbed churn"),
     ('grep -q "Wrote reconciliation note to ci-artifacts/publish-stack-reconciliation-next-step.txt" <<<"$WRITE_OUTPUT"', "Branch-history smoke test asserts the tracked-note refresh verdict"),
     ('grep -q "Generated: 2026-08-09 14:20 Asia/Taipei" "$WORKTREE/ci-artifacts/publish-stack-reconciliation-next-step.txt"', "Branch-history smoke test pins the deterministic reconciliation note timestamp"),
