@@ -3,9 +3,9 @@
 ## Branch
 - Working branch: `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`
 - GitHub-visible branch head: `56aefc5`
-- Latest tracked local head in the stack: `24532ff`
-- Latest non-doc logic head in the local stack: `24532ff`
-- Tracked local branch state at checkpoint: ahead by 174 commits over the GitHub-visible branch head
+- Latest tracked local head in the stack: `57beae2`
+- Latest non-doc logic head in the local stack: `57beae2`
+- Tracked local branch state at checkpoint: ahead by 180 commits over the GitHub-visible branch head
 
 ## Local commit stack after `5baa4b0`
 1. `38a2e61` — `tests: align checkpoint refresh smoke with upstream ref`
@@ -182,6 +182,12 @@
 172. `eb428c7` — `docs: refresh verifier checkpoint after freshness contract fix`
 173. `72ac0aa` — `docs: settle verifier checkpoint after contract sync`
 174. `24532ff` — `scripts: recognize absorbed default preflight coverage`
+175. `1bc2ed6` — `docs: settle verifier checkpoint after publish-note refresh`
+176. `631f54e` — `docs: settle verifier checkpoint dirty-state summary`
+177. `802dd45` — `scripts: cover known absorption fallback path`
+178. `63f3759` — `scripts: reuse publish reconciliation summary`
+179. `299a2eb` — `tests: cover remote cleaner branch reconcile fallback`
+180. `57beae2` — `scripts: align checkpoint refresh verification gates`
 ## What is now true locally
 - Bootstrap installer preflight remains green.
 - The bootstrap-preflight workflow itself is now pinned to Node24-safe GitHub Action majors (`actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`), and the workflow contract checker now fails locally if those pins drift.
@@ -217,15 +223,18 @@
 - Bootstrap installer preflight now also executes two more realistic local verifier-environment probes instead of only syntax-checking them:
   - a forced-TCG launch smoke path for `scripts/vm/verify_bootstrap_in_vm.sh`
   - a host-readiness helper smoke test for `scripts/check_vm_host_readiness.sh`
-- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `24532ff`, that same commit is also the latest non-doc logic head, the sandbox currently carries no additional uncommitted publish-boundary maintenance updates, and the branch is `ahead 174` over `fix/openclaw-config-path-and-local-mode`.
+- The current local hardening stack has moved well beyond that earlier nine-commit checkpoint chain on top of the GitHub-visible branch: the latest tracked commit is now `57beae2`, that same commit is also the latest non-doc logic head, the sandbox currently carries 1 uncommitted publish-boundary maintenance update, and the branch is `ahead 180` over `fix/openclaw-config-path-and-local-mode`.
 - The verifier no longer drops installer-phase VM failures on the floor: installer errors now emit the evidence bundle path plus installer-output, serial-log, and qemu-log excerpts, and that path is covered by a dedicated local smoke test.
 - Bootstrap preflight now locks that installer-failure path into its own required coverage, so future verifier edits cannot silently drop it while still appearing preflight-green.
-- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
+- The current local sandbox now carries one small publish-boundary maintenance delta beyond the tracked local stack:
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
 - Fresh local verification at the current sandbox state is green again:
   - `python3 scripts/check_publish_stack_parity_contract.py`
   - `python3 scripts/check_publish_stack_reconciliation_note.py`
   - `python3 scripts/check_publish_stack_reconciliation_note_contract.py`
   - `python3 scripts/check_compare_publish_branch_histories_contract.py`
+  - `python3 scripts/check_branch_reconcile_handoff.py`
+  - `python3 scripts/check_branch_reconcile_handoff_contract.py`
   - `python3 scripts/check_github_branch_visibility_contract.py`
   - `python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py`
   - `python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py`
@@ -233,6 +242,7 @@
   - `bash scripts/smoke_test_publish_stack_parity.sh`
   - `bash scripts/smoke_test_compare_publish_branch_histories.sh`
   - `bash scripts/smoke_test_publish_stack_reconciliation_note.sh`
+  - `bash scripts/smoke_test_branch_reconcile_handoff.sh`
   - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py`
   - `python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py`
   - `bash scripts/bootstrap_installer_preflight.sh` (rerun with the publish-boundary maintenance bundle in place)
