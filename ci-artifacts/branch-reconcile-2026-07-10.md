@@ -5,7 +5,7 @@
 - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` is the cleaner publish candidate.
 - `fix/openclaw-config-path-and-local-mode` still carries extra legacy local-only history, but that history is now fully accounted for as absorbed, patch-equivalent, or intentional doc-only drop noise.
 - The latest non-handoff branch tip captured by this note is `57beae2`; later doc-only checkpoint or branch-reconcile-only handoff refreshes are intentionally ignored here so the handoff does not self-stale immediately on commit.
-- The last non-doc tracked publish-boundary checkpoint remains `57beae2` until the current doc-only tip becomes GitHub-visible.
+- The last non-doc tracked publish-boundary checkpoint remains `57beae2` while the exact current doc-only tip is already GitHub-visible.
 - Divergence count from `git rev-list --left-right --count fix/openclaw-config-path-and-local-mode...transplant/fix-openclaw-config-path-and-local-mode-clean-stack`:
   - `fix/openclaw-config-path-and-local-mode`: `18`
   - `transplant/fix-openclaw-config-path-and-local-mode-clean-stack`: `269`
@@ -119,4 +119,4 @@ f4232c5 docs: sync visible verifier boundary state
 
 ## Best next move
 
-Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the external publish boundary: make the current transplant tip GitHub-visible, rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
+Use `transplant/fix-openclaw-config-path-and-local-mode-clean-stack` as the canonical local publish baseline. The remaining older-only legacy history is now entirely already-accounted-for drop noise, so the next manual block should stay focused on the visible publish boundary: rerun `Bootstrap Installer Preflight` on that exact visible ref, then proceed to VM verifier preflight / proof if it stays green.
