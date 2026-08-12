@@ -327,8 +327,10 @@ def print_reconciliation_next_step(
     cleaner_ref: str,
     older_vs_cleaner: list[tuple[str, str, str, list[str]]],
     cleaner_vs_older: list[tuple[str, str, str, list[str]]],
+    *,
+    summary: dict[str, object] | None = None,
 ) -> None:
-    summary = summarize_reconciliation(
+    summary = summary or summarize_reconciliation(
         older_ref,
         cleaner_ref,
         older_vs_cleaner,
@@ -396,8 +398,9 @@ def build_reconciliation_note(
     cleaner_vs_older: list[tuple[str, str, str, list[str]]],
     *,
     generated_at: str,
+    summary: dict[str, object] | None = None,
 ) -> str:
-    summary = summarize_reconciliation(
+    summary = summary or summarize_reconciliation(
         older_ref,
         cleaner_ref,
         older_vs_cleaner,
@@ -507,31 +510,20 @@ def main() -> None:
         cleaner_vs_older,
         "+",
     )
+    summary = summarize_reconciliation(
+        args.older_ref,
+        args.cleaner_ref,
+        older_vs_cleaner,
+        cleaner_vs_older,
+    )
     older_unique_rows = [row for row in older_vs_cleaner if row[0] == "+"]
     reviewed_drop_commits = [
-        commit for _, commit, _, _ in older_unique_rows if commit in reviewed_drop_candidates(args.older_ref, args.cleaner_ref)
+        commit for _, commit, _, _ in older_unique_rows if commit in summary["already_reviewed"]
     ]
-    older_unique_rows = [
-        row for row in older_unique_rows if row[1] not in reviewed_drop_candidates(args.older_ref, args.cleaner_ref)
-    ]
-    absorbed_candidates = [
-        commit
-        for _, commit, _, paths in older_unique_rows
-        if is_code_only(paths) and commit_is_absorbed_by_ref(commit, resolved_cleaner_ref)
-    ]
-    replay_candidates = [
-        commit
-        for _, commit, _, paths in older_unique_rows
-        if is_code_only(paths) and commit not in absorbed_candidates
-    ]
-    mixed_older = [
-        commit
-        for _, commit, _, paths in older_unique_rows
-        if paths and not is_doc_only(paths) and not is_code_only(paths)
-    ]
-    doc_only_older = [
-        commit for _, commit, _, paths in older_unique_rows if is_doc_only(paths)
-    ]
+    absorbed_candidates = summary["absorbed_candidates"]
+    replay_candidates = summary["replay_candidates"]
+    mixed_older = summary["mixed_older"]
+    doc_only_older = summary["doc_only_older"]
     print_commit_list(
         f"Code-only older commits already absorbed on {args.cleaner_ref}:",
         absorbed_candidates,
@@ -562,6 +554,7 @@ def main() -> None:
         args.cleaner_ref,
         older_vs_cleaner,
         cleaner_vs_older,
+        summary=summary,
     )
     if args.write_reconciliation_note:
         RECONCILIATION_NOTE.write_text(
@@ -573,6 +566,7 @@ def main() -> None:
                 older_vs_cleaner,
                 cleaner_vs_older,
                 generated_at=args.generated_at,
+                summary=summary,
             ),
             encoding="utf-8",
         )
