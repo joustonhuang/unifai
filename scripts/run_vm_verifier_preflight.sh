@@ -253,6 +253,59 @@ github_visible_ref_for_verifier() {
   esac
 }
 
+reject_stale_visible_ref_for_current_branch() {
+  local ref="$1"
+  local current_branch="$2"
+  local upstream_ref=""
+  local remote_ref=""
+  local ref_commit=""
+  local upstream_commit=""
+  local counts=""
+  local ahead=""
+  local behind=""
+
+  if ! git show-ref --verify --quiet "refs/heads/$current_branch"; then
+    return 0
+  fi
+
+  if ! upstream_ref="$(git rev-parse --abbrev-ref "$current_branch@{upstream}" 2>/dev/null)"; then
+    return 0
+  fi
+
+  case "$upstream_ref" in
+    */*)
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  remote_ref="refs/remotes/$upstream_ref"
+  if ! git show-ref --verify --quiet "$remote_ref"; then
+    return 0
+  fi
+
+  if ! ref_commit="$(git rev-parse --verify --quiet "$ref^{commit}" 2>/dev/null)"; then
+    return 0
+  fi
+
+  upstream_commit="$(git rev-parse "$remote_ref^{commit}")"
+  if [ "$ref_commit" != "$upstream_commit" ]; then
+    return 0
+  fi
+
+  counts="$(git rev-list --left-right --count "$current_branch...$upstream_ref")"
+  read -r ahead behind <<< "$counts"
+  if [ "$ahead" -le 0 ] || [ "$behind" -ne 0 ]; then
+    return 0
+  fi
+
+  echo "[FAIL] '$ref' resolves to the current GitHub-visible head for '$current_branch', but local branch '$current_branch' is ahead by $ahead commit(s)." >&2
+  echo "[INFO] Push/reconcile the local tip first, or rerun against the exact published SHA only after the local checkpoint-handoff stack matches that GitHub-visible ref." >&2
+  echo "[INFO] Review with: git log --oneline --left-right --cherry-pick $current_branch...$upstream_ref" >&2
+  exit 1
+}
+
 ensure_ref_is_github_visible() {
   local ref="$1"
   local branch="$2"
@@ -364,6 +417,9 @@ ensure_ref_is_github_visible "$ref" "$current_branch"
 
 effective_ref="$(local_branch_name "$ref")"
 verifier_ref="$(github_visible_ref_for_verifier "$effective_ref")"
+if ! git show-ref --verify --quiet "refs/heads/$effective_ref"; then
+  reject_stale_visible_ref_for_current_branch "$ref" "$current_branch"
+fi
 
 echo "== VM verifier local preflight =="
 echo "Repo: $REPO_ROOT"
