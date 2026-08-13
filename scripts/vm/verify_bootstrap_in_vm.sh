@@ -173,7 +173,7 @@ for check in "${REQUIRE_IF_PRESENT[@]}"; do
   echo "[PASS] $check = success"
 done
 
-for bin in qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do
+for bin in qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen scp timeout; do
   need_bin "$bin"
 done
 

@@ -36,7 +36,7 @@ printf '== VM host readiness for verify_bootstrap_in_vm ==\n'
 printf 'Host: %s\n' "$(hostname)"
 printf 'Repo: %s\n' "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do
+for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen scp timeout; do
   check_bin "$bin"
 done
 

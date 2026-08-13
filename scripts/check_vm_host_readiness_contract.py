@@ -26,7 +26,7 @@ required = [
     ("GH_INSTALLED=0", "VM host readiness helper tracks gh presence"),
     ("GH_AUTHENTICATED=0", "VM host readiness helper tracks gh auth state"),
     ("TOKEN_PRESENT=0", "VM host readiness helper tracks token fallback state"),
-    ('for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do', "VM host readiness helper checks the required verifier binaries"),
+    ('for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen scp timeout; do', "VM host readiness helper checks the required verifier binaries"),
     ("pass '/dev/kvm exists and is writable'", "VM host readiness helper reports writable /dev/kvm as a pass"),
     ("warn '/dev/kvm exists but is not writable; verifier will fall back to TCG emulation'", "VM host readiness helper warns when /dev/kvm is not writable"),
     ("warn '/dev/kvm is absent; verifier will fall back to TCG emulation'", "VM host readiness helper warns when /dev/kvm is absent"),

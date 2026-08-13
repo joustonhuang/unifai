@@ -11,7 +11,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 BIN_DIR="$TMP_DIR/bin"
 mkdir -p "$BIN_DIR"
 
-for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen timeout; do
+for bin in jq curl qemu-system-x86_64 qemu-img cloud-localds ssh ssh-keygen scp timeout; do
   cat > "$BIN_DIR/$bin" <<'EOF'
 #!/bin/bash
 exit 0
@@ -73,7 +73,7 @@ EOF
 run_case 1 none unauth
 UNAUTH_OUTPUT="$(cat "$TMP_DIR/output-unauth.txt")"
 
-if ! grep -Eq 'Summary: 8 pass, [23] warn, 0 fail' <<<"$UNAUTH_OUTPUT"; then
+if ! grep -Eq 'Summary: 9 pass, [23] warn, 0 fail' <<<"$UNAUTH_OUTPUT"; then
   echo "[FAIL] Expected unauthenticated synthetic readiness summary missing or drifted."
   exit 1
 fi
@@ -111,7 +111,7 @@ fi
 run_case 0 none auth
 AUTH_OUTPUT="$(cat "$TMP_DIR/output-auth.txt")"
 
-if ! grep -Eq 'Summary: 10 pass, [12] warn, 0 fail' <<<"$AUTH_OUTPUT"; then
+if ! grep -Eq 'Summary: 11 pass, [12] warn, 0 fail' <<<"$AUTH_OUTPUT"; then
   echo "[FAIL] Expected authenticated synthetic readiness summary missing or drifted."
   exit 1
 fi
@@ -144,7 +144,7 @@ fi
 run_case 1 gh_token unauth-token
 UNAUTH_TOKEN_OUTPUT="$(cat "$TMP_DIR/output-unauth-token.txt")"
 
-if ! grep -Eq 'Summary: 9 pass, [12] warn, 0 fail' <<<"$UNAUTH_TOKEN_OUTPUT"; then
+if ! grep -Eq 'Summary: 10 pass, [12] warn, 0 fail' <<<"$UNAUTH_TOKEN_OUTPUT"; then
   echo "[FAIL] Expected token-backed synthetic readiness summary missing or drifted."
   exit 1
 fi
@@ -172,7 +172,7 @@ fi
 run_case 1 github_token unauth-github-token
 UNAUTH_GITHUB_TOKEN_OUTPUT="$(cat "$TMP_DIR/output-unauth-github-token.txt")"
 
-if ! grep -Eq 'Summary: 9 pass, [12] warn, 0 fail' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
+if ! grep -Eq 'Summary: 10 pass, [12] warn, 0 fail' <<<"$UNAUTH_GITHUB_TOKEN_OUTPUT"; then
   echo "[FAIL] Expected GITHUB_TOKEN-backed synthetic readiness summary missing or drifted."
   exit 1
 fi
@@ -200,7 +200,7 @@ fi
 run_case missing none missing
 MISSING_GH_OUTPUT="$(cat "$TMP_DIR/output-missing.txt")"
 
-if ! grep -Eq 'Summary: 8 pass, [23] warn, 0 fail' <<<"$MISSING_GH_OUTPUT"; then
+if ! grep -Eq 'Summary: 9 pass, [23] warn, 0 fail' <<<"$MISSING_GH_OUTPUT"; then
   echo "[FAIL] Expected missing-gh synthetic readiness summary missing or drifted."
   exit 1
 fi
