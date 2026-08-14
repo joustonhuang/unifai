@@ -1,0 +1,66 @@
+Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ ff09dc0
+Current local checkpoint: ff09dc0
+Current checked-out branch tip: b6d5618 (docs: settle publish reconciliation after local preflight)
+Tracked publish-boundary state: ahead 20 over fix/openclaw-config-path-and-local-mode
+
+Checked-out tip delta beyond tracked checkpoint: 4 doc-only commits
+Working-tree files:
+(clean)
+
+Verification gates run:
+python3 scripts/check_publish_stack_parity_contract.py
+python3 scripts/check_publish_stack_reconciliation_note.py
+python3 scripts/check_publish_stack_reconciliation_note_contract.py
+python3 scripts/check_compare_publish_branch_histories_contract.py
+python3 scripts/check_branch_reconcile_handoff.py
+python3 scripts/check_branch_reconcile_handoff_contract.py
+python3 scripts/check_github_branch_visibility_contract.py
+python3 scripts/check_vm_verifier_checkpoint_freshness_contract.py
+python3 scripts/check_vm_verifier_checkpoint_refresh_contract.py
+python3 scripts/check_vm_host_readiness_contract.py
+bash scripts/smoke_test_publish_stack_parity.sh
+bash scripts/smoke_test_compare_publish_branch_histories.sh
+bash scripts/smoke_test_publish_stack_reconciliation_note.sh
+bash scripts/smoke_test_branch_reconcile_handoff.sh
+python3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py
+python3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py
+bash scripts/bootstrap_installer_preflight.sh
+
+Current host-readiness snapshot:
+- Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current live state is narrower (`/dev/kvm` is present but not writable, `gh` is installed and authenticated, no `GH_TOKEN`/`GITHUB_TOKEN` is exported).
+
+Latest local hardening:
+- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
+- The publish-boundary maintenance bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.
+- Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.
+
+Current checkpoint chain:
+  - `f4946cd` (`vm: require scp before verifier report copyback`)
+  - `c3dd862` (`docs: refresh vm verifier checkpoint handoff`)
+  - `a11ed88` (`docs: stabilize vm verifier checkpoint state`)
+  - `368306a` (`docs: settle publish-boundary handoff state`)
+  - `b08bbca` (`docs: refresh vm verifier checkpoint state`)
+  - `517fb5a` (`Fail closed on stale visible verifier refs`)
+  - `770c55c` (`docs: refresh vm verifier checkpoint handoff`)
+  - `a52708d` (`docs: stabilize vm verifier checkpoint state`)
+  - `a8fd1a9` (`docs: refresh branch reconcile handoff`)
+  - `d60a675` (`docs: refresh verifier checkpoint tracked-state wording`)
+  - `c162042` (`docs: settle verifier checkpoint after refresh`)
+  - `d3545e2` (`docs: settle verifier checkpoint after handoff refresh`)
+  - `f0ea7c4` (`tests: align freshness handoff wording`)
+  - `d57739d` (`docs: refresh verifier checkpoint after freshness sync`)
+  - `e39100a` (`docs: refresh branch reconcile handoff note`)
+  - `9095881` (`docs: refresh publish stack reconciliation note`)
+  - `738e084` (`docs: settle publish stack reconciliation note`)
+  - `adfadc7` (`docs: settle verifier checkpoint clean state`)
+  - `727c61a` (`docs: settle publish stack reconciliation counts`)
+  - `ff09dc0` (`scripts: allow publish reconciliation handoff noise`)
+
+Current external blocker:
+- The branch still needs the current branch tip `b6d5618` GitHub-visible; the tracked publish-boundary checkpoint remains `ff09dc0` until that visible ref exists.
+- The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `22560dc`, so the next real boundary is still a visible rerun on the exact published ref.
+
+Next clean move once the branch tip is GitHub-visible:
+- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `b6d5618` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; the tracked publish-boundary checkpoint remains `ff09dc0` until a non-doc commit supersedes it.
+- Rerun `Bootstrap Installer Preflight` on the exact visible ref.
+- If green, run `bash scripts/run_vm_verifier_preflight.sh <visible-ref>` and then `bash scripts/vm/verify_bootstrap_in_vm.sh <visible-ref>`.
