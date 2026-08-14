@@ -149,7 +149,7 @@ def main() -> int:
         (work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt").write_text(
             "Commit candidate: placeholder candidate fixture\n"
             "Current local checkpoint: oldsha\n"
-            "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
+            "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
             encoding="utf-8",
         )
         run(["git", "add", "."], work)
@@ -266,7 +266,7 @@ def main() -> int:
         assert latest_checkpoint == checkpoint
         assert f"Current local checkpoint: {docs_head_sha}\n" in commit_candidate
         assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\n" in commit_candidate
-        assert "Current branch state: ahead 2 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
+        assert "Tracked publish-boundary state: ahead 2 over fix/openclaw-config-path-and-local-mode\n" in commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in commit_candidate
         assert "Working-tree files:\nscratch.txt\n" in commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_publish_stack_reconciliation_note.py\npython3 scripts/check_publish_stack_reconciliation_note_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_branch_reconcile_handoff.py\npython3 scripts/check_branch_reconcile_handoff_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\nbash scripts/smoke_test_publish_stack_reconciliation_note.sh\nbash scripts/smoke_test_branch_reconcile_handoff.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in commit_candidate
@@ -400,7 +400,7 @@ def main() -> int:
         assert stable_latest_checkpoint == stable_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in stable_commit_candidate
         assert "Current checked-out branch tip:" not in stable_commit_candidate
-        assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
+        assert f"Tracked publish-boundary state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in stable_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint:" not in stable_commit_candidate
         assert "Working-tree files:\ndocs/BOOTSTRAP_VM_VERIFICATION.md\ndocs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md\n" in stable_commit_candidate
         assert "Current host-readiness snapshot:\n" in stable_commit_candidate
@@ -431,7 +431,7 @@ def main() -> int:
         assert doc_only_latest_checkpoint == doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
         assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
-        assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
+        assert f"Tracked publish-boundary state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_publish_stack_reconciliation_note.py\npython3 scripts/check_publish_stack_reconciliation_note_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_branch_reconcile_handoff.py\npython3 scripts/check_branch_reconcile_handoff_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\nbash scripts/smoke_test_publish_stack_reconciliation_note.sh\nbash scripts/smoke_test_branch_reconcile_handoff.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
@@ -462,7 +462,7 @@ def main() -> int:
         assert second_doc_only_latest_checkpoint == second_doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in second_doc_only_commit_candidate
         assert f"Current checked-out branch tip: {second_doc_only_tip} ({second_doc_only_subject})\n" in second_doc_only_commit_candidate
-        assert f"Current branch state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in second_doc_only_commit_candidate
+        assert f"Tracked publish-boundary state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in second_doc_only_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in second_doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in second_doc_only_commit_candidate
         assert (
@@ -491,7 +491,7 @@ def main() -> int:
         assert aligned_latest_checkpoint == aligned_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in aligned_commit_candidate
         assert f"Current checked-out branch tip: {second_doc_only_tip} ({second_doc_only_subject})\n" in aligned_commit_candidate
-        assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n" in aligned_commit_candidate
+        assert "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\n" in aligned_commit_candidate
         assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in aligned_commit_candidate
         assert "Working-tree files:\n(clean)\n" in aligned_commit_candidate
         assert f"  - `{stable_head}` (`{stable_subject}`)\n" in aligned_commit_candidate

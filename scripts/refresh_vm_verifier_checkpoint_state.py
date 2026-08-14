@@ -606,8 +606,8 @@ def main() -> int:
     CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")
 
     # Keep the handoff stable across doc-only settle commits by reporting the
-    # tracked functional checkpoint state, not the checked-out doc-only tip.
-    current_branch_state = f"ahead {ahead_count} over {upstream_display}"
+    # tracked publish-boundary checkpoint state, not the checked-out doc-only tip.
+    tracked_branch_state = f"ahead {ahead_count} over {upstream_display}"
     tip_delta_line = ""
     if tracked_ref != "HEAD":
         tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")
@@ -672,7 +672,7 @@ def main() -> int:
         f"Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ {tracked_head_short}\n"
         f"Current local checkpoint: {tracked_head_short}\n"
         f"{commit_candidate_tip_line}"
-        f"Current branch state: {current_branch_state}\n\n"
+        f"Tracked publish-boundary state: {tracked_branch_state}\n\n"
         f"{tip_delta_line}"
         f"{working_tree_block}\n\n"
         f"{verification_gates}\n\n"

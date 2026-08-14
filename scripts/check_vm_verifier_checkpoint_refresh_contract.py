@@ -88,7 +88,7 @@ required = [
     ('f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "', "Refresh helper reports when a doc-only checked-out tip is already GitHub-visible"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\\n"', "Refresh helper points the aligned doc-only visible-ref case back at the visible preflight rerun"),
     ('f"{commit_candidate_tip_line}"', "Refresh helper can surface the checked-out branch tip in the handoff artifact when it differs from the tracked publish head"),
-    ('current_branch_state = f"ahead {ahead_count} over {upstream_display}"', "Refresh helper reports the live checked-out branch distance in the handoff artifact"),
+    ('tracked_branch_state = f"ahead {ahead_count} over {upstream_display}"', "Refresh helper reports the tracked publish-boundary distance in the handoff artifact"),
     ('COMMIT_CANDIDATE.write_text(commit_candidate_text, encoding="utf-8")', "Refresh helper writes the commit-candidate handoff artifact"),
 ]
 
@@ -106,7 +106,7 @@ smoke_required = [
     ('assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\\n" in second_doc_only_commit_candidate', "Refresh smoke test pins the handoff tip-delta count after two unpublished doc-only checkpoint commits"),
     ('f"- The branch still needs the current branch tip `{second_doc_only_tip}` GitHub-visible; "', "Refresh smoke test pins the blocker wording for the second unpublished doc-only checkpoint tip"),
     ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Refresh smoke test exercises the already-visible doc-only tip handoff"),
-    ('assert "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref branch-state line"),
+    ('assert "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref tracked-state line"),
     ('assert "Working-tree files:\\n(clean)\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref clean handoff shape"),
     ('f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\\n"', "Refresh smoke test pins the aligned visible-ref next move"),
