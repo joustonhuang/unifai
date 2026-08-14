@@ -91,7 +91,7 @@ def seed_repo(work: Path) -> None:
     (work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt").write_text(
         "Commit candidate: placeholder candidate fixture\n"
         "Current local checkpoint: oldsha\n"
-        "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
+        "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
         encoding="utf-8",
     )
 
@@ -216,9 +216,9 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "Current branch state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
                 f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
-                "Current branch state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
                 1,
             ),
             encoding="utf-8",
@@ -279,8 +279,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "Current branch state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
-                "Current branch state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead 1 over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
                 1,
             ),
             encoding="utf-8",
@@ -410,8 +410,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "Current branch state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
-                "Current branch state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\n",
+                "Tracked publish-boundary state: ahead stale over fix/openclaw-config-path-and-local-mode\n",
                 1,
             ),
             encoding="utf-8",
