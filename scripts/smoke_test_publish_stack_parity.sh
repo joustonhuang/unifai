@@ -78,7 +78,18 @@ cat > ci-artifacts/branch-reconcile-2026-07-10.md <<'EOF'
 
 - differs only as checked-in handoff bookkeeping
 EOF
+cat > ci-artifacts/publish-stack-reconciliation-next-step.txt <<'EOF'
+Publish-stack reconciliation checkpoint
+Generated: synthetic
+
+Baseline branch:
+- expected
+
+Current status:
+- differs only as checked-in handoff bookkeeping
+EOF
 git add ci-artifacts/branch-reconcile-2026-07-10.md
+git add ci-artifacts/publish-stack-reconciliation-next-step.txt
 git commit -q -m "checked-in handoff note"
 
 PASS_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_parity.py base candidate-good expected")"

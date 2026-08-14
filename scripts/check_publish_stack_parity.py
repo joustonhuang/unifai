@@ -14,6 +14,7 @@ DEFAULT_ALLOWED_PATHS = [
     "docs/BOOTSTRAP_VM_VERIFICATION.md",
     "docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md",
     "ci-artifacts/branch-reconcile-2026-07-10.md",
+    "ci-artifacts/publish-stack-reconciliation-next-step.txt",
 ]
 
 
