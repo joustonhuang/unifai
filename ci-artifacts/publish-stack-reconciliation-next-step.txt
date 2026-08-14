@@ -1,0 +1,22 @@
+Publish-stack reconciliation checkpoint
+Generated: 2026-08-12 16:18 Asia/Taipei
+
+Baseline branch:
+- transplant/fix-openclaw-config-path-and-local-mode-clean-stack
+
+Current status:
+- baseline branch is ahead 295 over fix/openclaw-config-path-and-local-mode
+- no code-only older commits remain to replay from fix/openclaw-config-path-and-local-mode
+- 4 older code-only commits are already absorbed on the baseline branch
+- no older mixed docs+code commits remain for manual review
+- no older doc/checkpoint-only commits remain for manual review or drop
+- 11 older commits are already reviewed and ready to drop
+- 292 cleaner-only commits remain on the baseline branch relative to the older local fix branch
+
+Next clean move:
+1. Stay on transplant/fix-openclaw-config-path-and-local-mode-clean-stack as the publish baseline.
+2. Treat the remaining older-only history as already-accounted-for drop noise unless archaeology is needed.
+3. Keep the next live step focused on making the current transplant tip GitHub-visible, rerunning `Bootstrap Installer Preflight` on that exact visible ref, and only then moving into VM verifier preflight / proof.
+
+Reference command:
+python3 scripts/compare_publish_branch_histories.py fix/openclaw-config-path-and-local-mode transplant/fix-openclaw-config-path-and-local-mode-clean-stack
