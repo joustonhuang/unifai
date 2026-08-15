@@ -13,9 +13,11 @@ DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-
 CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
 COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
 STABILIZED_ENV = "UNIFAI_VM_CHECKPOINT_REFRESH_STABILIZED"
-CHECKPOINT_DOCS = {
+SELF_MAINTAINED_HANDOFF_PATHS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
     str(DOC_CHECKPOINT.relative_to(REPO_ROOT)),
+    str(CHECKPOINT_LATEST.relative_to(REPO_ROOT)),
+    str(COMMIT_CANDIDATE.relative_to(REPO_ROOT)),
 }
 NON_LOGIC_PREFIXES = ("docs/", "ci-artifacts/")
 
@@ -51,10 +53,10 @@ def tracked_dirty_paths() -> list[str]:
 
 def effective_dirty_paths(dirty_paths: list[str], tracked_ref: str) -> list[str]:
     # Once HEAD is only a doc-only tip above the tracked publish-boundary commit,
-    # keep the tracked docs anchored to the underlying handoff instead of treating
-    # their own refreshed text as new uncommitted bundle delta.
+    # keep the tracked handoff anchored to the underlying publish boundary instead
+    # of treating regenerated checkpoint artifacts as new uncommitted bundle delta.
     if tracked_ref != "HEAD":
-        return [path for path in dirty_paths if path not in CHECKPOINT_DOCS]
+        return [path for path in dirty_paths if path not in SELF_MAINTAINED_HANDOFF_PATHS]
     return dirty_paths
 
 

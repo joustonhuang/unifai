@@ -28,6 +28,8 @@ required = [
     ('DEFAULT_ALLOWED_PATHS = [', "Publish stack parity checker defines default allowed noisy paths"),
     ('"docs/BOOTSTRAP_VM_VERIFICATION.md"', "Publish stack parity checker allows the boundary doc by default"),
     ('"docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"', "Publish stack parity checker allows the checkpoint doc by default"),
+    ('"ci-artifacts/bootstrap-preflight/commit-candidate.txt"', "Publish stack parity checker allows the generated commit-candidate handoff artifact by default"),
+    ('"ci-artifacts/vm-verifier-checkpoint-latest.md"', "Publish stack parity checker allows the generated latest-checkpoint handoff artifact by default"),
     ('"ci-artifacts/branch-reconcile-2026-07-10.md"', "Publish stack parity checker allows the checked-in branch-reconcile handoff note by default"),
     ('"ci-artifacts/publish-stack-reconciliation-next-step.txt"', "Publish stack parity checker allows the checked-in publish-stack reconciliation note by default"),
     ('def git_output(*args: str) -> str | None:', "Publish stack parity checker defines optional git output capture for inferred refs"),

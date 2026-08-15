@@ -10,9 +10,11 @@ DOC_BOUNDARY = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
 DOC_CHECKPOINT = REPO_ROOT / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
 CHECKPOINT_LATEST = REPO_ROOT / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
 COMMIT_CANDIDATE = REPO_ROOT / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
-CHECKPOINT_DOCS = {
+SELF_MAINTAINED_HANDOFF_PATHS = {
     str(DOC_BOUNDARY.relative_to(REPO_ROOT)),
     str(DOC_CHECKPOINT.relative_to(REPO_ROOT)),
+    str(CHECKPOINT_LATEST.relative_to(REPO_ROOT)),
+    str(COMMIT_CANDIDATE.relative_to(REPO_ROOT)),
 }
 NON_LOGIC_PREFIXES = ("docs/", "ci-artifacts/")
 
@@ -100,7 +102,7 @@ def require_no_prefixed_lines_between_prefixes(
 
 def effective_dirty_paths(dirty_paths: list[str], tracked_ref: str) -> list[str]:
     if tracked_ref != "HEAD":
-        return [path for path in dirty_paths if path not in CHECKPOINT_DOCS]
+        return [path for path in dirty_paths if path not in SELF_MAINTAINED_HANDOFF_PATHS]
     return dirty_paths
 
 
