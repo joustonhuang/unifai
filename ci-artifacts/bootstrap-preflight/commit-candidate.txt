@@ -3,9 +3,7 @@ Current local checkpoint: 13312b7
 Tracked publish-boundary state: ahead 29 over fix/openclaw-config-path-and-local-mode
 
 Working-tree files:
-ci-artifacts/bootstrap-preflight/commit-candidate.txt
-ci-artifacts/vm-verifier-checkpoint-latest.md
-docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md
+(clean)
 
 Verification gates run:
 python3 scripts/check_publish_stack_parity_contract.py
@@ -30,11 +28,8 @@ Current host-readiness snapshot:
 - Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current live state is narrower (`/dev/kvm` is present but not writable, `gh` is installed and authenticated, no `GH_TOKEN`/`GITHUB_TOKEN` is exported).
 
 Latest local hardening:
-- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
-  - `ci-artifacts/bootstrap-preflight/commit-candidate.txt`
-  - `ci-artifacts/vm-verifier-checkpoint-latest.md`
-  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
-- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.
+- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
+- The publish-boundary maintenance bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.
 - Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.
 
 Current checkpoint chain:
@@ -69,10 +64,10 @@ Current checkpoint chain:
   - `13312b7` (`scripts: stabilize clean checkpoint settle handoff`)
 
 Current external blocker:
-- The branch still needs the local checkpoint chain through `13312b7` to become GitHub-visible before the real VM-proof path can continue.
+- The branch still needs the current checked-out doc-only tip GitHub-visible; the tracked publish-boundary checkpoint remains `13312b7` until that visible ref exists.
 - The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `22560dc`, so the next real boundary is still a visible rerun on the exact published ref.
 
-Next clean move before the real VM-proof path:
-- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make local checkpoint `13312b7` GitHub-visible on `fix/openclaw-config-path-and-local-mode`.
+Next clean move once the branch tip is GitHub-visible:
+- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; the tracked publish-boundary checkpoint remains `13312b7` until a non-doc commit supersedes it.
 - Rerun `Bootstrap Installer Preflight` on the exact visible ref.
 - If green, run `bash scripts/run_vm_verifier_preflight.sh <visible-ref>` and then `bash scripts/vm/verify_bootstrap_in_vm.sh <visible-ref>`.
