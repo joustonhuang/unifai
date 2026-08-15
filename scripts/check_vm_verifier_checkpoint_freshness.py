@@ -298,14 +298,15 @@ def main() -> int:
                 return status
 
     tip_line = f"Current checked-out branch tip: {current_head_short} ({current_head_subject})\n"
+    clean_doc_only_tip = tracked_ref != "HEAD" and not dirty_paths
     tip_delta_line = ""
-    if tracked_ref != "HEAD":
+    if tracked_ref != "HEAD" and not clean_doc_only_tip:
         tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")
         tip_delta_label = "commit" if tip_delta_count == "1" else "commits"
         tip_delta_line = (
             f"Checked-out tip delta beyond tracked checkpoint: {tip_delta_count} doc-only {tip_delta_label}\n"
         )
-    if tracked_ref != "HEAD" and current_head_ahead_count != "0":
+    if tracked_ref != "HEAD" and current_head_ahead_count != "0" and not clean_doc_only_tip:
         if "the current checked-out branch tip is `" in boundary_text:
             return fail("boundary doc checked-out tip line should stay out of tracked docs to avoid doc-only self-refresh churn.")
         if "- Current checked-out branch tip: `" in checkpoint_text:
@@ -336,7 +337,7 @@ def main() -> int:
         )
         if status:
             return status
-    elif tracked_ref != "HEAD":
+    elif tracked_ref != "HEAD" and not clean_doc_only_tip:
         if "the current checked-out branch tip is `" in boundary_text:
             return fail("boundary doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible.")
         if "- Current checked-out branch tip: `" in checkpoint_text:
@@ -361,6 +362,60 @@ def main() -> int:
             commit_candidate_text,
             (
                 f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+                f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\n"
+            ),
+            "Commit-candidate next move",
+        )
+        if status:
+            return status
+    elif tracked_ref != "HEAD" and current_head_ahead_count != "0":
+        if "the current checked-out branch tip is `" in boundary_text:
+            return fail("boundary doc checked-out tip line should stay out of tracked docs to keep clean doc-only settle handoffs stable.")
+        if "- Current checked-out branch tip: `" in checkpoint_text:
+            return fail("checkpoint doc checked-out tip line should stay out of tracked docs to keep clean doc-only settle handoffs stable.")
+        if tip_line in commit_candidate_text:
+            return fail("commit-candidate tip line should stay out of clean doc-only settle handoffs.")
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The branch still needs the current checked-out doc-only tip GitHub-visible; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
+            ),
+            "Commit-candidate external blocker",
+        )
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- Run `{push_command}` to make the current checked-out tip GitHub-visible on `{upstream_display}`; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
+            ),
+            "Commit-candidate next move",
+        )
+        if status:
+            return status
+    elif tracked_ref != "HEAD":
+        if "the current checked-out branch tip is `" in boundary_text:
+            return fail("boundary doc checked-out tip line should stay out of tracked docs after a clean doc-only tip becomes visible.")
+        if "- Current checked-out branch tip: `" in checkpoint_text:
+            return fail("checkpoint doc checked-out tip line should stay out of tracked docs after a clean doc-only tip becomes visible.")
+        if tip_line in commit_candidate_text:
+            return fail("commit-candidate tip line should stay out of clean aligned doc-only handoffs.")
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The current checked-out doc-only tip is already GitHub-visible on `{upstream_display}`; "
+                f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` because the tip-only delta is doc-only.\n"
+            ),
+            "Commit-candidate external blocker",
+        )
+        if status:
+            return status
+        status = require_contains(
+            commit_candidate_text,
+            (
+                f"- The current checked-out doc-only tip is already GitHub-visible on `{upstream_display}`; "
                 f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\n"
             ),
             "Commit-candidate next move",

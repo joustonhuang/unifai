@@ -608,10 +608,11 @@ def main() -> int:
     CHECKPOINT_LATEST.write_text(checkpoint_text, encoding="utf-8")
 
     # Keep the handoff stable across doc-only settle commits by reporting the
-    # tracked publish-boundary checkpoint state, not the checked-out doc-only tip.
+    # tracked publish-boundary checkpoint state once the worktree is otherwise clean.
     tracked_branch_state = f"ahead {ahead_count} over {upstream_display}"
+    clean_doc_only_tip = tracked_ref != "HEAD" and not dirty_paths
     tip_delta_line = ""
-    if tracked_ref != "HEAD":
+    if tracked_ref != "HEAD" and not clean_doc_only_tip:
         tip_delta_count = git("rev-list", "--count", f"{tracked_ref}..HEAD")
         tip_delta_label = "commit" if tip_delta_count == "1" else "commits"
         tip_delta_line = (
@@ -641,7 +642,7 @@ def main() -> int:
         working_tree_block = "Working-tree files:\n" + "\n".join(dirty_paths)
     else:
         working_tree_block = "Working-tree files:\n(clean)"
-    if tracked_ref != "HEAD" and current_head_ahead_count != "0":
+    if tracked_ref != "HEAD" and current_head_ahead_count != "0" and not clean_doc_only_tip:
         next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
         next_move_line = (
             f"- Run `{push_command}` to make the current branch tip `{current_head_short}` GitHub-visible on `{upstream_display}`; "
@@ -651,7 +652,7 @@ def main() -> int:
             f"- The branch still needs the current branch tip `{current_head_short}` GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
         )
-    elif tracked_ref != "HEAD":
+    elif tracked_ref != "HEAD" and not clean_doc_only_tip:
         next_move_heading = "Next clean move before the real VM-proof path:\n"
         next_move_line = (
             f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
@@ -659,6 +660,28 @@ def main() -> int:
         )
         external_blocker_line = (
             f"- The exact branch tip `{current_head_short}` is already GitHub-visible on `{upstream_display}`; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` because the tip-only delta is doc-only.\n"
+        )
+    elif tracked_ref != "HEAD" and current_head_ahead_count != "0":
+        commit_candidate_tip_line = ""
+        next_move_heading = "Next clean move once the branch tip is GitHub-visible:\n"
+        next_move_line = (
+            f"- Run `{push_command}` to make the current checked-out tip GitHub-visible on `{upstream_display}`; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until a non-doc commit supersedes it.\n"
+        )
+        external_blocker_line = (
+            f"- The branch still needs the current checked-out doc-only tip GitHub-visible; "
+            f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` until that visible ref exists.\n"
+        )
+    elif tracked_ref != "HEAD":
+        commit_candidate_tip_line = ""
+        next_move_heading = "Next clean move before the real VM-proof path:\n"
+        next_move_line = (
+            f"- The current checked-out doc-only tip is already GitHub-visible on `{upstream_display}`; "
+            f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{tracked_head_short}`.\n"
+        )
+        external_blocker_line = (
+            f"- The current checked-out doc-only tip is already GitHub-visible on `{upstream_display}`; "
             f"the tracked publish-boundary checkpoint remains `{tracked_head_short}` because the tip-only delta is doc-only.\n"
         )
     else:

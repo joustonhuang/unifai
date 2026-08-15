@@ -107,17 +107,17 @@ smoke_required = [
     ('assert f"Current checked-out branch tip: {head_sha} (docs: refresh branch reconcile publish handoff)\\n" in commit_candidate', "Refresh smoke test pins the initial doc-only checked-out tip line"),
     ('assert "Current checked-out branch tip:" not in stable_commit_candidate', "Refresh smoke test forbids a checked-out tip line when the tracked checkpoint is HEAD"),
     ('run(["git", "commit", "-m", "docs: settle verifier checkpoint handoff"], work)', "Refresh smoke test exercises a second unpublished doc-only checkpoint commit"),
-    ('assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\\n" in second_doc_only_commit_candidate', "Refresh smoke test pins the handoff tip-delta count after two unpublished doc-only checkpoint commits"),
-    ('f"- The branch still needs the current branch tip `{second_doc_only_tip}` GitHub-visible; "', "Refresh smoke test pins the blocker wording for the second unpublished doc-only checkpoint tip"),
+    ('assert "Checked-out tip delta beyond tracked checkpoint:" not in second_doc_only_commit_candidate', "Refresh smoke test keeps clean doc-only settle handoffs free of per-tip delta churn"),
+    ('f"- The branch still needs the current checked-out doc-only tip GitHub-visible; "', "Refresh smoke test pins the stable blocker wording for a clean unpublished doc-only tip"),
     ('run(["git", "push", "origin", "HEAD:fix/openclaw-config-path-and-local-mode"], work)', "Refresh smoke test exercises the already-visible doc-only tip handoff"),
     ('assert "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref tracked-state line"),
     ('assert "Working-tree files:\\n(clean)\\n" in aligned_commit_candidate', "Refresh smoke test pins the aligned visible-ref clean handoff shape"),
-    ('f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
+    ('f"- The current checked-out doc-only tip is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the aligned visible-ref blocker wording"),
     ('f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\\n"', "Refresh smoke test pins the aligned visible-ref next move"),
     ('assert "Next clean move before the real VM-proof path:\\n" in aligned_commit_candidate', "Refresh smoke test keeps the aligned case on the visible-ref rerun path"),
     ('run(["git", "remote", "rename", "origin", "github"], work)', "Refresh smoke test renames the upstream remote to exercise dynamic push-command generation"),
     ('"--set-upstream-to=github/fix/openclaw-config-path-and-local-mode"', "Refresh smoke test points the branch at the renamed GitHub remote"),
-    ('f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the unpublished doc-only next move against the renamed GitHub remote"),
+    ('f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "', "Refresh smoke test pins the stable unpublished doc-only next move against the renamed GitHub remote"),
 ]
 
 for needle, message in smoke_required:

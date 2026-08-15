@@ -430,17 +430,17 @@ def main() -> int:
         assert "- Current checked-out branch tip:" not in doc_only_checkpoint
         assert doc_only_latest_checkpoint == doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in doc_only_commit_candidate
-        assert f"Current checked-out branch tip: {doc_only_tip} ({doc_only_subject})\n" in doc_only_commit_candidate
+        assert "Current checked-out branch tip:" not in doc_only_commit_candidate
         assert f"Tracked publish-boundary state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in doc_only_commit_candidate
-        assert "Checked-out tip delta beyond tracked checkpoint: 1 doc-only commit\n" in doc_only_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint:" not in doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in doc_only_commit_candidate
         assert "Verification gates run:\npython3 scripts/check_publish_stack_parity_contract.py\npython3 scripts/check_publish_stack_reconciliation_note.py\npython3 scripts/check_publish_stack_reconciliation_note_contract.py\npython3 scripts/check_compare_publish_branch_histories_contract.py\npython3 scripts/check_branch_reconcile_handoff.py\npython3 scripts/check_branch_reconcile_handoff_contract.py\npython3 scripts/check_github_branch_visibility_contract.py\npython3 scripts/check_vm_verifier_checkpoint_freshness_contract.py\npython3 scripts/check_vm_verifier_checkpoint_refresh_contract.py\npython3 scripts/check_vm_host_readiness_contract.py\nbash scripts/smoke_test_publish_stack_parity.sh\nbash scripts/smoke_test_compare_publish_branch_histories.sh\nbash scripts/smoke_test_publish_stack_reconciliation_note.sh\nbash scripts/smoke_test_branch_reconcile_handoff.sh\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_freshness.py\npython3 -B scripts/smoke_test_vm_verifier_checkpoint_refresh.py\nbash scripts/bootstrap_installer_preflight.sh\n" in doc_only_commit_candidate
         assert (
-            f"- The branch still needs the current branch tip `{doc_only_tip}` GitHub-visible; "
+            f"- The branch still needs the current checked-out doc-only tip GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
         ) in doc_only_commit_candidate
         assert (
-            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in doc_only_commit_candidate
 
@@ -461,16 +461,16 @@ def main() -> int:
         assert "- Current checked-out branch tip:" not in second_doc_only_checkpoint
         assert second_doc_only_latest_checkpoint == second_doc_only_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in second_doc_only_commit_candidate
-        assert f"Current checked-out branch tip: {second_doc_only_tip} ({second_doc_only_subject})\n" in second_doc_only_commit_candidate
+        assert "Current checked-out branch tip:" not in second_doc_only_commit_candidate
         assert f"Tracked publish-boundary state: ahead {stable_ahead} over fix/openclaw-config-path-and-local-mode\n" in second_doc_only_commit_candidate
-        assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in second_doc_only_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint:" not in second_doc_only_commit_candidate
         assert "Working-tree files:\n(clean)\n" in second_doc_only_commit_candidate
         assert (
-            f"- The branch still needs the current branch tip `{second_doc_only_tip}` GitHub-visible; "
+            f"- The branch still needs the current checked-out doc-only tip GitHub-visible; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until that visible ref exists.\n"
         ) in second_doc_only_commit_candidate
         assert (
-            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{second_doc_only_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in second_doc_only_commit_candidate
 
@@ -490,17 +490,17 @@ def main() -> int:
         assert f"Latest tracked local head in the stack: `{stable_head}`" in aligned_checkpoint
         assert aligned_latest_checkpoint == aligned_checkpoint
         assert f"Current local checkpoint: {stable_head}\n" in aligned_commit_candidate
-        assert f"Current checked-out branch tip: {second_doc_only_tip} ({second_doc_only_subject})\n" in aligned_commit_candidate
+        assert "Current checked-out branch tip:" not in aligned_commit_candidate
         assert "Tracked publish-boundary state: ahead 0 over fix/openclaw-config-path-and-local-mode\n" in aligned_commit_candidate
-        assert "Checked-out tip delta beyond tracked checkpoint: 2 doc-only commits\n" in aligned_commit_candidate
+        assert "Checked-out tip delta beyond tracked checkpoint:" not in aligned_commit_candidate
         assert "Working-tree files:\n(clean)\n" in aligned_commit_candidate
         assert f"  - `{stable_head}` (`{stable_subject}`)\n" in aligned_commit_candidate
         assert (
-            f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- The current checked-out doc-only tip is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` because the tip-only delta is doc-only.\n"
         ) in aligned_commit_candidate
         assert (
-            f"- The exact branch tip `{second_doc_only_tip}` is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- The current checked-out doc-only tip is already GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"rerun `Bootstrap Installer Preflight` on that visible ref while the tracked publish-boundary checkpoint remains `{stable_head}`.\n"
         ) in aligned_commit_candidate
         assert "Next clean move before the real VM-proof path:\n" in aligned_commit_candidate
@@ -518,12 +518,11 @@ def main() -> int:
         (work / "docs" / "github-remote-checkpoint.md").write_text("github remote doc-only tip\n", encoding="utf-8")
         run(["git", "add", "docs/github-remote-checkpoint.md"], work)
         run(["git", "commit", "-m", "docs: add github-remote doc-only tip"], work)
-        github_remote_tip = run(["git", "rev-parse", "--short", "HEAD"], work)
         subprocess.check_call(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], cwd=work)
 
         github_remote_commit_candidate = read_commit_candidate(work)
         assert (
-            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{stable_head}` until a non-doc commit supersedes it.\n"
         ) in github_remote_commit_candidate
 

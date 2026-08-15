@@ -292,21 +292,21 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "Current checked-out branch tip: ",
-                "Current checked-out branch tip: stale ",
+                "current checked-out doc-only tip GitHub-visible",
+                "stale checked-out doc-only tip GitHub-visible",
                 1,
             ),
             encoding="utf-8",
         )
         stale_doc_only_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "Commit-candidate checked-out tip is stale; expected to find:" in stale_doc_only_tip_output
+        assert "Commit-candidate external blocker is stale; expected to find:" in stale_doc_only_tip_output
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "- The branch still needs the current branch tip ",
-                "- The branch still needs the stale branch tip ",
+                "- The branch still needs the current checked-out doc-only tip ",
+                "- The branch still needs the stale checked-out doc-only tip ",
                 1,
             ),
             encoding="utf-8",
@@ -318,8 +318,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip ",
-                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the stale branch tip ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip ",
+                "- Run `git push origin HEAD:fix/openclaw-config-path-and-local-mode` to make the stale checked-out tip ",
                 1,
             ),
             encoding="utf-8",
@@ -367,9 +367,9 @@ def main() -> int:
         github_remote_tip_subject = run(["git", "show", "-s", "--format=%s", "HEAD"], work)
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         github_remote_unpublished_commit_candidate = commit_candidate.read_text(encoding="utf-8")
-        assert f"Current checked-out branch tip: {github_remote_tip} ({github_remote_tip_subject})\n" in github_remote_unpublished_commit_candidate
+        assert "Current checked-out branch tip:" not in github_remote_unpublished_commit_candidate
         assert (
-            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current branch tip `{github_remote_tip}` GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
+            f"- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; "
             f"the tracked publish-boundary checkpoint remains `{current_head_short}` until a non-doc commit supersedes it.\n"
         ) in github_remote_unpublished_commit_candidate
         github_remote_unpublished_fresh_output = run_ok(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
@@ -386,7 +386,7 @@ def main() -> int:
             encoding="utf-8",
         )
         aligned_boundary_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "boundary doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_boundary_tip_output
+        assert "boundary doc checked-out tip line should stay out of tracked docs after a clean doc-only tip becomes visible." in aligned_boundary_tip_output
 
         boundary_doc.write_text(boundary_text, encoding="utf-8")
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
@@ -402,7 +402,7 @@ def main() -> int:
             encoding="utf-8",
         )
         aligned_checkpoint_tip_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
-        assert "checkpoint doc checked-out tip line should stay out of tracked docs after the doc-only tip becomes visible." in aligned_checkpoint_tip_output
+        assert "checkpoint doc checked-out tip line should stay out of tracked docs after a clean doc-only tip becomes visible." in aligned_checkpoint_tip_output
 
         checkpoint_doc.write_text(checkpoint_text, encoding="utf-8")
         latest_checkpoint.write_text(latest_checkpoint_text, encoding="utf-8")
@@ -423,8 +423,8 @@ def main() -> int:
         commit_candidate_text = commit_candidate.read_text(encoding="utf-8")
         commit_candidate.write_text(
             commit_candidate_text.replace(
-                "- The exact branch tip `",
-                "- The stale exact branch tip `",
+                "- The current checked-out doc-only tip is already GitHub-visible",
+                "- The stale checked-out doc-only tip is already GitHub-visible",
                 1,
             ),
             encoding="utf-8",
