@@ -268,6 +268,64 @@ class WebuiRuntimeTruthTests(unittest.TestCase):
             self.assertNotIn("MOCK_SECRET_KEY_FOR_TEST", body)
             self.assertNotIn("/tmp/unifai_sessions/9.json", body)
 
+    def test_runtime_truth_page_exposes_read_only_html_snapshot(self):
+        with tempfile.TemporaryDirectory(prefix="unifai-webui-page-") as tmp_dir:
+            db_path = Path(tmp_dir) / "supervisor.db"
+            conn = sqlite3.connect(db_path)
+            conn.execute(
+                """
+                CREATE TABLE tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    created_at TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    spec TEXT NOT NULL,
+                    result TEXT
+                )
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO tasks (created_at, status, spec, result)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    "2026-08-17T07:00:00+00:00",
+                    "done",
+                    '{"type":"tool","cmd":"echo","prompt":"MOCK_SECRET_KEY_FOR_TEST"}',
+                    '{"session_path":"/tmp/unifai_sessions/11.json","payload":{"summary":"brief is ready"}}',
+                ),
+            )
+            conn.commit()
+            conn.close()
+
+            original_db = webui.SUPERVISOR_DB
+            try:
+                webui.SUPERVISOR_DB = db_path
+                server = HTTPServer(("127.0.0.1", 0), webui.make_handler("fake-sv-cli"))
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    conn_http = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+                    conn_http.request("GET", "/runtime-truth?limit=999")
+                    response = conn_http.getresponse()
+                    body = response.read().decode("utf-8")
+                    conn_http.close()
+                finally:
+                    server.shutdown()
+                    thread.join(timeout=5)
+                    server.server_close()
+            finally:
+                webui.SUPERVISOR_DB = original_db
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.getheader("Content-Type"), "text/html; charset=utf-8")
+        self.assertIn("Runtime Truth Feed", body)
+        self.assertIn("Rows per section (1 to 20)", body)
+        self.assertIn("Wilson Brief", body)
+        self.assertIn("brief is ready", body)
+        self.assertNotIn("MOCK_SECRET_KEY_FOR_TEST", body)
+        self.assertNotIn("/tmp/unifai_sessions/11.json", body)
+
     def test_runtime_truth_api_reports_missing_db_as_json_error(self):
         original_db = webui.SUPERVISOR_DB
         try:
@@ -295,6 +353,33 @@ class WebuiRuntimeTruthTests(unittest.TestCase):
             response.getheader("Content-Type"), "application/json; charset=utf-8"
         )
         self.assertIn('"ok": false', body)
+        self.assertIn("Supervisor DB not found", body)
+
+    def test_runtime_truth_page_reports_missing_db_as_html_error(self):
+        original_db = webui.SUPERVISOR_DB
+        try:
+            webui.SUPERVISOR_DB = Path("/tmp/does-not-exist-supervisor.db")
+            server = HTTPServer(("127.0.0.1", 0), webui.make_handler("fake-sv-cli"))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                conn_http = http.client.HTTPConnection(
+                    "127.0.0.1", server.server_port, timeout=5
+                )
+                conn_http.request("GET", "/runtime-truth")
+                response = conn_http.getresponse()
+                body = response.read().decode("utf-8")
+                conn_http.close()
+            finally:
+                server.shutdown()
+                thread.join(timeout=5)
+                server.server_close()
+        finally:
+            webui.SUPERVISOR_DB = original_db
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.getheader("Content-Type"), "text/html; charset=utf-8")
+        self.assertIn("Runtime truth unavailable", body)
         self.assertIn("Supervisor DB not found", body)
 
     def test_runtime_truth_api_clamps_limit_query_parameter(self):
@@ -329,6 +414,39 @@ class WebuiRuntimeTruthTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(calls, [webui.RUNTIME_TRUTH_MAX_LIMIT])
 
+    def test_runtime_truth_page_clamps_limit_query_parameter(self):
+        original_db = webui.SUPERVISOR_DB
+        original_snapshot = webui._runtime_truth_snapshot
+        calls: list[int] = []
+
+        def fake_snapshot(limit: int = webui.RUNTIME_TRUTH_DEFAULT_LIMIT) -> dict:
+            calls.append(limit)
+            return {"ok": True, "tasks": [], "incidents": [], "events": []}
+
+        try:
+            webui.SUPERVISOR_DB = Path("/tmp/does-not-matter.db")
+            webui._runtime_truth_snapshot = fake_snapshot
+            server = HTTPServer(("127.0.0.1", 0), webui.make_handler("fake-sv-cli"))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                conn_http = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+                conn_http.request("GET", "/runtime-truth?limit=999")
+                response = conn_http.getresponse()
+                body = response.read().decode("utf-8")
+                conn_http.close()
+            finally:
+                server.shutdown()
+                thread.join(timeout=5)
+                server.server_close()
+        finally:
+            webui.SUPERVISOR_DB = original_db
+            webui._runtime_truth_snapshot = original_snapshot
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(calls, [webui.RUNTIME_TRUTH_MAX_LIMIT])
+        self.assertIn('value="20"', body)
+
     def test_runtime_truth_api_uses_default_limit_for_invalid_query_parameter(self):
         original_db = webui.SUPERVISOR_DB
         original_snapshot = webui._runtime_truth_snapshot
@@ -361,6 +479,39 @@ class WebuiRuntimeTruthTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(calls, [webui.RUNTIME_TRUTH_DEFAULT_LIMIT])
 
+    def test_runtime_truth_page_uses_default_limit_for_invalid_query_parameter(self):
+        original_db = webui.SUPERVISOR_DB
+        original_snapshot = webui._runtime_truth_snapshot
+        calls: list[int] = []
+
+        def fake_snapshot(limit: int = webui.RUNTIME_TRUTH_DEFAULT_LIMIT) -> dict:
+            calls.append(limit)
+            return {"ok": True, "tasks": [], "incidents": [], "events": []}
+
+        try:
+            webui.SUPERVISOR_DB = Path("/tmp/does-not-matter.db")
+            webui._runtime_truth_snapshot = fake_snapshot
+            server = HTTPServer(("127.0.0.1", 0), webui.make_handler("fake-sv-cli"))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                conn_http = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+                conn_http.request("GET", "/runtime-truth?limit=banana")
+                response = conn_http.getresponse()
+                body = response.read().decode("utf-8")
+                conn_http.close()
+            finally:
+                server.shutdown()
+                thread.join(timeout=5)
+                server.server_close()
+        finally:
+            webui.SUPERVISOR_DB = original_db
+            webui._runtime_truth_snapshot = original_snapshot
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(calls, [webui.RUNTIME_TRUTH_DEFAULT_LIMIT])
+        self.assertIn('value="5"', body)
+
     def test_runtime_truth_api_clamps_zero_limit_query_parameter(self):
         original_db = webui.SUPERVISOR_DB
         original_snapshot = webui._runtime_truth_snapshot
@@ -392,6 +543,39 @@ class WebuiRuntimeTruthTests(unittest.TestCase):
 
         self.assertEqual(response.status, 200)
         self.assertEqual(calls, [webui.RUNTIME_TRUTH_MIN_LIMIT])
+
+    def test_runtime_truth_page_clamps_zero_limit_query_parameter(self):
+        original_db = webui.SUPERVISOR_DB
+        original_snapshot = webui._runtime_truth_snapshot
+        calls: list[int] = []
+
+        def fake_snapshot(limit: int = webui.RUNTIME_TRUTH_DEFAULT_LIMIT) -> dict:
+            calls.append(limit)
+            return {"ok": True, "tasks": [], "incidents": [], "events": []}
+
+        try:
+            webui.SUPERVISOR_DB = Path("/tmp/does-not-matter.db")
+            webui._runtime_truth_snapshot = fake_snapshot
+            server = HTTPServer(("127.0.0.1", 0), webui.make_handler("fake-sv-cli"))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                conn_http = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+                conn_http.request("GET", "/runtime-truth?limit=0")
+                response = conn_http.getresponse()
+                body = response.read().decode("utf-8")
+                conn_http.close()
+            finally:
+                server.shutdown()
+                thread.join(timeout=5)
+                server.server_close()
+        finally:
+            webui.SUPERVISOR_DB = original_db
+            webui._runtime_truth_snapshot = original_snapshot
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(calls, [webui.RUNTIME_TRUTH_MIN_LIMIT])
+        self.assertIn('value="1"', body)
 
 
 if __name__ == "__main__":

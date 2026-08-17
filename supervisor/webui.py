@@ -366,7 +366,10 @@ button.danger:hover{background:#9a2a2a;}
 .status{margin-top:12px;font-size:.85rem;}
 """
 
-_NAV = '<nav><a href="/">Dashboard</a><a href="/credentials">Credentials</a><a href="/kill-switch">Kill Switch</a></nav>'
+_NAV = (
+    '<nav><a href="/">Dashboard</a><a href="/runtime-truth">Runtime Truth</a>'
+    '<a href="/credentials">Credentials</a><a href="/kill-switch">Kill Switch</a></nav>'
+)
 
 
 # ── Page builders ────────────────────────────────────────────────────────────
@@ -448,6 +451,26 @@ def _credentials_page(status_html: str = "") -> str:
 """)
 
 
+def _runtime_truth_page(limit: int = RUNTIME_TRUTH_DEFAULT_LIMIT) -> str:
+    runtime_truth = _runtime_truth_snapshot(limit=limit)
+    return _page(
+        "Runtime Truth",
+        f"""
+<h2>Runtime Truth Feed</h2>
+<p class="notice">
+  Read-only Supervisor, Oracle, and Gaia runtime state for Wilson/Star Office consumers.<br>
+  This page keeps presentation separate from credential and kill-switch controls.
+</p>
+<form method="GET" action="/runtime-truth">
+  <label>Rows per section ({RUNTIME_TRUTH_MIN_LIMIT} to {RUNTIME_TRUTH_MAX_LIMIT})</label>
+  <input type="number" name="limit" value="{limit}" min="{RUNTIME_TRUTH_MIN_LIMIT}" max="{RUNTIME_TRUTH_MAX_LIMIT}">
+  <button type="submit">Refresh Runtime Truth</button>
+</form>
+{_render_runtime_truth(runtime_truth)}
+""",
+    )
+
+
 def _kill_switch_page(status_html: str = "") -> str:
     fuse = _fuse_state()
     if fuse["tripped"]:
@@ -514,6 +537,12 @@ def make_handler(sv_cli: str):
 
             if parsed.path in ("/", "/index.html"):
                 self._html(200, _dashboard_page())
+            elif parsed.path == "/runtime-truth":
+                params = parse_qs(parsed.query)
+                limit = _coerce_runtime_truth_limit(
+                    (params.get("limit") or [str(RUNTIME_TRUTH_DEFAULT_LIMIT)])[0]
+                )
+                self._html(200, _runtime_truth_page(limit=limit))
             elif parsed.path == "/api/runtime-truth":
                 params = parse_qs(parsed.query)
                 limit = _coerce_runtime_truth_limit(
@@ -603,7 +632,10 @@ def main():
 
     _audit({"event": "webui_start", "port": args.port})
     print(f"[webui] https://localhost:{args.port}")
-    print(f"[webui] Pages: / (dashboard)  /credentials  /kill-switch  /api/runtime-truth")
+    print(
+        "[webui] Pages: / (dashboard)  /runtime-truth  /credentials"
+        "  /kill-switch  /api/runtime-truth"
+    )
     print(f"[webui] Audit: {AUDIT_LOG}")
     try:
         server.serve_forever()

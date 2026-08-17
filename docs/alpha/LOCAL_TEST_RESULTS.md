@@ -47,6 +47,7 @@ Expected output: `Results: 12 passed, 0 failed` (integration) + 50 unit tests
 - 2026-08-17: `pytest -q supervisor/tests`
 - Result: `62 passed in 5.72s`
 - Coverage relevant to the current Wilson/WebUI track now includes the read-only Runtime Truth dashboard/API, Wilson brief summarization, and HTML-escaping regression coverage for untrusted runtime rows
+- The WebUI also now exposes a dedicated read-only `/runtime-truth` page, separating the runtime feed from credential and kill-switch controls for the next Star Office-facing presentation slice
 
 ---
 
@@ -79,6 +80,7 @@ Expected output: `Results: 12 passed, 0 failed` (integration) + 50 unit tests
 - `webui.py` generates self-signed cert via `openssl`
 - Binds to `127.0.0.1` only (loopback)
 - Serves HTTP 200 on `/` (dashboard), `/credentials`, `/kill-switch`, and `/api/runtime-truth`
+- Serves HTTP 200 on `/runtime-truth` as a dedicated read-only runtime feed page with clamped `limit` query handling
 - Dashboard now includes a read-only Runtime Truth section with a Wilson brief plus recent Supervisor task, Oracle incident, and Gaia event summaries
 - Credentials are written to SecretVault via CLI subprocess
 
