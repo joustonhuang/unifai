@@ -603,7 +603,7 @@ def main():
 
     _audit({"event": "webui_start", "port": args.port})
     print(f"[webui] https://localhost:{args.port}")
-    print(f"[webui] Pages: / (dashboard)  /credentials  /kill-switch")
+    print(f"[webui] Pages: / (dashboard)  /credentials  /kill-switch  /api/runtime-truth")
     print(f"[webui] Audit: {AUDIT_LOG}")
     try:
         server.serve_forever()
