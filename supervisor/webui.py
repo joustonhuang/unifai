@@ -14,21 +14,29 @@ Usage:
     python3 webui.py [--port 7700] [--sv-cli path/to/cli.js]
 """
 
-import os, ssl, json, subprocess, argparse, sys
+import os, ssl, json, subprocess, argparse, sys, sqlite3
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlparse
 from datetime import datetime, timezone
 from pathlib import Path
+from html import escape
+
+from agents.wilson.wilson import WilsonAgent
+from supervisor.types.signal_dto import SignalDeriver
 
 _HERE = Path(__file__).resolve().parent
 
 DEFAULT_PORT   = int(os.getenv("WEBUI_PORT", "7700"))
 DEFAULT_SV_CLI = os.getenv("WEBUI_SV_CLI", str(_HERE / "supervisor-secretvault" / "src" / "cli.js"))
+SUPERVISOR_DB  = Path(os.getenv("WEBUI_SUPERVISOR_DB", os.path.expanduser("~/supervisor/data/supervisor.db")))
 CERT_DIR       = Path(os.getenv("WEBUI_CERT_DIR", str(_HERE / "data" / "certs")))
 AUDIT_LOG      = Path(os.getenv("WEBUI_AUDIT_LOG", str(_HERE / "logs" / "webui_audit.log")))
 FUSE_STATE     = Path(os.getenv("FUSE_STATE_FILE", "/var/lib/little7/fuse_state.json"))
 FUSE_TRIP_CMD  = _HERE / "bin" / "fuse-trip"
 FUSE_RESET_CMD = _HERE / "bin" / "fuse-reset"
+RUNTIME_TRUTH_DEFAULT_LIMIT = 5
+RUNTIME_TRUTH_MIN_LIMIT = 1
+RUNTIME_TRUTH_MAX_LIMIT = 20
 
 # ── Token gauge: read from token_gauge.py if available ──────────────────────
 
@@ -157,6 +165,181 @@ def _audit(entry: dict) -> None:
         f.write(json.dumps(entry) + "\n")
 
 
+def _load_json(text: str | None) -> dict:
+    if not text:
+        return {}
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _runtime_task_summary(row: sqlite3.Row) -> dict:
+    spec = _load_json(row["spec"])
+    result = _load_json(row["result"])
+    task_type = str(spec.get("type") or "unknown")
+    if task_type == "tool":
+        detail = f"tool:{spec.get('cmd', 'unknown')}"
+    elif task_type == "llm":
+        detail = f"llm:{spec.get('agent') or spec.get('requester') or 'unknown'}"
+    else:
+        detail = task_type
+    signal = SignalDeriver.derive_task_signal(
+        {
+            "task_id": row["id"],
+            "status": row["status"],
+            "summary": result.get("payload", {}).get("summary"),
+            "error": row["error"] if "error" in row.keys() else None,
+            "reason": spec.get("reason"),
+        }
+    )
+    return {
+        "id": str(row["id"]),
+        "created_at": str(row["created_at"]),
+        "status": str(row["status"]),
+        "detail": detail,
+        "summary": signal.summary,
+        "session_persisted": bool(result.get("session_path")),
+    }
+
+
+def _runtime_incident_summary(row: sqlite3.Row) -> dict:
+    result = _load_json(row["result_json"])
+    return {
+        "created_at": str(row["created_at"]),
+        "severity": str(row["severity"]),
+        "incident_type": str(row["incident_type"]),
+        "stage": str(row["stage"]),
+        "summary": str(result.get("summary") or row["incident_type"]),
+    }
+
+
+def _runtime_event_summary(row: sqlite3.Row) -> dict:
+    return {
+        "timestamp": str(row["timestamp"]),
+        "event_type": str(row["event_type"]),
+        "actor": str(row["actor"]),
+        "target": str(row["target"] or ""),
+        "task_id": str(row["task_id"] or ""),
+    }
+
+
+def _runtime_truth_brief(snapshot: dict) -> dict:
+    return WilsonAgent.summarize_runtime_truth(snapshot).as_dict()
+
+
+def _runtime_truth_snapshot(limit: int = RUNTIME_TRUTH_DEFAULT_LIMIT) -> dict:
+    if not SUPERVISOR_DB.is_file():
+        return {"ok": False, "error": f"Supervisor DB not found at {SUPERVISOR_DB}"}
+
+    conn = sqlite3.connect(f"file:{SUPERVISOR_DB}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        tables = {
+            row["name"]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
+
+        snapshot = {"ok": True, "tasks": [], "incidents": [], "events": []}
+
+        if "tasks" in tables:
+            rows = conn.execute(
+                "SELECT id, created_at, status, spec, result FROM tasks ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            snapshot["tasks"] = [_runtime_task_summary(row) for row in rows]
+
+        if "oracle_incidents" in tables:
+            rows = conn.execute(
+                """
+                SELECT created_at, severity, incident_type, stage, result_json
+                FROM oracle_incidents
+                ORDER BY id DESC LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+            snapshot["incidents"] = [_runtime_incident_summary(row) for row in rows]
+
+        if "events" in tables:
+            rows = conn.execute(
+                "SELECT timestamp, event_type, actor, target, task_id FROM events ORDER BY rowid DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            snapshot["events"] = [_runtime_event_summary(row) for row in rows]
+
+        snapshot["brief"] = _runtime_truth_brief(snapshot)
+        return snapshot
+    except sqlite3.Error as error:
+        return {"ok": False, "error": f"Supervisor DB read failed: {error}"}
+    finally:
+        conn.close()
+
+
+def _render_runtime_truth(snapshot: dict) -> str:
+    if not snapshot.get("ok"):
+        return f'<div class="card"><span class="warn">⚠ Runtime truth unavailable: {escape(str(snapshot.get("error", "unknown error")))}</span></div>'
+
+    brief = snapshot.get("brief") or _runtime_truth_brief(snapshot)
+
+    def render_list(items: list[dict], formatter) -> str:
+        if not items:
+            return '<div class="card"><span class="notice">No recent rows.</span></div>'
+        rendered = "".join(f"<li>{formatter(item)}</li>" for item in items)
+        return f'<div class="card"><ul>{rendered}</ul></div>'
+
+    tasks_html = render_list(
+        snapshot.get("tasks", []),
+        lambda item: (
+            f"<strong>task {escape(item['id'])}</strong> "
+            f"[{escape(item['status'])}] {escape(item['detail'])} "
+            f"<span class=\"notice\">{escape(item['created_at'])}</span><br>"
+            f"<span class=\"notice\">{escape(item['summary'])}</span>"
+            f"{' <span class=\"notice\">session persisted</span>' if item.get('session_persisted') else ''}"
+        ),
+    )
+    incidents_html = render_list(
+        snapshot.get("incidents", []),
+        lambda item: (
+            f"<strong>{escape(item['severity'])}</strong> "
+            f"{escape(item['incident_type'])} at {escape(item['stage'])} "
+            f"<span class=\"notice\">{escape(item['summary'])}</span>"
+        ),
+    )
+    events_html = render_list(
+        snapshot.get("events", []),
+        lambda item: (
+            f"<strong>{escape(item['event_type'])}</strong> by {escape(item['actor'])} "
+            f"{escape(item['task_id']) if item['task_id'] else ''} "
+            f"{escape(item['target']) if item['target'] else ''} "
+            f"<span class=\"notice\">{escape(item['timestamp'])}</span>"
+        ),
+    )
+    return (
+        "<h2>Runtime Truth</h2>"
+        "<p class=\"notice\">Recent read-only snapshots from Supervisor and Gaia truth sources.</p>"
+        "<h2>Wilson Brief</h2>"
+        f"<div class=\"card\"><strong>{escape(str(brief.get('headline', 'Runtime truth is quiet.')))}</strong><ul>"
+        + "".join(f"<li>{escape(str(item))}</li>" for item in brief.get("details", []))
+        + "</ul></div>"
+        "<h2>Recent Tasks</h2>"
+        f"{tasks_html}"
+        "<h2>Oracle Incidents</h2>"
+        f"{incidents_html}"
+        "<h2>Gaia Events</h2>"
+        f"{events_html}"
+    )
+
+
+def _coerce_runtime_truth_limit(raw_value: str | None) -> int:
+    try:
+        limit = int(raw_value or str(RUNTIME_TRUTH_DEFAULT_LIMIT))
+    except (TypeError, ValueError):
+        return RUNTIME_TRUTH_DEFAULT_LIMIT
+    return max(RUNTIME_TRUTH_MIN_LIMIT, min(RUNTIME_TRUTH_MAX_LIMIT, limit))
+
+
 # ── CSS shared ───────────────────────────────────────────────────────────────
 
 _CSS = """
@@ -202,6 +385,7 @@ def _page(title: str, body: str) -> str:
 def _dashboard_page() -> str:
     fuse = _fuse_state()
     gauge = _token_gauge_summary()
+    runtime_truth = _runtime_truth_snapshot()
 
     # Fuse card
     if fuse["tripped"]:
@@ -237,6 +421,7 @@ def _dashboard_page() -> str:
 {fuse_html}
 {gauge_html}
 {sv_html}
+{_render_runtime_truth(runtime_truth)}
 <p class="notice" style="margin-top:20px;">
   This dashboard is served over HTTPS on localhost only.<br>
   Access is restricted to this machine. No authentication required for localhost access.<br>
@@ -299,6 +484,16 @@ def make_handler(sv_cli: str):
         def log_message(self, fmt, *args):
             pass  # suppress default; we use _audit
 
+        def _json(self, code: int, payload: dict) -> None:
+            b = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(b)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.wfile.write(b)
+
         def _html(self, code: int, body: str) -> None:
             b = body.encode("utf-8")
             self.send_response(code)
@@ -315,11 +510,19 @@ def make_handler(sv_cli: str):
             return parse_qs(raw)
 
         def do_GET(self):
-            if self.path in ("/", "/index.html"):
+            parsed = urlparse(self.path)
+
+            if parsed.path in ("/", "/index.html"):
                 self._html(200, _dashboard_page())
-            elif self.path == "/credentials":
+            elif parsed.path == "/api/runtime-truth":
+                params = parse_qs(parsed.query)
+                limit = _coerce_runtime_truth_limit(
+                    (params.get("limit") or [str(RUNTIME_TRUTH_DEFAULT_LIMIT)])[0]
+                )
+                self._json(200, _runtime_truth_snapshot(limit=limit))
+            elif parsed.path == "/credentials":
                 self._html(200, _credentials_page())
-            elif self.path == "/kill-switch":
+            elif parsed.path == "/kill-switch":
                 self._html(200, _kill_switch_page())
             else:
                 self._html(404, _page("404", "<p>Not found.</p>"))

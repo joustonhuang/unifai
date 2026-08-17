@@ -6,7 +6,7 @@
 
 ---
 
-## Result: 12/12 integration + 46 unit = 58 total PASS ✅
+## Result: 12/12 integration + 50 unit = 62 total PASS ✅
 
 ```
 [PASS] Neo Guardian: all 9 tests passed
@@ -38,7 +38,15 @@ cd /mnt/d/Claude/unifai
 bash scripts/local_e2e_test.sh
 ```
 
-Expected output: `Results: 12 passed, 0 failed` (integration) + 46 unit tests
+Expected output: `Results: 12 passed, 0 failed` (integration) + 50 unit tests
+
+---
+
+## Latest Focused Verification
+
+- 2026-08-17: `pytest -q supervisor/tests`
+- Result: `62 passed in 5.72s`
+- Coverage relevant to the current Wilson/WebUI track now includes the read-only Runtime Truth dashboard/API, Wilson brief summarization, and HTML-escaping regression coverage for untrusted runtime rows
 
 ---
 
@@ -70,7 +78,8 @@ Expected output: `Results: 12 passed, 0 failed` (integration) + 46 unit tests
 ### 5. WebUI HTTPS Dashboard
 - `webui.py` generates self-signed cert via `openssl`
 - Binds to `127.0.0.1` only (loopback)
-- Serves HTTP 200 on `/` (dashboard), `/credentials`, `/kill-switch`
+- Serves HTTP 200 on `/` (dashboard), `/credentials`, `/kill-switch`, and `/api/runtime-truth`
+- Dashboard now includes a read-only Runtime Truth section with a Wilson brief plus recent Supervisor task, Oracle incident, and Gaia event summaries
 - Credentials are written to SecretVault via CLI subprocess
 
 ---

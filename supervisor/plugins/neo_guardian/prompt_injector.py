@@ -27,7 +27,7 @@ class SystemInjector:
     def get_physics_context(self) -> str:
         """Return a system physics snapshot formatted as XML."""
         os_name = f"{platform.system()} {platform.release()}"
-        current_date_utc = datetime.datetime.utcnow().isoformat()
+        current_date_utc = datetime.datetime.now(datetime.UTC).isoformat()
         working_directory = os.getcwd()
 
         return (
