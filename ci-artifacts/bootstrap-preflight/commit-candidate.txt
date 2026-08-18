@@ -1,9 +1,11 @@
-Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ 13312b7
-Current local checkpoint: 13312b7
-Tracked publish-boundary state: ahead 29 over fix/openclaw-config-path-and-local-mode
+Commit candidate: publish-boundary maintenance bundle for visible-ref handoff @ 470050e
+Current local checkpoint: 470050e
+Tracked publish-boundary state: ahead 37 over fix/openclaw-config-path-and-local-mode
 
 Working-tree files:
-(clean)
+ci-artifacts/bootstrap-preflight/commit-candidate.txt
+ci-artifacts/vm-verifier-checkpoint-latest.md
+docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md
 
 Verification gates run:
 python3 scripts/check_publish_stack_parity_contract.py
@@ -28,8 +30,11 @@ Current host-readiness snapshot:
 - Live host-readiness has improved since the older missing-QEMU note: the required verifier tools are present on this host, and the current live state is narrower (`/dev/kvm` is present but not writable, `gh` is installed and authenticated, no `GH_TOKEN`/`GITHUB_TOKEN` is exported).
 
 Latest local hardening:
-- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack.
-- The publish-boundary maintenance bundle is now preserved as a clean local commit instead of only a dirty working tree, so the publish boundary is sharper and less likely to be lost or restaged incorrectly when GitHub visibility opens.
+- The current local sandbox now carries 3 uncommitted publish-boundary maintenance updates beyond the tracked local stack:
+  - `ci-artifacts/bootstrap-preflight/commit-candidate.txt`
+  - `ci-artifacts/vm-verifier-checkpoint-latest.md`
+  - `docs/BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md`
+- The publish-boundary maintenance bundle is no longer only a clean-commit story: the commit stack is preserved, but the current sandbox also carries additional uncommitted publish-boundary maintenance delta.
 - Fresh local `bash scripts/bootstrap_installer_preflight.sh` reruns are green with the current publish-boundary maintenance bundle in place.
 
 Current checkpoint chain:
@@ -62,12 +67,20 @@ Current checkpoint chain:
   - `00e047e` (`docs: refresh verifier checkpoint after self-maintenance`)
   - `40d79dc` (`docs: settle verifier checkpoint after self-maintenance`)
   - `13312b7` (`scripts: stabilize clean checkpoint settle handoff`)
+  - `bef6417` (`docs: refresh verifier checkpoint after clean settle handoff`)
+  - `0eaa4b7` (`docs: settle verifier checkpoint after clean settle handoff`)
+  - `5e719ad` (`docs: refresh publish-boundary handoff artifacts`)
+  - `d0eea6c` (`docs: settle verifier checkpoint after handoff refresh`)
+  - `cc82711` (`docs: settle publish stack reconciliation note`)
+  - `69a1acf` (`Add runtime truth webui snapshot view`)
+  - `a56b49c` (`Fix webui startup route banner`)
+  - `470050e` (`Add dedicated runtime truth webui page`)
 
 Current external blocker:
-- The branch still needs the current checked-out doc-only tip GitHub-visible; the tracked publish-boundary checkpoint remains `13312b7` until that visible ref exists.
+- The branch still needs the local checkpoint chain through `470050e` to become GitHub-visible before the real VM-proof path can continue.
 - The last recorded public blocker remains `Bootstrap Installer Preflight` failing on `22560dc`, so the next real boundary is still a visible rerun on the exact published ref.
 
-Next clean move once the branch tip is GitHub-visible:
-- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make the current checked-out tip GitHub-visible on `fix/openclaw-config-path-and-local-mode`; the tracked publish-boundary checkpoint remains `13312b7` until a non-doc commit supersedes it.
+Next clean move before the real VM-proof path:
+- Run `git push github HEAD:fix/openclaw-config-path-and-local-mode` to make local checkpoint `470050e` GitHub-visible on `fix/openclaw-config-path-and-local-mode`.
 - Rerun `Bootstrap Installer Preflight` on the exact visible ref.
 - If green, run `bash scripts/run_vm_verifier_preflight.sh <visible-ref>` and then `bash scripts/vm/verify_bootstrap_in_vm.sh <visible-ref>`.
