@@ -5,13 +5,13 @@ Baseline branch:
 - transplant/fix-openclaw-config-path-and-local-mode-clean-stack
 
 Current status:
-- baseline branch is ahead 314 over fix/openclaw-config-path-and-local-mode
+- baseline branch is ahead 315 over fix/openclaw-config-path-and-local-mode
 - 1 code-only older commits remain to replay from fix/openclaw-config-path-and-local-mode
 - 3 older code-only commits are already absorbed on the baseline branch
 - no older mixed docs+code commits remain for manual review
 - no older doc/checkpoint-only commits remain for manual review or drop
 - 11 older commits are already reviewed and ready to drop
-- 311 cleaner-only commits remain on the baseline branch relative to the older local fix branch
+- 312 cleaner-only commits remain on the baseline branch relative to the older local fix branch
 
 Next clean move:
 1. Stay on transplant/fix-openclaw-config-path-and-local-mode-clean-stack as the publish baseline.
