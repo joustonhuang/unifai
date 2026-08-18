@@ -127,6 +127,39 @@ def main() -> int:
 
         latest_checkpoint = work / "ci-artifacts" / "vm-verifier-checkpoint-latest.md"
         commit_candidate_doc = work / "ci-artifacts" / "bootstrap-preflight" / "commit-candidate.txt"
+        visible_head_short = run(
+            ["git", "rev-parse", "--short", "origin/fix/openclaw-config-path-and-local-mode"],
+            work,
+        )
+        checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
+        checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
+        checkpoint_doc.write_text(
+            checkpoint_text.replace(
+                f"- GitHub-visible branch head: `{visible_head_short}`",
+                "- GitHub-visible branch head: `stale-visible-head`",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_visible_head_output = expect_fail(["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work)
+        assert "Checkpoint doc visible head is stale; expected to find:" in stale_visible_head_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
+        latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
+        latest_checkpoint.write_text(
+            latest_checkpoint_text.replace(
+                f"- GitHub-visible branch head: `{visible_head_short}`",
+                "- GitHub-visible branch head: `stale-visible-head`",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        stale_latest_visible_head_output = expect_fail(
+            ["python3", "-B", "scripts/check_vm_verifier_checkpoint_freshness.py"], work
+        )
+        assert "Checkpoint latest visible head is stale; expected to find:" in stale_latest_visible_head_output
+
+        run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         latest_checkpoint_text = latest_checkpoint.read_text(encoding="utf-8")
         latest_checkpoint.write_text(
             latest_checkpoint_text.replace(
@@ -141,7 +174,6 @@ def main() -> int:
 
         run_ok(["python3", "-B", "scripts/refresh_vm_verifier_checkpoint_state.py"], work)
         boundary_doc = work / "docs" / "BOOTSTRAP_VM_VERIFICATION.md"
-        checkpoint_doc = work / "docs" / "BOOTSTRAP_VM_VERIFIER_CHECKPOINT_2026-06-15.md"
         checkpoint_text = checkpoint_doc.read_text(encoding="utf-8")
         stale_checkpoint_duplicate_delta = (
             "- The current local sandbox now carries no additional uncommitted publish-boundary maintenance delta beyond the tracked local stack represented here.\n"

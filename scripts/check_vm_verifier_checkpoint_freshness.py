@@ -166,6 +166,9 @@ def main() -> int:
     ahead_count = git("rev-list", "--count", f"{upstream}..{tracked_ref}")
     current_head_ahead_count = git("rev-list", "--count", f"{upstream}..HEAD")
     upstream_short = git("rev-parse", "--short", upstream)
+    visible_head_short = upstream_short
+    if tracked_ref != "HEAD" and current_head_ahead_count == "0":
+        visible_head_short = tracked_head_short
     latest_non_doc_all_paths = [
         line.strip()
         for line in git("diff-tree", "--no-commit-id", "--name-only", "-r", tracked_ref).splitlines()
@@ -217,6 +220,16 @@ def main() -> int:
             checkpoint_latest_text,
             f"Latest tracked local head in the stack: `{tracked_head_short}`",
             "Checkpoint latest tracked head",
+        ),
+        (
+            checkpoint_text,
+            f"GitHub-visible branch head: `{visible_head_short}`",
+            "Checkpoint doc visible head",
+        ),
+        (
+            checkpoint_latest_text,
+            f"GitHub-visible branch head: `{visible_head_short}`",
+            "Checkpoint latest visible head",
         ),
         (
             checkpoint_text,
