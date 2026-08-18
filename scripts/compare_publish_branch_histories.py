@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RECONCILIATION_NOTE = REPO_ROOT / "ci-artifacts" / "publish-stack-reconciliation-next-step.txt"
+RECONCILIATION_NOTE_PATH = "ci-artifacts/publish-stack-reconciliation-next-step.txt"
 REVIEWED_DROP_CANDIDATES_BY_BRANCH_PAIR: dict[tuple[str, str], set[str]] = {
     (
         "fix/openclaw-config-path-and-local-mode",
@@ -245,6 +246,10 @@ def is_doc_only(paths: list[str]) -> bool:
     return bool(paths) and all(path.startswith("docs/") for path in paths)
 
 
+def is_reconciliation_note_only(paths: list[str]) -> bool:
+    return bool(paths) and all(path == RECONCILIATION_NOTE_PATH for path in paths)
+
+
 def has_doc_paths(paths: list[str]) -> bool:
     return any(path.startswith("docs/") for path in paths)
 
@@ -287,6 +292,9 @@ def summarize_reconciliation(
     cleaner_unique = commits_with_marker(cleaner_vs_older, "+")
     older_duplicates = commits_with_marker(older_vs_cleaner, "-")
     cleaner_duplicates = commits_with_marker(cleaner_vs_older, "-")
+    cleaner_note_only = [
+        commit for _, commit, _, paths in cleaner_vs_older if is_reconciliation_note_only(paths)
+    ]
     absorbed_candidates = [
         commit
         for _, commit, _, paths in older_unique_rows
@@ -311,8 +319,9 @@ def summarize_reconciliation(
     return {
         "absorbed_candidates": absorbed_candidates,
         "already_reviewed": already_reviewed,
+        "cleaner_note_only": cleaner_note_only,
         "cleaner_duplicates": cleaner_duplicates,
-        "cleaner_unique": cleaner_unique,
+        "cleaner_unique": [commit for commit in cleaner_unique if commit not in cleaner_note_only],
         "doc_only_older": doc_only_older,
         "mixed_older": mixed_older,
         "older_duplicates": older_duplicates,
@@ -412,6 +421,8 @@ def build_reconciliation_note(
     doc_only_older = summary["doc_only_older"]
     already_reviewed = summary["already_reviewed"]
     cleaner_unique = summary["cleaner_unique"]
+    cleaner_note_only = summary["cleaner_note_only"]
+    effective_right_count = right_count - len(cleaner_note_only)
 
     replay_line = (
         f"- {len(replay_candidates)} code-only older commits remain to replay from {older_ref}"
@@ -427,7 +438,7 @@ def build_reconciliation_note(
             f"- {cleaner_ref}",
             "",
             "Current status:",
-            f"- baseline branch is ahead {right_count} over {older_ref}",
+            f"- baseline branch is ahead {effective_right_count} over {older_ref}",
             replay_line,
             f"- {len(absorbed_candidates)} older code-only commits are already absorbed on the baseline branch",
             (

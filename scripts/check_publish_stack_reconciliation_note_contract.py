@@ -56,6 +56,8 @@ smoke_required = [
     ('python3 scripts/check_publish_stack_reconciliation_note.py --older-ref fix/older --cleaner-ref transplant/cleaner', "Publish-note smoke test exercises the checker against synthetic refs"),
     ('docs: cleaner bookkeeping', "Publish-note smoke test creates a live cleaner-only drift after the note snapshot"),
     ('Expected publish-note checker to fail once the cleaner branch drifts past the tracked note.', "Publish-note smoke test fail-closes on live branch drift"),
+    ('docs: settle publish reconciliation note', "Publish-note smoke test creates a reconciliation-note-only settle commit after refresh"),
+    ('Expected publish-note checker to ignore a cleaner-only note settle commit.', "Publish-note smoke test proves reconciliation-note-only bookkeeping does not invalidate the note"),
     ('Publish-stack reconciliation note matches current branch-comparison state', "Publish-note smoke test covers the passing path"),
 ]
 

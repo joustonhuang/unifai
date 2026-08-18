@@ -79,4 +79,15 @@ grep -q "expected" <<<"$FAIL_OUTPUT" || {
   exit 1
 }
 
+python3 scripts/compare_publish_branch_histories.py --write-reconciliation-note --generated-at '2026-08-09 18:20 Asia/Taipei' fix/older transplant/cleaner >/dev/null
+git add ci-artifacts/publish-stack-reconciliation-next-step.txt
+git commit -q -m "docs: settle publish reconciliation note"
+
+STABLE_OUTPUT="$("$REAL_BASH" -lc "cd '$WORKTREE' && python3 scripts/check_publish_stack_reconciliation_note.py --older-ref fix/older --cleaner-ref transplant/cleaner")"
+printf '%s\n' "$STABLE_OUTPUT"
+grep -q "Publish-stack reconciliation note matches current branch-comparison state" <<<"$STABLE_OUTPUT" || {
+  echo "[FAIL] Expected publish-note checker to ignore a cleaner-only note settle commit."
+  exit 1
+}
+
 echo "[PASS] publish-stack reconciliation note smoke test passed"
