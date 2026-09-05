@@ -31,6 +31,15 @@ require_grep() {
   pass "Pattern '$pattern' present in ${path#$REPO_ROOT/}"
 }
 
+reject_grep() {
+  local pattern="$1"
+  local path="$2"
+  if grep -Eq "$pattern" "$path"; then
+    fail "Forbidden pattern '$pattern' found in ${path#$REPO_ROOT/}"
+  fi
+  pass "Pattern '$pattern' absent from ${path#$REPO_ROOT/}"
+}
+
 echo "== Bootstrap installer preflight =="
 echo "Repo root: $REPO_ROOT"
 echo "Report: $REPORT_FILE"
@@ -60,9 +69,14 @@ require_grep 'check_root\s*\(' "$INSTALLER"
 require_grep 'check_os\s*\(' "$INSTALLER"
 require_grep 'phase_8_validation\s*\(' "$INSTALLER"
 
-for service in unifai-secretvault unifai-keyman unifai-supervisor unifai-openclaw; do
+for service in unifai-secretvault unifai-supervisor unifai-openclaw; do
   require_grep "$service" "$INSTALLER"
 done
+
+require_file "$REPO_ROOT/supervisor/plugins/keyman_guardian/keyman_auth_cli.py"
+require_file "$REPO_ROOT/supervisor/governance/policy_engine.py"
+require_grep 'supervisor/plugins/keyman_guardian/keyman_auth_cli\.py' "$INSTALLER"
+reject_grep 'github\.com/joustonhuang/keyman(\.git)?' "$INSTALLER"
 
 require_grep 'curl -fsSL https://openclaw.ai/install.sh \| bash' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
 pass "Stage 50 uses official OpenClaw installer"

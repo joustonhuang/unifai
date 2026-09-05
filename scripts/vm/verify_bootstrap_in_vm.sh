@@ -261,12 +261,11 @@ fi
 {
   echo "== systemd service status =="
   sudo systemctl status unifai-secretvault --no-pager || true
-  sudo systemctl status unifai-keyman --no-pager || true
   sudo systemctl status unifai-supervisor --no-pager || true
   sudo systemctl status unifai-openclaw --no-pager || true
   echo
   echo "== active check =="
-  for svc in unifai-secretvault unifai-keyman unifai-supervisor unifai-openclaw; do
+  for svc in unifai-secretvault unifai-supervisor unifai-openclaw; do
     if sudo systemctl is-active --quiet "$svc"; then
       echo "[PASS] $svc active"
     else

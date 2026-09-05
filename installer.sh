@@ -27,6 +27,7 @@ INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/unifai}"
 PYTHON_VERSION="3.10"
 NODE_VERSION="18"
 LOG_FILE="/tmp/unifai-install.log"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Helper functions
 log_info() {
@@ -177,47 +178,15 @@ phase_2_python_env() {
 ##############################################################################
 
 phase_3_keyman() {
-    log_info "=== PHASE 3: Keyman Installation ==="
+    log_info "=== PHASE 3: Keyman Source Validation ==="
 
-    source "${INSTALL_PREFIX}/venv/bin/activate"
+    local keyman_cli="${REPO_ROOT}/supervisor/plugins/keyman_guardian/keyman_auth_cli.py"
+    local policy_engine="${REPO_ROOT}/supervisor/governance/policy_engine.py"
 
-    mkdir -p "${INSTALL_PREFIX}/keyman"
-    cd "${INSTALL_PREFIX}/keyman"
+    [[ -f "$keyman_cli" ]] || log_error "Embedded Keyman CLI not found: $keyman_cli"
+    [[ -f "$policy_engine" ]] || log_error "Embedded Keyman policy engine not found: $policy_engine"
 
-    # Clone keyman repo (adjust URL as needed)
-    if [[ ! -d ".git" ]]; then
-        git clone https://github.com/joustonhuang/keyman.git .
-    else
-        git pull origin main
-    fi
-
-    # Install Python dependencies
-    pip install -r requirements.txt
-
-    # Create systemd service for Keyman
-    cat > /etc/systemd/system/unifai-keyman.service << EOF
-[Unit]
-Description=UnifAI Keyman Service (Authorization)
-After=network.target unifai-secretvault.service
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=unifai
-WorkingDirectory=${INSTALL_PREFIX}/keyman
-Environment="PATH=${INSTALL_PREFIX}/venv/bin"
-ExecStart=${INSTALL_PREFIX}/venv/bin/python -m keyman.cli
-Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    systemctl daemon-reload
-    log_success "Phase 3: Keyman installed and service registered"
+    log_success "Phase 3: Embedded Keyman source is available for Supervisor installation"
 }
 
 ##############################################################################
@@ -245,7 +214,7 @@ phase_4_supervisor() {
     cat > /etc/systemd/system/unifai-supervisor.service << EOF
 [Unit]
 Description=UnifAI Supervisor Service (Agent Orchestration)
-After=network.target unifai-keyman.service unifai-secretvault.service
+After=network.target unifai-secretvault.service
 Wants=network-online.target
 
 [Service]
@@ -417,7 +386,7 @@ phase_8_validation() {
     log_info "=== INSTALLATION COMPLETE ==="
     echo ""
     log_info "Next steps:"
-    echo "  1. Start services: sudo systemctl start unifai-secretvault unifai-keyman unifai-supervisor unifai-openclaw"
+    echo "  1. Start services: sudo systemctl start unifai-secretvault unifai-supervisor unifai-openclaw"
     echo "  2. Enable auto-start: sudo systemctl enable unifai-*"
     echo "  3. Check status: sudo systemctl status unifai-*"
     echo "  4. View logs: sudo journalctl -u unifai-openclaw -f"
