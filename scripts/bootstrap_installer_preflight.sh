@@ -80,6 +80,10 @@ reject_grep 'github\.com/joustonhuang/keyman(\.git)?' "$INSTALLER"
 
 require_grep 'curl -fsSL https://openclaw.ai/install.sh \| bash' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
 pass "Stage 50 uses official OpenClaw installer"
+require_grep 'OPENCLAW_CONFIG="\$\{OPENCLAW_CONFIG_DIR\}/openclaw\.json"' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
+require_grep 'mode:[[:space:]]*"local"' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
+require_grep 'workspace:[[:space:]]*"~/.openclaw/workspace"' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
+reject_grep 'openclaw\.json5|codex-mini-latest|openai-codex/gpt-5\.4' "$REPO_ROOT/little7-installer/stages/50_openclaw.sh"
 
 cat <<'EOF'
 
