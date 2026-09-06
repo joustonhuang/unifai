@@ -6,7 +6,7 @@ echo "== Stage 60: Telegram Gateway Configuration =="
 DST_BASE="/opt/little7"
 SV_DIR="${DST_BASE}/supervisor/supervisor-secretvault"
 MASTER_KEY_FILE="/etc/little7/secretvault_master.key"
-OPENCLAW_CONFIG="${HOME}/.openclaw/openclaw.json5"
+OPENCLAW_CONFIG="${HOME}/.openclaw/openclaw.json"
 
 # -----------------------------------------------------------------------
 # 1. Verify dependencies from earlier stages
@@ -66,12 +66,12 @@ fi
 # -----------------------------------------------------------------------
 echo "[2/3] Enabling Telegram channel in OpenClaw config..."
 
-# Update the openclaw.json5 to enable Telegram
+# Update the canonical OpenClaw config to enable Telegram.
 # We don't write the token here — it's injected at runtime via OPENCLAW_BOT_TOKEN env var
 python3 - <<'PYEOF'
 import re, pathlib, sys
 
-config_path = pathlib.Path.home() / ".openclaw" / "openclaw.json5"
+config_path = pathlib.Path.home() / ".openclaw" / "openclaw.json"
 content = config_path.read_text()
 
 # Enable telegram in the config
@@ -84,7 +84,7 @@ content = re.sub(
 
 # Remove the comment about apiKey injection (it's already handled)
 config_path.write_text(content)
-print("openclaw.json5 updated: telegram.enabled = true")
+print("openclaw.json updated: telegram.enabled = true")
 PYEOF
 
 # -----------------------------------------------------------------------
