@@ -78,11 +78,11 @@ if [ ! -f "${OPENCLAW_CONFIG}" ]; then
   },
 }
 EOF
-  chmod 600 "${OPENCLAW_CONFIG}"
   echo "[OK] OpenClaw config skeleton written to ${OPENCLAW_CONFIG} (no API key)"
 else
   echo "OpenClaw config already exists — skipping (not overwriting)"
 fi
+chmod 600 "${OPENCLAW_CONFIG}"
 
 # -----------------------------------------------------------------------
 # 3. Create World Physics injection launcher

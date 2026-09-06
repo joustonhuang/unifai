@@ -94,4 +94,10 @@ passed("Generated config does not persist provider secrets")
 require(stage50, 'chmod 700 "${OPENCLAW_CONFIG_DIR}"', "Config directory is private")
 require(stage50, 'chmod 600 "${OPENCLAW_CONFIG}"', "Config file is private")
 
+config_write_end = stage50.find("\nfi\n", stage50.find("if [ ! -f \"${OPENCLAW_CONFIG}\" ]"))
+config_chmod = stage50.find('chmod 600 "${OPENCLAW_CONFIG}"')
+if config_write_end == -1 or config_chmod < config_write_end:
+    fail("Existing config files are also forced to private permissions")
+passed("Existing config files are also forced to private permissions")
+
 print("[PASS] OpenClaw installer config contract looks sane")
